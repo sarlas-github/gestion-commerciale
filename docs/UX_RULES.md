@@ -164,3 +164,11 @@ quantity = 0                    → 🔴 rouge  "Rupture"
 - Navigation ← → pour changer de mois
 - Par défaut : mois en cours
 - Utilisé sur : Dashboard, États clients, États fournisseurs, Fiche client/fournisseur onglet État
+
+
+## 12. Responsive
+L'app doit être fully responsive (mobile + desktop) :
+- Sidebar cachée sur mobile → drawer hamburger
+- Tables scrollables horizontalement sur mobile
+- Formulaires en pleine largeur sur mobile
+- Boutons et inputs adaptés au touch

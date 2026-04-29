@@ -20,6 +20,7 @@ import {
 } from 'lucide-react'
 import { cn } from '@/lib/utils'
 import { useAuth } from '@/hooks/useAuth'
+import { useStockAlertCount } from '@/hooks/useProducts'
 import { Button } from '@/components/ui/button'
 import { Separator } from '@/components/ui/separator'
 
@@ -94,6 +95,7 @@ export const Sidebar = ({ onClose }: SidebarProps) => {
   const location = useLocation()
   const navigate = useNavigate()
   const { signOut } = useAuth()
+  const { data: alertCount = 0 } = useStockAlertCount()
   const [expandedItems, setExpandedItems] = useState<string[]>(['Paiements', 'États'])
 
   const isActive = (href: string) => location.pathname.startsWith(href)
@@ -173,7 +175,14 @@ export const Sidebar = ({ onClose }: SidebarProps) => {
             </p>
             <div className="space-y-0.5">
               {group.items.map((item) => (
-                <NavLink key={item.href} item={item} />
+                <NavLink
+                  key={item.href}
+                  item={
+                    item.href === '/products' && alertCount > 0
+                      ? { ...item, badge: alertCount }
+                      : item
+                  }
+                />
               ))}
             </div>
           </div>

@@ -1,0 +1,226 @@
+import { useEffect } from 'react'
+import { useForm, Controller } from 'react-hook-form'
+import { zodResolver } from '@hookform/resolvers/zod'
+import { z } from 'zod'
+import { Loader2, CheckCircle2, AlertTriangle } from 'lucide-react'
+import {
+  Dialog,
+  DialogContent,
+  DialogHeader,
+  DialogTitle,
+  DialogFooter,
+} from '@/components/ui/dialog'
+import { Button } from '@/components/ui/button'
+import { Input } from '@/components/ui/input'
+import { Label } from '@/components/ui/label'
+import { useAdjustStock } from '@/hooks/useProducts'
+import type { ProductWithStock } from '@/types'
+
+const schema = z.object({
+  direction: z.enum(['in', 'out']),
+  quantity: z
+    .number({ invalid_type_error: 'Veuillez entrer un nombre valide' })
+    .min(1, 'La valeur doit être supérieure à 0'),
+  note: z.string().min(1, 'Ce champ est obligatoire'),
+})
+
+type FormData = z.infer<typeof schema>
+
+interface StockAdjustModalProps {
+  product: ProductWithStock | null
+  open: boolean
+  onOpenChange: (open: boolean) => void
+}
+
+export const StockAdjustModal = ({
+  product,
+  open,
+  onOpenChange,
+}: StockAdjustModalProps) => {
+  const adjustStock = useAdjustStock()
+  const currentQty = product?.stock?.quantity ?? 0
+
+  const {
+    register,
+    handleSubmit,
+    watch,
+    reset,
+    control,
+    formState: { errors },
+  } = useForm<FormData>({
+    resolver: zodResolver(schema),
+    defaultValues: { direction: 'in', quantity: 1, note: '' },
+  })
+
+  const direction = watch('direction')
+  const quantityRaw = watch('quantity')
+  const quantity = Number(quantityRaw) || 0
+
+  const delta = direction === 'in' ? quantity : -quantity
+  const newQty = currentQty + delta
+  const isNegative = newQty < 0
+
+  useEffect(() => {
+    if (open) reset({ direction: 'in', quantity: 1, note: '' })
+  }, [open, reset])
+
+  const onSubmit = async (data: FormData) => {
+    if (!product?.stock) return
+    await adjustStock.mutateAsync({
+      productId: product.id,
+      currentStockId: product.stock.id,
+      currentQuantity: currentQty,
+      direction: data.direction,
+      quantity: data.quantity,
+      note: data.note,
+    })
+    onOpenChange(false)
+  }
+
+  return (
+    <Dialog open={open} onOpenChange={onOpenChange}>
+      <DialogContent className="sm:max-w-md">
+        <DialogHeader>
+          <DialogTitle>Correction stock</DialogTitle>
+        </DialogHeader>
+
+        <form onSubmit={handleSubmit(onSubmit)} noValidate className="space-y-4">
+          {/* Produit (lecture seule) */}
+          <div className="space-y-1.5">
+            <Label>Produit</Label>
+            <div className="flex h-8 items-center rounded-lg border border-input bg-muted/30 px-2.5 text-sm">
+              {product?.name ?? '—'}
+            </div>
+          </div>
+
+          {/* Type IN / OUT */}
+          <div className="space-y-1.5">
+            <Label>
+              Type <span className="text-destructive">*</span>
+            </Label>
+            <div className="flex gap-6">
+              <label className="flex items-center gap-2 cursor-pointer text-sm">
+                <input
+                  type="radio"
+                  value="in"
+                  {...register('direction')}
+                  className="accent-primary"
+                />
+                IN (ajouter)
+              </label>
+              <label className="flex items-center gap-2 cursor-pointer text-sm">
+                <input
+                  type="radio"
+                  value="out"
+                  {...register('direction')}
+                  className="accent-primary"
+                />
+                OUT (retirer)
+              </label>
+            </div>
+          </div>
+
+          {/* Quantité */}
+          <div className="space-y-1.5">
+            <Label htmlFor="adj-qty">
+              Quantité <span className="text-destructive">*</span>
+            </Label>
+            <Controller
+              name="quantity"
+              control={control}
+              render={({ field }) => (
+                <Input
+                  id="adj-qty"
+                  type="number"
+                  min={1}
+                  onFocus={e => e.target.select()}
+                  value={field.value ?? ''}
+                  onChange={e =>
+                    field.onChange(
+                      e.target.value === '' ? undefined : Number(e.target.value)
+                    )
+                  }
+                  onBlur={field.onBlur}
+                  aria-invalid={Boolean(errors.quantity)}
+                />
+              )}
+            />
+            {errors.quantity && (
+              <p className="text-sm text-destructive">{errors.quantity.message}</p>
+            )}
+          </div>
+
+          {/* Note (obligatoire) */}
+          <div className="space-y-1.5">
+            <Label htmlFor="adj-note">
+              Note <span className="text-destructive">*</span>
+            </Label>
+            <Controller
+              name="note"
+              control={control}
+              render={({ field }) => (
+                <Input
+                  id="adj-note"
+                  placeholder="Motif de la correction"
+                  {...field}
+                  aria-invalid={Boolean(errors.note)}
+                />
+              )}
+            />
+            {errors.note && (
+              <p className="text-sm text-destructive">{errors.note.message}</p>
+            )}
+          </div>
+
+          {/* Preview stock actuel / après */}
+          <div className="rounded-lg border bg-muted/30 p-3 space-y-1.5 text-sm">
+            <div className="flex justify-between">
+              <span className="text-muted-foreground">Stock actuel</span>
+              <span className="font-medium">{currentQty}</span>
+            </div>
+            <div className="flex justify-between items-center">
+              <span className="text-muted-foreground">Stock après</span>
+              <span
+                className={`font-medium flex items-center gap-1 ${
+                  isNegative ? 'text-destructive' : 'text-green-600'
+                }`}
+              >
+                {newQty}
+                {isNegative ? (
+                  <AlertTriangle className="h-4 w-4" />
+                ) : (
+                  <CheckCircle2 className="h-4 w-4" />
+                )}
+              </span>
+            </div>
+            {isNegative && (
+              <p className="text-xs text-destructive">
+                Stock insuffisant (disponible : {currentQty})
+              </p>
+            )}
+          </div>
+
+          <DialogFooter>
+            <Button
+              type="button"
+              variant="outline"
+              onClick={() => onOpenChange(false)}
+              disabled={adjustStock.isPending}
+            >
+              Annuler
+            </Button>
+            <Button
+              type="submit"
+              disabled={adjustStock.isPending || isNegative}
+            >
+              {adjustStock.isPending && (
+                <Loader2 className="mr-2 h-4 w-4 animate-spin" />
+              )}
+              Enregistrer
+            </Button>
+          </DialogFooter>
+        </form>
+      </DialogContent>
+    </Dialog>
+  )
+}

@@ -1,0 +1,10 @@
+Crée le module produits complet :
+- Page /products exactement comme MOCKUPS.md section 2
+- Formulaire création/édition comme MOCKUPS.md section 3
+  (modale ou page, type pack affiche pièces)
+- Modale correction stock comme MOCKUPS.md section 5
+- Hook useProducts.ts pour tous les CRUD
+- Confirmation suppression (bloquée si produit utilisé)
+- Stock coloré selon statut (OK/Faible/Rupture)
+- Badge rouge sur Produits dans sidebar si alertes actives
+Respecte UX_RULES.md pour validation et autocomplete.

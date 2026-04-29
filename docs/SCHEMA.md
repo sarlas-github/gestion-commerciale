@@ -268,6 +268,20 @@ NNN = séquentiel par type, par année, par utilisateur.
 
 ---
 
+## Numérotation documents (document_sequences)
+
+Table dédiée pour les séquences :
+- user_id, type, year, last_number
+- Incrémentée à chaque création de document
+- Numéro jamais réutilisé même après suppression
+- Format : FAC-2025-001, REC-2025-001 etc.
+
+Règle : toujours lire last_number + 1 depuis 
+document_sequences avant de créer un document.
+
+
+---
+
 ## Calcul statut stock
 ```
 quantity = 0              → 'rupture' (🔴)

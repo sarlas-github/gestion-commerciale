@@ -1,4 +1,5 @@
 import { BrowserRouter, Routes, Route, Navigate } from 'react-router-dom'
+import { Toaster } from '@/components/ui/sonner'
 import { AppLayout } from '@/components/layout/AppLayout'
 
 // Pages Auth
@@ -58,6 +59,8 @@ import { SettingsPage } from '@/pages/settings/SettingsPage'
 
 export const App = () => {
   return (
+    <>
+    <Toaster richColors position="top-right" />
     <BrowserRouter>
       <Routes>
         {/* Routes publiques */}
@@ -125,5 +128,6 @@ export const App = () => {
         <Route path="*" element={<Navigate to="/dashboard" replace />} />
       </Routes>
     </BrowserRouter>
+    </>
   )
 }
