@@ -1,0 +1,21 @@
+Lis attentivement CLAUDE.md et tous les fichiers dans docs/ 
+(PRD.md, SCHEMA.md, STACK.md, UX_RULES.md, ROUTES.md, MOCKUPS.md).
+
+Ensuite :
+1. Installe toutes les dépendances listées dans STACK.md
+2. Configure Tailwind CSS et shadcn/ui avec tous les composants listés
+3. Crée toute la structure de dossiers src/ définie dans CLAUDE.md
+4. Crée src/lib/supabase.ts et src/lib/utils.ts
+5. Crée src/types/index.ts avec tous les types TypeScript 
+   correspondant aux tables du SCHEMA.md
+6. Crée le layout principal AppLayout.tsx avec Sidebar.tsx 
+   exactement comme défini dans MOCKUPS.md section 1 
+   (groupes CATALOGUE, ACHATS, VENTES, FINANCES, ADMIN)
+7. Configure React Router avec toutes les routes de ROUTES.md
+8. Crée des pages placeholder vides pour chaque route
+9. Configure React Query dans main.tsx
+10. Lance npm run dev et confirme que l'app tourne sans erreurs
+
+Respecte strictement les conventions de CLAUDE.md.
+Interface en français. Devise MAD.
+

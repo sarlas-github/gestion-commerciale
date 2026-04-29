@@ -1,0 +1,34 @@
+# Dépendances
+node_modules/
+
+# Build
+dist/
+dist-ssr/
+
+# Variables d'environnement (contient les clés Supabase !)
+.env
+.env.local
+.env.*.local
+
+# Logs
+*.log
+npm-debug.log*
+
+# Éditeurs
+.vscode/
+.idea/
+*.suo
+*.ntvs*
+*.njsproj
+*.sln
+*.sw?
+
+# OS
+.DS_Store
+Thumbs.db
+
+# Claude / IA
+.claude/
+
+# TypeScript cache
+*.tsbuildinfo

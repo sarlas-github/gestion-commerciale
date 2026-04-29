@@ -1,0 +1,64 @@
+import { clsx, type ClassValue } from 'clsx'
+import { twMerge } from 'tailwind-merge'
+
+export function cn(...inputs: ClassValue[]) {
+  return twMerge(clsx(inputs))
+}
+
+// Format monnaie MAD — Format : 1 234,00 MAD
+export const formatCurrency = (amount: number): string => {
+  return new Intl.NumberFormat('fr-MA', {
+    style: 'currency',
+    currency: 'MAD',
+    minimumFractionDigits: 2,
+  }).format(amount)
+}
+
+// Format date en français
+export const formatDate = (date: string | Date): string => {
+  const d = typeof date === 'string' ? new Date(date) : date
+  return d.toLocaleDateString('fr-FR')
+}
+
+// Format date ISO YYYY-MM-DD
+export const toISODate = (date: Date): string => {
+  return date.toISOString().split('T')[0]
+}
+
+// Calcule le statut de paiement
+export const getPaymentStatus = (
+  paid: number,
+  total: number
+): 'paid' | 'partial' | 'unpaid' => {
+  if (paid === 0) return 'unpaid'
+  if (paid >= total) return 'paid'
+  return 'partial'
+}
+
+// Calcule le statut du stock
+export const getStockStatus = (
+  quantity: number,
+  stockAlert: number
+): 'ok' | 'faible' | 'rupture' => {
+  if (quantity === 0) return 'rupture'
+  if (quantity <= stockAlert) return 'faible'
+  return 'ok'
+}
+
+// Format numéro document
+export const formatDocumentNumber = (
+  type: 'invoice' | 'receipt' | 'quote' | 'order' | 'delivery',
+  year: number,
+  sequence: number
+): string => {
+  const prefix: Record<string, string> = {
+    invoice: 'FAC',
+    receipt: 'REC',
+    quote: 'DEV',
+    order: 'BC',
+    delivery: 'BL',
+  }
+  return `${prefix[type]}-${year}-${String(sequence).padStart(3, '0')}`
+}
+
+export const DEFAULT_PAGE_SIZE = 10
