@@ -35,3 +35,11 @@ RLS filtre sur `user_id = auth.uid()` mais ne l'injecte pas. Toujours passer `us
 
 ## 5. Supabase join 1-1 retourne un tableau
 `select('*, stock(*)')` → `stock` est un `Stock[]`. Extraire : `Array.isArray(s) ? s[0] ?? null : s`.
+
+---
+
+## 6. Colonnes GENERATED — ne jamais insérer
+`subtotal` dans `purchase_items`, `sale_items` et `document_items` est GENERATED (`quantity * unit_price`).
+`remaining` dans `purchases`, `sales` et `documents` est GENERATED (`total - paid`).
+Ne jamais inclure ces champs dans un INSERT/UPDATE → erreur "cannot insert a non-DEFAULT value".
+

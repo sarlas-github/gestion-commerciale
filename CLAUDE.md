@@ -133,38 +133,36 @@ Toute l'interface en **français** — labels, boutons, messages d'erreur, titre
 
 ---
 
-## ⚠️ Transactions atomiques critiques
+## ⚠️ Transactions atomiques — Règle absolue
 
-### Création vente (ATOMIQUE)
-```
-BEGIN
-  INSERT sales
-  INSERT sale_items
-  UPDATE stock (-)
-  INSERT stock_movements (OUT)
-  INSERT documents (type: invoice) ← snapshot complet
-  INSERT document_items            ← snapshot produits
-COMMIT
-```
+Toute opération touchant plusieurs tables DOIT être 
+implémentée via une fonction PostgreSQL appelée avec 
+supabase.rpc() — JAMAIS via des await séquentiels.
 
-### Création paiement client (ATOMIQUE)
-```
-BEGIN
-  INSERT client_payments
-  UPDATE sales (paid, status)
-  INSERT documents (type: receipt) ← snapshot complet
-COMMIT
-```
+Pattern obligatoire pour TOUTE opération multi-tables :
 
-### Création achat (ATOMIQUE)
-```
-BEGIN
-  INSERT purchases
-  INSERT purchase_items
-  UPDATE stock (+)
-  INSERT stock_movements (IN)
-COMMIT
-```
+// ✅ CORRECT
+await supabase.rpc('create_sale', { params })
+
+// ❌ INTERDIT
+await supabase.from('sales').insert(...)
+await supabase.from('sale_items').insert(...)
+await supabase.from('stock').update(...)
+
+Fonctions PostgreSQL à créer dans Supabase pour :
+- create_purchase → purchases + purchase_items 
+  + stock(+) + stock_movements(IN) + supplier_payments
+- create_sale → sales + sale_items + stock(-) 
+  + stock_movements(OUT) + client_payments 
+  + documents(invoice) + document_items
+- create_client_payment → client_payments 
+  + sales update + documents(receipt)
+- create_supplier_payment → supplier_payments 
+  + purchases update
+
+Si une étape échoue → rollback complet automatique.
+Cette règle s'applique à TOUTES les opérations 
+multi-tables présentes et futures.
 
 ---
 

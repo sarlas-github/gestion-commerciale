@@ -77,7 +77,7 @@ Respecte UX_RULES.md pour validation et autocomplete.
 
 ---
 
-## PROMPT 4 — Mouvements Stock
+## PROMPT 4 — Mouvements Stock 
 ```
 Crée la page /stock/movements exactement comme 
 MOCKUPS.md section 4 :
@@ -104,7 +104,7 @@ Respecte UX_RULES.md.
 
 ---
 
-## PROMPT 6 — Achats
+## PROMPT 6 — Achats  -fait-
 ```
 Crée le module achats complet :
 - Page /purchases exactement comme MOCKUPS.md section 8
@@ -139,7 +139,7 @@ Respecte UX_RULES.md.
 
 ---
 
-## PROMPT 8 — Ventes
+## PROMPT 8 — Ventes 
 ```
 Crée le module ventes complet :
 - Page /sales exactement comme MOCKUPS.md section 12

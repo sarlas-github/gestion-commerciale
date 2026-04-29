@@ -100,6 +100,11 @@ export const useCreatePurchase = () => {
 
       if (pErr) throw pErr
 
+      // Helper rollback — supprime l'achat orphelin si une étape suivante échoue
+      const rollback = async () => {
+        await supabase.from('purchases').delete().eq('id', purchase.id)
+      }
+
       // 3. INSERT purchase_items
       if (payload.items.length > 0) {
         const { error: itemErr } = await supabase
@@ -110,10 +115,9 @@ export const useCreatePurchase = () => {
               product_id: i.product_id,
               quantity: i.quantity,
               unit_price: i.unit_price,
-              subtotal: i.quantity * i.unit_price,
             }))
           )
-        if (itemErr) throw itemErr
+        if (itemErr) { await rollback(); throw itemErr }
       }
 
       // 4. UPDATE stock + INSERT stock_movements pour chaque produit
