@@ -14,11 +14,7 @@ export const SaleEditPage = () => {
   const handleSubmit = async (values: SaleFormValues) => {
     await updateSale.mutateAsync({
       id: id!,
-      payments: values.payments.map(p => ({
-        date: p.date,
-        amount: Number(p.amount),
-        note: p.note ?? '',
-      })),
+      ...values,
     })
     navigate('/sales')
   }
@@ -47,6 +43,7 @@ export const SaleEditPage = () => {
         }
       />
       <SaleForm
+        key={sale.id}
         existing={sale}
         onSubmit={handleSubmit}
         isLoading={updateSale.isPending}

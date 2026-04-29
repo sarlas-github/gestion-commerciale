@@ -17,10 +17,9 @@ import { useAdjustStock } from '@/hooks/useProducts'
 import type { ProductWithStock } from '@/types'
 
 const schema = z.object({
-  direction: z.enum(['in', 'out']),
   quantity: z
     .number({ invalid_type_error: 'Veuillez entrer un nombre valide' })
-    .min(1, 'La valeur doit être supérieure à 0'),
+    .min(0, 'La valeur doit être positive'),
   note: z.string().min(1, 'Ce champ est obligatoire'),
 })
 
@@ -49,20 +48,16 @@ export const StockAdjustModal = ({
     formState: { errors },
   } = useForm<FormData>({
     resolver: zodResolver(schema),
-    defaultValues: { direction: 'in', quantity: 1, note: '' },
+    defaultValues: { quantity: currentQty, note: '' },
   })
 
-  const direction = watch('direction')
-  const quantityRaw = watch('quantity')
-  const quantity = Number(quantityRaw) || 0
-
-  const delta = direction === 'in' ? quantity : -quantity
-  const newQty = currentQty + delta
-  const isNegative = newQty < 0
+  const newQty = Number(watch('quantity')) || 0
+  const delta = newQty - currentQty
+  const isIncrease = delta >= 0
 
   useEffect(() => {
-    if (open) reset({ direction: 'in', quantity: 1, note: '' })
-  }, [open, reset])
+    if (open) reset({ quantity: currentQty, note: '' })
+  }, [open, reset, currentQty])
 
   const onSubmit = async (data: FormData) => {
     if (!product?.stock) return
@@ -70,8 +65,7 @@ export const StockAdjustModal = ({
       productId: product.id,
       currentStockId: product.stock.id,
       currentQuantity: currentQty,
-      direction: data.direction,
-      quantity: data.quantity,
+      quantity: data.quantity, // Nouvelle quantité absolue
       note: data.note,
     })
     onOpenChange(false)
@@ -93,37 +87,18 @@ export const StockAdjustModal = ({
             </div>
           </div>
 
-          {/* Type IN / OUT */}
+          {/* Stock Actuel */}
           <div className="space-y-1.5">
-            <Label>
-              Type <span className="text-destructive">*</span>
-            </Label>
-            <div className="flex gap-6">
-              <label className="flex items-center gap-2 cursor-pointer text-sm">
-                <input
-                  type="radio"
-                  value="in"
-                  {...register('direction')}
-                  className="accent-primary"
-                />
-                IN (ajouter)
-              </label>
-              <label className="flex items-center gap-2 cursor-pointer text-sm">
-                <input
-                  type="radio"
-                  value="out"
-                  {...register('direction')}
-                  className="accent-primary"
-                />
-                OUT (retirer)
-              </label>
+            <Label>Stock actuel</Label>
+            <div className="flex h-8 items-center rounded-lg border border-input bg-muted/30 px-2.5 text-sm font-medium">
+              {currentQty}
             </div>
           </div>
 
-          {/* Quantité */}
+          {/* Nouveau Stock */}
           <div className="space-y-1.5">
             <Label htmlFor="adj-qty">
-              Quantité <span className="text-destructive">*</span>
+              Nouveau stock <span className="text-destructive">*</span>
             </Label>
             <Controller
               name="quantity"
@@ -132,7 +107,7 @@ export const StockAdjustModal = ({
                 <Input
                   id="adj-qty"
                   type="number"
-                  min={1}
+                  min={0}
                   onFocus={e => e.target.select()}
                   value={field.value ?? ''}
                   onChange={e =>
@@ -172,32 +147,12 @@ export const StockAdjustModal = ({
             )}
           </div>
 
-          {/* Preview stock actuel / après */}
-          <div className="rounded-lg border bg-muted/30 p-3 space-y-1.5 text-sm">
-            <div className="flex justify-between">
-              <span className="text-muted-foreground">Stock actuel</span>
-              <span className="font-medium">{currentQty}</span>
-            </div>
-            <div className="flex justify-between items-center">
-              <span className="text-muted-foreground">Stock après</span>
-              <span
-                className={`font-medium flex items-center gap-1 ${
-                  isNegative ? 'text-destructive' : 'text-green-600'
-                }`}
-              >
-                {newQty}
-                {isNegative ? (
-                  <AlertTriangle className="h-4 w-4" />
-                ) : (
-                  <CheckCircle2 className="h-4 w-4" />
-                )}
-              </span>
-            </div>
-            {isNegative && (
-              <p className="text-xs text-destructive">
-                Stock insuffisant (disponible : {currentQty})
-              </p>
-            )}
+          {/* Différence */}
+          <div className="rounded-lg border bg-muted/30 p-3 flex justify-between items-center text-sm">
+            <span className="text-muted-foreground">Correction à appliquer</span>
+            <span className={`font-bold tabular-nums ${isIncrease ? 'text-green-600' : 'text-amber-600'}`}>
+              {isIncrease ? '+' : ''}{delta}
+            </span>
           </div>
 
           <DialogFooter>
@@ -211,7 +166,7 @@ export const StockAdjustModal = ({
             </Button>
             <Button
               type="submit"
-              disabled={adjustStock.isPending || isNegative}
+              disabled={adjustStock.isPending}
             >
               {adjustStock.isPending && (
                 <Loader2 className="mr-2 h-4 w-4 animate-spin" />

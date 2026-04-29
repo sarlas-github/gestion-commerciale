@@ -27,6 +27,10 @@ export interface CreateSalePayload {
   payments: SalePaymentInput[]
 }
 
+export interface UpdateSalePayload extends CreateSalePayload {
+  id: string
+}
+
 // ── Helpers ───────────────────────────────────────────────────────────────────
 
 async function getCurrentUser() {
@@ -90,7 +94,7 @@ export const useSale = (id: string) =>
     queryFn: async () => {
       const { data, error } = await supabase
         .from('sales')
-        .select('*, clients(id, name), sale_items(*, products(id, name)), client_payments(*)')
+        .select('*, clients(id, name), sale_items(*, products(id, name, pieces_count)), client_payments(*)')
         .eq('id', id)
         .single()
 
@@ -113,7 +117,7 @@ export const useCreateSale = () => {
       const saleDate = payload.date || today
 
       // 1. Calculs financiers
-      const total = payload.items.reduce((s, i) => s + i.quantity * i.unit_price, 0)
+      const total = payload.items.reduce((s, i) => s + i.quantity * (i.pieces_count || 1) * i.unit_price, 0)
       const paid = payload.payments.reduce((s, p) => s + p.amount, 0)
       const status = getPaymentStatus(paid, total)
 
@@ -144,7 +148,6 @@ export const useCreateSale = () => {
               sale_id: sale.id,
               product_id: i.product_id,
               quantity: i.quantity,
-              pieces_count: i.pieces_count,
               unit_price: i.unit_price,
             }))
           )
@@ -157,14 +160,26 @@ export const useCreateSale = () => {
           .from('stock')
           .select('id, quantity')
           .eq('product_id', item.product_id)
-          .single()
+          .maybeSingle()
         if (stkErr) throw stkErr
-
-        const { error: updErr } = await supabase
-          .from('stock')
-          .update({ quantity: (stockRow.quantity ?? 0) - item.quantity })
-          .eq('id', stockRow.id)
-        if (updErr) throw updErr
+        const newQty = Number(item.quantity)
+        
+        if (stockRow) {
+          const { error: updErr } = await supabase
+            .from('stock')
+            .update({ quantity: (stockRow.quantity ?? 0) - newQty })
+            .eq('id', stockRow.id)
+          if (updErr) throw updErr
+        } else {
+          const { error: insStkErr } = await supabase
+            .from('stock')
+            .insert({
+              user_id: uid,
+              product_id: item.product_id,
+              quantity: -newQty,
+            })
+          if (insStkErr) throw insStkErr
+        }
 
         const { error: movErr } = await supabase
           .from('stock_movements')
@@ -172,7 +187,7 @@ export const useCreateSale = () => {
             user_id: uid,
             product_id: item.product_id,
             type: 'out',
-            quantity: -item.quantity,
+            quantity: -newQty,
             reference_type: 'sale',
             reference_id: sale.id,
             note: null,
@@ -242,7 +257,7 @@ export const useCreateSale = () => {
       if (payload.items.length > 0) {
         const { data: products } = await supabase
           .from('products')
-          .select('id, name, pieces_count')
+          .select('id, name')
           .in('id', payload.items.map(i => i.product_id))
 
         const productMap = Object.fromEntries((products ?? []).map(p => [p.id, p]))
@@ -255,7 +270,6 @@ export const useCreateSale = () => {
               product_id: i.product_id,
               product_name: productMap[i.product_id]?.name ?? 'Produit inconnu',
               quantity: i.quantity,
-              pieces_count: i.pieces_count,
               unit_price: i.unit_price,
             }))
           )
@@ -282,52 +296,189 @@ export const useCreateSale = () => {
 export const useUpdateSale = () => {
   const qc = useQueryClient()
   return useMutation({
-    mutationFn: async ({ id, payments }: { id: string; payments: SalePaymentInput[] }) => {
+    mutationFn: async (payload: UpdateSalePayload) => {
+      const { id, client_id, date, note, items, payments } = payload
       const user = await getCurrentUser()
 
-      const { data: sale, error: sErr } = await supabase
+      // 1. Récupère la vente actuelle (avec items)
+      const { data: oldSale, error: sErr } = await supabase
         .from('sales')
-        .select('total')
+        .select('*, sale_items(*)')
         .eq('id', id)
         .single()
       if (sErr) throw sErr
 
-      // Supprime anciens paiements et réinsère
-      const { error: delErr } = await supabase
-        .from('client_payments')
-        .delete()
-        .eq('sale_id', id)
-      if (delErr) throw delErr
+      // 2. Calculs financiers
+      const total = items.reduce((s, i) => s + i.quantity * (i.pieces_count || 1) * i.unit_price, 0)
+      const paid = payments.reduce((s, p) => s + p.amount, 0)
+      const status = getPaymentStatus(paid, total)
 
-      const newPaid = payments.reduce((s, p) => s + p.amount, 0)
-
-      if (payments.length > 0) {
-        const { error: payErr } = await supabase
-          .from('client_payments')
-          .insert(
-            payments.map(p => ({
-              user_id: user.id,
-              sale_id: id,
-              amount: p.amount,
-              date: p.date,
-              note: p.note || null,
-            }))
-          )
-        if (payErr) throw payErr
-      }
-
-      const newStatus = getPaymentStatus(newPaid, sale.total)
-
+      // 3. UPDATE sale (header)
       const { error: updErr } = await supabase
         .from('sales')
-        .update({ paid: newPaid, status: newStatus })
+        .update({
+          client_id,
+          date,
+          note: note || null,
+          total,
+          paid,
+          status,
+        })
         .eq('id', id)
       if (updErr) throw updErr
+
+      // 4. Traitement des articles
+      const newItems = items.filter(i => !i.original_id)
+      const existingItems = items.filter(i => !!i.original_id)
+
+      // a. Mettre à jour les prix des articles existants
+      for (const item of existingItems) {
+        const { error: updItemErr } = await supabase
+          .from('sale_items')
+          .update({ unit_price: item.unit_price })
+          .eq('id', item.original_id)
+        if (updItemErr) throw updItemErr
+      }
+      
+      if (newItems.length > 0) {
+        // a. Insérer les nouveaux items
+        const { error: insItemErr } = await supabase.from('sale_items').insert(
+          newItems.map(i => ({
+            sale_id: id,
+            product_id: i.product_id,
+            quantity: i.quantity,
+            unit_price: i.unit_price,
+          }))
+        )
+        if (insItemErr) throw insItemErr
+
+        // b. Appliquer stock pour les nouveaux items
+        for (const item of newItems) {
+          const { data: stockRow, error: sErr2 } = await supabase.from('stock').select('id, quantity').eq('product_id', item.product_id).maybeSingle()
+          if (sErr2) throw sErr2
+          
+          const qtyToSub = Number(item.quantity)
+          
+          if (stockRow) {
+            const { error: upStkErr } = await supabase.from('stock').update({ quantity: (stockRow.quantity || 0) - qtyToSub }).eq('id', stockRow.id)
+            if (upStkErr) throw upStkErr
+          } else {
+            const { error: insStkErr } = await supabase.from('stock').insert({
+              user_id: user.id,
+              product_id: item.product_id,
+              quantity: -qtyToSub,
+            })
+            if (insStkErr) throw insStkErr
+          }
+            
+          const { error: insMovErr } = await supabase.from('stock_movements').insert({
+            user_id: user.id,
+            product_id: item.product_id,
+            type: 'out',
+            quantity: -qtyToSub,
+            reference_type: 'sale',
+            reference_id: id,
+            note: 'Ajout nouvel article à la vente',
+            date: date,
+          })
+          if (insMovErr) throw insMovErr
+        }
+
+        // c. Mettre à jour les items du document si une facture existe
+        const { data: document } = await supabase.from('documents').select('id').eq('sale_id', id).eq('type', 'invoice').maybeSingle()
+        if (document) {
+           const { data: products } = await supabase.from('products').select('id, name').in('id', newItems.map(ni => ni.product_id))
+           const prodMap = Object.fromEntries((products || []).map(p => [p.id, p]))
+
+           await supabase.from('document_items').insert(
+             newItems.map(i => ({
+               document_id: document.id,
+               product_id: i.product_id,
+               product_name: prodMap[i.product_id]?.name ?? 'Produit inconnu',
+               quantity: i.quantity,
+               unit_price: i.unit_price,
+             }))
+           )
+        }
+      }
+
+      // 5. UPDATE Payments (Header et paiements uniquement)
+      const { error: delPayErr } = await supabase.from('client_payments').delete().eq('sale_id', id)
+      if (delPayErr) throw delPayErr
+      if (payments.length > 0) {
+        const { error: insPayErr } = await supabase.from('client_payments').insert(
+          payments.map(p => ({
+            user_id: user.id,
+            sale_id: id,
+            amount: p.amount,
+            date: p.date,
+            note: p.note || null,
+          }))
+        )
+        if (insPayErr) throw insPayErr
+      }
+
+      // 6. UPDATE Document (facture)
+      const { data: client, error: clErr } = await supabase.from('clients').select('name, address, ice').eq('id', client_id).single()
+      if (clErr) throw clErr
+      
+      const { data: document, error: docFetchErr } = await supabase
+        .from('documents')
+        .select('id')
+        .eq('sale_id', id)
+        .eq('type', 'invoice')
+        .maybeSingle()
+
+      if (document) {
+        const { error: upDocErr } = await supabase
+          .from('documents')
+          .update({
+            client_id,
+            date,
+            payment_status: status,
+            total,
+            paid,
+            note: note || null,
+            client_name: client?.name ?? null,
+            client_address: client?.address ?? null,
+            client_ice: client?.ice ?? null,
+          })
+          .eq('id', document.id)
+        if (upDocErr) throw upDocErr
+
+        // Update document items if items changed
+        if (itemsChanged) {
+          const { error: delDiErr } = await supabase.from('document_items').delete().eq('document_id', document.id)
+          if (delDiErr) throw delDiErr
+          
+          const { data: products, error: prodErr } = await supabase
+            .from('products')
+            .select('id, name')
+            .in('id', items.map(i => i.product_id))
+          if (prodErr) throw prodErr
+          const productMap = Object.fromEntries((products ?? []).map(p => [p.id, p]))
+
+          const { error: insDiErr } = await supabase.from('document_items').insert(
+            items.map(i => ({
+              document_id: document.id,
+              product_id: i.product_id,
+              product_name: productMap[i.product_id]?.name ?? 'Produit inconnu',
+              quantity: i.quantity,
+              unit_price: i.unit_price,
+              // pieces_count supprimé car colonne absente en BDD
+            }))
+          )
+          if (insDiErr) throw insDiErr
+        }
+      }
     },
     onSuccess: (_, { id }) => {
       qc.invalidateQueries({ queryKey: ['sales'] })
       qc.invalidateQueries({ queryKey: ['sales', id] })
       qc.invalidateQueries({ queryKey: ['clients'] })
+      qc.invalidateQueries({ queryKey: ['products'] })
+      qc.invalidateQueries({ queryKey: ['stock-movements'] })
+      qc.invalidateQueries({ queryKey: ['stock-alerts'] })
       toast.success('Vente mise à jour')
     },
     onError: (err: Error) => {

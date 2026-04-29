@@ -18,8 +18,7 @@ export interface AdjustStockInput {
   productId: string
   currentStockId: string
   currentQuantity: number
-  direction: 'in' | 'out'
-  quantity: number
+  quantity: number // Nouvelle quantité absolue
   note: string
 }
 
@@ -198,12 +197,8 @@ export const useAdjustStock = () => {
     mutationFn: async (input: AdjustStockInput) => {
       const user = await getCurrentUser()
 
-      const delta = input.direction === 'in' ? input.quantity : -input.quantity
-      const newQty = input.currentQuantity + delta
-
-      if (newQty < 0) {
-        throw new Error(`Stock insuffisant (disponible : ${input.currentQuantity})`)
-      }
+      const newQty = input.quantity
+      const delta = newQty - input.currentQuantity
 
       const { error: stockErr } = await supabase
         .from('stock')

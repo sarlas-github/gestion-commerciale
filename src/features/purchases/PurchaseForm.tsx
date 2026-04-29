@@ -12,15 +12,18 @@ import { Dialog, DialogContent, DialogHeader, DialogTitle } from '@/components/u
 import { useSuppliers, useCreateSupplier } from '@/hooks/useSuppliers'
 import { useProducts, useCreateProduct } from '@/hooks/useProducts'
 import { SupplierForm, type SupplierFormValues } from '@/features/suppliers/SupplierForm'
+import { ProductForm, type ProductFormData } from '@/features/products/ProductForm'
 import { formatCurrency, getPaymentStatus, toISODate } from '@/lib/utils'
 import type { Purchase } from '@/types'
 
 // ── Schéma Zod ────────────────────────────────────────────────────────────────
 
 const itemSchema = z.object({
+  original_id: z.string().optional(), // ID base de données
   product_id: z.string().min(1, 'Choisir un produit'),
   quantity: z.number({ invalid_type_error: 'Entrer une quantité' }).min(1, 'Min 1'),
   unit_price: z.number({ invalid_type_error: 'Entrer un prix' }).min(0),
+  pieces_count: z.number().min(1).default(1),
 })
 
 const paymentSchema = z.object({
@@ -79,14 +82,16 @@ export const PurchaseForm = ({ existing, onSubmit, isLoading = false }: Purchase
 
   // Valeurs par défaut pour l'édition
   const defaultItems = existing?.purchase_items?.map(i => ({
+    original_id: i.id,
     product_id: i.product_id,
-    quantity: i.quantity,
-    unit_price: i.unit_price,
-  })) ?? [{ product_id: '', quantity: 1, unit_price: 0 }]
+    quantity: Number(i.quantity),
+    unit_price: Number(i.unit_price),
+    pieces_count: Number(i.products?.pieces_count || 1),
+  })) ?? [{ product_id: '', quantity: 1, unit_price: 0, pieces_count: 1 }]
 
   const defaultPayments = existing?.supplier_payments?.map(p => ({
     date: p.date,
-    amount: p.amount,
+    amount: Number(p.amount),
     note: p.note ?? '',
   })) ?? []
 
@@ -94,6 +99,7 @@ export const PurchaseForm = ({ existing, onSubmit, isLoading = false }: Purchase
     control,
     handleSubmit,
     watch,
+    setValue,
     formState: { errors },
   } = useForm<PurchaseFormValues>({
     resolver: zodResolver(purchaseSchema),
@@ -121,11 +127,11 @@ export const PurchaseForm = ({ existing, onSubmit, isLoading = false }: Purchase
   const watchedItems = watch('items')
   const watchedPayments = watch('payments')
 
-  const total = watchedItems.reduce(
-    (s, i) => s + (Number(i.quantity) || 0) * (Number(i.unit_price) || 0),
+  const total = watchedItems?.reduce(
+    (s, i) => s + (Number(i.quantity) || 0) * (Number(i.pieces_count) || 1) * (Number(i.unit_price) || 0),
     0
-  )
-  const paid = watchedPayments.reduce((s, p) => s + (Number(p.amount) || 0), 0)
+  ) || 0
+  const paid = watchedPayments?.reduce((s, p) => s + (Number(p.amount) || 0), 0) || 0
   const remaining = total - paid
   const status = getPaymentStatus(paid, total)
 
@@ -143,18 +149,24 @@ export const PurchaseForm = ({ existing, onSubmit, isLoading = false }: Purchase
     [createSupplier]
   )
 
-  // Création rapide produit (minimal)
-  const handleQuickProduct = useCallback(async () => {
-    const name = window.prompt('Nom du produit :')
-    if (!name?.trim()) return
+  // Création rapide produit
+  const handleQuickProduct = useCallback(async (data: ProductFormData) => {
     await createProduct.mutateAsync({
-      name: name.trim(),
-      type: 'individual',
-      pieces_count: 1,
-      stock_alert: 0,
+      name: data.name,
+      type: data.type,
+      pieces_count: data.pieces_count,
+      stock_alert: data.stock_alert,
     })
     setShowNewProduct(false)
   }, [createProduct])
+
+  // Changement de produit sur une ligne
+  const handleProductChange = (idx: number, productId: string) => {
+    const product = products.find(p => p.id === productId)
+    if (product) {
+      setValue(`items.${idx}.pieces_count`, product.pieces_count)
+    }
+  }
 
   return (
     <>
@@ -168,6 +180,20 @@ export const PurchaseForm = ({ existing, onSubmit, isLoading = false }: Purchase
             onSubmit={handleQuickSupplier}
             onCancel={() => setShowNewSupplier(false)}
             isLoading={createSupplier.isPending}
+          />
+        </DialogContent>
+      </Dialog>
+
+      {/* Modale création rapide produit */}
+      <Dialog open={showNewProduct} onOpenChange={setShowNewProduct}>
+        <DialogContent>
+          <DialogHeader>
+            <DialogTitle>Nouveau produit</DialogTitle>
+          </DialogHeader>
+          <ProductForm
+            onSubmit={handleQuickProduct}
+            onCancel={() => setShowNewProduct(false)}
+            isLoading={createProduct.isPending}
           />
         </DialogContent>
       </Dialog>
@@ -285,26 +311,28 @@ export const PurchaseForm = ({ existing, onSubmit, isLoading = false }: Purchase
           <div className="overflow-x-auto">
             <table className="w-full text-sm">
               <thead>
-                <tr className="border-b text-left text-muted-foreground">
-                  <th className="pb-2 font-medium w-full">Produit</th>
-                  <th className="pb-2 font-medium text-right pr-3 whitespace-nowrap">Qté</th>
-                  <th className="pb-2 font-medium text-right pr-3 whitespace-nowrap">Prix unit.</th>
-                  <th className="pb-2 font-medium text-right pr-3 whitespace-nowrap">Sous-total</th>
+                <tr className="text-xs font-medium text-muted-foreground border-b uppercase tracking-wider">
+                  <th className="pb-2 font-medium text-left pr-3">Produit</th>
+                  <th className="pb-2 font-medium text-right pr-3 w-20">Pièces</th>
+                  <th className="pb-2 font-medium text-right pr-3 w-24">Quantité</th>
+                  <th className="pb-2 font-medium text-right pr-3 w-32">P.U (MAD)</th>
+                  <th className="pb-2 font-medium text-right pr-3">S. Total</th>
                   <th className="pb-2 w-8" />
                 </tr>
               </thead>
               <tbody className="divide-y">
                 {itemFields.map((field, idx) => {
                   const qty = Number(watchedItems[idx]?.quantity) || 0
+                  const pieces = Number(watchedItems[idx]?.pieces_count) || 1
                   const price = Number(watchedItems[idx]?.unit_price) || 0
-                  const subtotal = qty * price
+                  const subtotal = qty * pieces * price
                   return (
                     <tr key={field.id}>
                       {/* Produit */}
-                      <td className="py-2 pr-3">
-                        {hasExistingPayments ? (
-                          <span className="text-muted-foreground">
-                            {products.find(p => p.id === field.product_id)?.name ?? field.product_id}
+                      <td className="py-2 pr-3 min-w-[200px]">
+                        {field.original_id ? (
+                          <span className="text-sm font-medium">
+                            {products.find(p => p.id === field.product_id)?.name || 'Produit inconnu'}
                           </span>
                         ) : (
                           <div className="flex gap-2">
@@ -315,7 +343,10 @@ export const PurchaseForm = ({ existing, onSubmit, isLoading = false }: Purchase
                                 <select
                                   className="flex h-8 w-full rounded-md border border-input bg-background px-2 text-sm focus-visible:outline-none focus-visible:ring-1 focus-visible:ring-ring"
                                   value={f.value}
-                                  onChange={f.onChange}
+                                  onChange={e => {
+                                    f.onChange(e.target.value)
+                                    handleProductChange(idx, e.target.value)
+                                  }}
                                   ref={f.ref}
                                 >
                                   <option value="">— Produit —</option>
@@ -331,7 +362,7 @@ export const PurchaseForm = ({ existing, onSubmit, isLoading = false }: Purchase
                               size="icon"
                               className="h-8 w-8 shrink-0"
                               title="Nouveau produit"
-                              onClick={handleQuickProduct}
+                              onClick={() => setShowNewProduct(true)}
                             >
                               <Plus className="h-3.5 w-3.5" />
                             </Button>
@@ -344,10 +375,16 @@ export const PurchaseForm = ({ existing, onSubmit, isLoading = false }: Purchase
                         )}
                       </td>
 
+                      {/* Pièces (Read-only) */}
+                      <td className="py-2 pr-3 text-right text-muted-foreground tabular-nums text-sm">
+                        {watchedItems[idx]?.pieces_count || 1}
+                      </td>
+
+
                       {/* Quantité */}
-                      <td className="py-2 pr-3">
-                        {hasExistingPayments ? (
-                          <span className="block text-right">{field.quantity}</span>
+                      <td className="py-2 pr-4">
+                        {field.original_id ? (
+                          <span className="block text-right text-sm">{field.quantity}</span>
                         ) : (
                           <Controller
                             name={`items.${idx}.quantity`}
@@ -356,7 +393,7 @@ export const PurchaseForm = ({ existing, onSubmit, isLoading = false }: Purchase
                               <Input
                                 type="number"
                                 min={1}
-                                className="w-20 text-right h-8"
+                                className="w-full text-right h-8 text-sm"
                                 value={f.value}
                                 onChange={e => f.onChange(e.target.value === '' ? undefined : Number(e.target.value))}
                                 onFocus={e => e.target.select()}
@@ -368,37 +405,38 @@ export const PurchaseForm = ({ existing, onSubmit, isLoading = false }: Purchase
                       </td>
 
                       {/* Prix unitaire */}
-                      <td className="py-2 pr-3">
-                        {hasExistingPayments ? (
-                          <span className="block text-right">{formatCurrency(field.unit_price)}</span>
-                        ) : (
-                          <Controller
-                            name={`items.${idx}.unit_price`}
-                            control={control}
-                            render={({ field: f }) => (
-                              <Input
-                                type="number"
-                                min={0}
-                                step="0.01"
-                                className="w-28 text-right h-8"
-                                value={f.value}
-                                onChange={e => f.onChange(e.target.value === '' ? undefined : Number(e.target.value))}
-                                onFocus={e => e.target.select()}
-                                ref={f.ref}
-                              />
-                            )}
-                          />
-                        )}
+                      <td className="py-2 pr-4">
+                        <Controller
+                          name={`items.${idx}.unit_price`}
+                          control={control}
+                          render={({ field: f }) => (
+                            <Input
+                              type="number"
+                              step="0.01"
+                              className="h-8 text-right font-mono"
+                              onFocus={e => e.target.select()}
+                              value={f.value ?? ''}
+                              onChange={e =>
+                                f.onChange(
+                                  e.target.value === ''
+                                    ? undefined
+                                    : Number(e.target.value)
+                                )
+                              }
+                              ref={f.ref}
+                            />
+                          )}
+                        />
                       </td>
 
                       {/* Sous-total */}
-                      <td className="py-2 pr-3 text-right font-medium whitespace-nowrap">
-                        {formatCurrency(subtotal)}
+                      <td className="py-2 pr-4 text-right font-medium whitespace-nowrap text-sm">
+                        {formatCurrency(qty * (watchedItems[idx]?.pieces_count || 1) * price)}
                       </td>
 
                       {/* Supprimer */}
                       <td className="py-2">
-                        {!hasExistingPayments && itemFields.length > 1 && (
+                        {!field.original_id && itemFields.length > 1 && (
                           <Button
                             type="button"
                             variant="ghost"
@@ -416,7 +454,7 @@ export const PurchaseForm = ({ existing, onSubmit, isLoading = false }: Purchase
               </tbody>
               <tfoot>
                 <tr className="border-t">
-                  <td colSpan={3} className="pt-3 text-right font-semibold pr-3">Total :</td>
+                  <td colSpan={4} className="pt-3 text-right font-semibold pr-3">Total :</td>
                   <td className="pt-3 text-right font-bold pr-3">{formatCurrency(total)}</td>
                   <td />
                 </tr>

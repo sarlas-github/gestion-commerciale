@@ -141,6 +141,7 @@ export interface PurchaseItem {
   purchase_id: string
   product_id: string
   quantity: number
+  pieces_count: number
   unit_price: number
   subtotal: number
   // Joins
@@ -280,6 +281,7 @@ export interface PurchaseFormData {
   items: Array<{
     product_id: string
     quantity: number
+    pieces_count: number
     unit_price: number
   }>
   payments: Array<{

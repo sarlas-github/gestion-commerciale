@@ -14,11 +14,7 @@ export const PurchaseEditPage = () => {
   const handleSubmit = async (values: PurchaseFormValues) => {
     await updatePurchase.mutateAsync({
       id: id!,
-      payments: values.payments.map(p => ({
-        date: p.date,
-        amount: Number(p.amount),
-        note: p.note ?? '',
-      })),
+      ...values,
     })
     navigate('/purchases')
   }
@@ -47,6 +43,7 @@ export const PurchaseEditPage = () => {
         }
       />
       <PurchaseForm
+        key={purchase.id}
         existing={purchase}
         onSubmit={handleSubmit}
         isLoading={updatePurchase.isPending}
