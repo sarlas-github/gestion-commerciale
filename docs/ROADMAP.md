@@ -212,7 +212,12 @@ MOCKUPS.md section 18 :
 ## BUGS & AJUSTEMENTS (à remplir au fur et à mesure)
 
 ```
-- [ ] ...
+-tour: mask telephone numero marocain avce espaeces 06 69 29 58 00
+-new achat : la popup d'ajout de produit doit appeler la meme interface d ajout de produit que products/new, c'est d ailleurs
+ce qui est fait dans fournisseur
+-new achat: ajouter colonne nbr de pieces on le recupere une dois le produit est selectionné
+en lecture seule dans grille produits et le total de la ligne doit etre : qte * nbr pieces * PU
+-  
 - [ ] ...
 ```
 

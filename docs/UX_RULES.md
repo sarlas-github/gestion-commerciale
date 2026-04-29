@@ -172,3 +172,13 @@ L'app doit être fully responsive (mobile + desktop) :
 - Tables scrollables horizontalement sur mobile
 - Formulaires en pleine largeur sur mobile
 - Boutons et inputs adaptés au touch
+
+---
+
+## 13. Numéros de téléphone (Maroc)
+
+Tout numéro de téléphone doit être affiché et saisi selon le format marocain :
+- **Format** : `XX XX XX XX XX` (ex: `06 69 29 58 00`)
+- **Saisie** : Utiliser un masque de saisie qui ajoute les espaces automatiquement.
+- **Affichage** : Toujours formater avec des espaces dans les tableaux et les fiches détails.
+- **Stockage** : Stocker uniquement les chiffres (10 caractères) en base de données pour faciliter les recherches.

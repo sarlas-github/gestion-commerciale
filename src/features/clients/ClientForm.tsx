@@ -5,6 +5,7 @@ import { Loader2 } from 'lucide-react'
 import { Button } from '@/components/ui/button'
 import { Input } from '@/components/ui/input'
 import { Label } from '@/components/ui/label'
+import { PhoneInput } from '@/components/shared/PhoneInput'
 import type { Client } from '@/types'
 
 const clientSchema = z.object({
@@ -74,9 +75,8 @@ export const ClientForm = ({
           name="phone"
           control={control}
           render={({ field }) => (
-            <Input
+            <PhoneInput
               id="cf-phone"
-              placeholder="06XXXXXXXX"
               value={field.value ?? ''}
               onChange={field.onChange}
               onBlur={field.onBlur}

@@ -8,7 +8,7 @@ import { ConfirmDialog } from '@/components/shared/ConfirmDialog'
 import { Button } from '@/components/ui/button'
 import { Badge } from '@/components/ui/badge'
 import { useSuppliers, useDeleteSupplier, type SupplierWithStats } from '@/hooks/useSuppliers'
-import { formatCurrency } from '@/lib/utils'
+import { formatCurrency, formatPhone } from '@/lib/utils'
 import { useState } from 'react'
 
 // Badge statut fournisseur
@@ -35,7 +35,7 @@ export const SuppliersPage = () => {
       {
         accessorKey: 'phone',
         header: 'Téléphone',
-        cell: ({ row }) => row.original.phone || '—',
+        cell: ({ row }) => formatPhone(row.original.phone) || '—',
       },
       {
         accessorKey: 'address',
@@ -116,7 +116,7 @@ export const SuppliersPage = () => {
         exportFileName="fournisseurs"
         exportMapper={s => ({
           Nom: s.name,
-          Téléphone: s.phone ?? '',
+          Téléphone: formatPhone(s.phone),
           Adresse: s.address ?? '',
           ICE: s.ice ?? '',
           'Total dû': s.totalDu,

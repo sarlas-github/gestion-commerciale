@@ -23,7 +23,7 @@ import {
   useSupplierPayments,
   useSupplierMonthlyState,
 } from '@/hooks/useSuppliers'
-import { formatCurrency, formatDate } from '@/lib/utils'
+import { formatCurrency, formatDate, formatPhone } from '@/lib/utils'
 import type { Purchase, SupplierPayment } from '@/types'
 
 // ── MonthPicker inline ────────────────────────────────────────────────────────
@@ -82,7 +82,7 @@ const TabInfos = ({ supplier }: { supplier: ReturnType<typeof useSupplier>['data
     <dl className="grid gap-4 sm:grid-cols-2">
       {[
         { label: 'Nom', value: supplier.name },
-        { label: 'Téléphone', value: supplier.phone || '—' },
+        { label: 'Téléphone', value: formatPhone(supplier.phone) || '—' },
         { label: 'Adresse', value: supplier.address || '—' },
         { label: 'ICE', value: supplier.ice || '—' },
       ].map(({ label, value }) => (

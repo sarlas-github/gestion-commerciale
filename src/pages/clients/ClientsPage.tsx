@@ -8,7 +8,7 @@ import { ConfirmDialog } from '@/components/shared/ConfirmDialog'
 import { Button } from '@/components/ui/button'
 import { Badge } from '@/components/ui/badge'
 import { useClients, useDeleteClient, type ClientWithStats } from '@/hooks/useClients'
-import { formatCurrency } from '@/lib/utils'
+import { formatCurrency, formatPhone } from '@/lib/utils'
 
 const StatusBadge = ({ status }: { status: 'ok' | 'partial' | 'unpaid' }) => {
   if (status === 'ok') return <Badge className="bg-green-100 text-green-800 hover:bg-green-100">🟢 OK</Badge>
@@ -28,7 +28,7 @@ export const ClientsPage = () => {
       {
         accessorKey: 'phone',
         header: 'Téléphone',
-        cell: ({ row }) => row.original.phone || '—',
+        cell: ({ row }) => formatPhone(row.original.phone) || '—',
       },
       {
         accessorKey: 'address',
@@ -109,7 +109,7 @@ export const ClientsPage = () => {
         exportFileName="clients"
         exportMapper={c => ({
           Nom: c.name,
-          Téléphone: c.phone ?? '',
+          Téléphone: formatPhone(c.phone),
           Adresse: c.address ?? '',
           ICE: c.ice ?? '',
           'Total dû': c.totalDu,

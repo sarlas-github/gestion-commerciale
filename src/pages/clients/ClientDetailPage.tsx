@@ -22,7 +22,7 @@ import {
   useClientPayments,
   useClientMonthlyState,
 } from '@/hooks/useClients'
-import { formatCurrency, formatDate } from '@/lib/utils'
+import { formatCurrency, formatDate, formatPhone } from '@/lib/utils'
 import type { Sale, ClientPayment } from '@/types'
 
 // ── MonthPicker ───────────────────────────────────────────────────────────────
@@ -75,7 +75,7 @@ const TabInfos = ({ client }: { client: ReturnType<typeof useClient>['data'] }) 
     <dl className="grid gap-4 sm:grid-cols-2">
       {[
         { label: 'Nom', value: client.name },
-        { label: 'Téléphone', value: client.phone || '—' },
+        { label: 'Téléphone', value: formatPhone(client.phone) || '—' },
         { label: 'Adresse', value: client.address || '—' },
         { label: 'ICE', value: client.ice || '—' },
       ].map(({ label, value }) => (

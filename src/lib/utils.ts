@@ -62,3 +62,21 @@ export const formatDocumentNumber = (
 }
 
 export const DEFAULT_PAGE_SIZE = 10
+
+// Format numéro de téléphone marocain : XX XX XX XX XX
+export const formatPhone = (phone: string | null | undefined): string => {
+  if (!phone) return ''
+  // Garder uniquement les chiffres
+  const cleaned = phone.replace(/\D/g, '')
+  // Limiter à 10 chiffres (standard marocain)
+  const truncated = cleaned.slice(0, 10)
+  // Ajouter les espaces tous les 2 chiffres
+  const match = truncated.match(/.{1,2}/g)
+  return match ? match.join(' ') : truncated
+}
+
+// Supprime les espaces pour stockage/validation
+export const unformatPhone = (phone: string | null | undefined): string => {
+  if (!phone) return ''
+  return phone.replace(/\D/g, '')
+}
