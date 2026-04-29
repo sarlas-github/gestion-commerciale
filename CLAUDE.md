@@ -188,3 +188,4 @@ Voir `docs/` :
 - `MOCKUPS.md` — Maquettes interfaces
 - `ROADMAP.md` — Ordre d'implémentation (prompts Phase 1A → 1B → 2)
 - `GOTCHAS.md` — Pièges techniques validés en dev (⚠️ lire avant tout formulaire ou hook)
+- `testing.md` — Credentials de test

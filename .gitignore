@@ -29,6 +29,7 @@ Thumbs.db
 
 # Claude / IA
 .claude/
+TESTING.md
 
 # TypeScript cache
 *.tsbuildinfo

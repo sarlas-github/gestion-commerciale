@@ -1,4 +1,4 @@
-import { useForm } from 'react-hook-form'
+import { useForm, Controller } from 'react-hook-form'
 import { zodResolver } from '@hookform/resolvers/zod'
 import { z } from 'zod'
 import { Loader2 } from 'lucide-react'
@@ -30,7 +30,7 @@ export const SupplierForm = ({
   isLoading = false,
 }: SupplierFormProps) => {
   const {
-    register,
+    control,
     handleSubmit,
     formState: { errors },
   } = useForm<SupplierFormValues>({
@@ -44,12 +44,27 @@ export const SupplierForm = ({
   })
 
   return (
-    <form onSubmit={handleSubmit(onSubmit)} className="space-y-4">
+    // noValidate : désactive la validation HTML5 native, laisse Zod gérer (GOTCHA #1)
+    <form onSubmit={handleSubmit(onSubmit)} noValidate className="space-y-4">
       <div className="space-y-1.5">
         <Label htmlFor="name">
           Nom <span className="text-destructive">*</span>
         </Label>
-        <Input id="name" {...register('name')} placeholder="Nom du fournisseur" />
+        {/* Controller obligatoire : register() ne forward pas le ref shadcn (GOTCHA #1) */}
+        <Controller
+          name="name"
+          control={control}
+          render={({ field }) => (
+            <Input
+              id="name"
+              placeholder="Nom du fournisseur"
+              value={field.value}
+              onChange={field.onChange}
+              onBlur={field.onBlur}
+              ref={field.ref}
+            />
+          )}
+        />
         {errors.name && (
           <p className="text-xs text-destructive">{errors.name.message}</p>
         )}
@@ -57,17 +72,56 @@ export const SupplierForm = ({
 
       <div className="space-y-1.5">
         <Label htmlFor="phone">Téléphone</Label>
-        <Input id="phone" {...register('phone')} placeholder="06XXXXXXXX" />
+        <Controller
+          name="phone"
+          control={control}
+          render={({ field }) => (
+            <Input
+              id="phone"
+              placeholder="06XXXXXXXX"
+              value={field.value ?? ''}
+              onChange={field.onChange}
+              onBlur={field.onBlur}
+              ref={field.ref}
+            />
+          )}
+        />
       </div>
 
       <div className="space-y-1.5">
         <Label htmlFor="address">Adresse</Label>
-        <Input id="address" {...register('address')} placeholder="Ville, adresse..." />
+        <Controller
+          name="address"
+          control={control}
+          render={({ field }) => (
+            <Input
+              id="address"
+              placeholder="Ville, adresse..."
+              value={field.value ?? ''}
+              onChange={field.onChange}
+              onBlur={field.onBlur}
+              ref={field.ref}
+            />
+          )}
+        />
       </div>
 
       <div className="space-y-1.5">
         <Label htmlFor="ice">ICE</Label>
-        <Input id="ice" {...register('ice')} placeholder="Identifiant commun de l'entreprise" />
+        <Controller
+          name="ice"
+          control={control}
+          render={({ field }) => (
+            <Input
+              id="ice"
+              placeholder="Identifiant commun de l'entreprise"
+              value={field.value ?? ''}
+              onChange={field.onChange}
+              onBlur={field.onBlur}
+              ref={field.ref}
+            />
+          )}
+        />
       </div>
 
       <div className="flex justify-end gap-3 pt-2">

@@ -61,7 +61,7 @@ Utilise les champs de la table companies dans SCHEMA.md.
 
 ---
 
-## PROMPT 3 — Produits
+## PROMPT 3 — Produits ((fait))
 ```
 Crée le module produits complet :
 - Page /products exactement comme MOCKUPS.md section 2
@@ -90,7 +90,7 @@ MOCKUPS.md section 4 :
 
 ---
 
-## PROMPT 5 — Fournisseurs
+## PROMPT 5 — Fournisseurs -fait-
 ```
 Crée le module fournisseurs complet :
 - Page /suppliers exactement comme MOCKUPS.md section 6
