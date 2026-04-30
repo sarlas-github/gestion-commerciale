@@ -1,4 +1,4 @@
-import { useState, useCallback } from 'react'
+import { useState, useCallback, useEffect } from 'react'
 import { useNavigate } from 'react-router-dom'
 import { Controller, useForm, useFieldArray } from 'react-hook-form'
 import { zodResolver } from '@hookform/resolvers/zod'
@@ -14,6 +14,7 @@ import { useProducts, useCreateProduct } from '@/hooks/useProducts'
 import { ClientForm, type ClientFormValues } from '@/features/clients/ClientForm'
 import { ProductForm, type ProductFormData } from '@/features/products/ProductForm'
 import { formatCurrency, getPaymentStatus, toISODate } from '@/lib/utils'
+import { useNextSaleNumber } from '@/hooks/useSales'
 import type { Sale } from '@/types'
 
 // ── Schéma Zod ────────────────────────────────────────────────────────────────
@@ -35,6 +36,7 @@ const paymentSchema = z.object({
 export const saleSchema = z.object({
   client_id: z.string().min(1, 'Client obligatoire'),
   date: z.string().min(1, 'Date obligatoire'),
+  reference: z.string().optional().or(z.literal('')),
   note: z.string().optional().or(z.literal('')),
   items: z.array(itemSchema).min(1, 'Ajouter au moins un produit'),
   payments: z.array(paymentSchema),
@@ -100,13 +102,22 @@ export const SaleForm = ({ existing, onSubmit, isLoading = false }: SaleFormProp
     defaultValues: {
       client_id: existing?.client_id ?? '',
       date: existing?.date ?? today,
+      reference: existing?.reference ?? '',
       note: existing?.note ?? '',
       items: defaultItems,
       payments: defaultPayments,
     },
   })
 
-  const { fields: itemFields, append: appendItem, remove: removeItem } = useFieldArray({
+  const { data: nextRef } = useNextSaleNumber()
+
+  useEffect(() => {
+    if (!existing && nextRef) {
+      setValue('reference', nextRef)
+    }
+  }, [existing, nextRef, setValue])
+
+  const { fields: itemFields, prepend: prependItem, remove: removeItem } = useFieldArray({
     control,
     name: 'items',
   })
@@ -245,8 +256,24 @@ export const SaleForm = ({ existing, onSubmit, isLoading = false }: SaleFormProp
               {errors.date && <p className="text-xs text-destructive">{errors.date.message}</p>}
             </div>
 
-            {/* Note */}
+            {/* Référence */}
             <div className="space-y-1.5">
+              <Label>Référence</Label>
+              <Controller
+                name="reference"
+                control={control}
+                render={({ field }) => (
+                  <Input 
+                    placeholder="Auto-généré" 
+                    {...field} 
+                    className="font-mono"
+                  />
+                )}
+              />
+            </div>
+
+            {/* Note */}
+            <div className="space-y-1.5 sm:col-span-2">
               <Label>Note</Label>
               <Controller
                 name="note"
@@ -268,7 +295,7 @@ export const SaleForm = ({ existing, onSubmit, isLoading = false }: SaleFormProp
                 type="button"
                 variant="outline"
                 size="sm"
-                onClick={() => appendItem({ product_id: '', quantity: 1, unit_price: 0, pieces_count: 1 })}
+                onClick={() => prependItem({ product_id: '', quantity: 1, unit_price: 0, pieces_count: 1 })}
               >
                 <Plus className="mr-1.5 h-4 w-4" />
                 Ajouter une ligne

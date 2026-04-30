@@ -41,6 +41,11 @@ export const PurchasesPage = () => {
         cell: ({ row }) => formatDate(row.original.date),
       },
       {
+        accessorKey: 'created_at',
+        header: 'Créé le',
+        cell: ({ row }) => formatDate(row.original.created_at, true), // true for showing time if needed
+      },
+      {
         accessorKey: 'total',
         header: 'Total',
         cell: ({ row }) => <span className="font-medium">{formatCurrency(row.original.total)}</span>,
@@ -122,6 +127,7 @@ export const PurchasesPage = () => {
         isLoading={isLoading}
         searchPlaceholder="Rechercher par référence, fournisseur..."
         exportFileName="achats"
+        defaultSorting={[{ id: 'created_at', desc: true }]}
         exportMapper={p => ({
           Référence: p.reference ?? '',
           Fournisseur: (p as Purchase & { suppliers?: { name: string } }).suppliers?.name ?? '',

@@ -1,4 +1,4 @@
-import { useState, useCallback } from 'react'
+import { useState, useCallback, useEffect } from 'react'
 import { useNavigate } from 'react-router-dom'
 import { Controller, useForm, useFieldArray } from 'react-hook-form'
 import { zodResolver } from '@hookform/resolvers/zod'
@@ -11,6 +11,7 @@ import { Badge } from '@/components/ui/badge'
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from '@/components/ui/dialog'
 import { useSuppliers, useCreateSupplier } from '@/hooks/useSuppliers'
 import { useProducts, useCreateProduct } from '@/hooks/useProducts'
+import { useNextPurchaseNumber } from '@/hooks/usePurchases'
 import { SupplierForm, type SupplierFormValues } from '@/features/suppliers/SupplierForm'
 import { ProductForm, type ProductFormData } from '@/features/products/ProductForm'
 import { formatCurrency, getPaymentStatus, toISODate } from '@/lib/utils'
@@ -113,7 +114,15 @@ export const PurchaseForm = ({ existing, onSubmit, isLoading = false }: Purchase
     },
   })
 
-  const { fields: itemFields, append: appendItem, remove: removeItem } = useFieldArray({
+  const { data: nextRef } = useNextPurchaseNumber()
+
+  useEffect(() => {
+    if (!existing && nextRef) {
+      setValue('reference', nextRef)
+    }
+  }, [existing, nextRef, setValue])
+
+  const { fields: itemFields, prepend: prependItem, remove: removeItem } = useFieldArray({
     control,
     name: 'items',
   })
@@ -293,7 +302,7 @@ export const PurchaseForm = ({ existing, onSubmit, isLoading = false }: Purchase
                 variant="outline"
                 size="sm"
                 onClick={() => {
-                  appendItem({ product_id: '', quantity: 1, unit_price: 0 })
+                  prependItem({ product_id: '', quantity: 1, unit_price: 0, pieces_count: 1 })
                 }}
               >
                 <Plus className="mr-1.5 h-4 w-4" />

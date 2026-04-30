@@ -137,6 +137,7 @@ created_at   TIMESTAMPTZ
 id          UUID PK
 user_id     UUID FK → auth.users
 client_id   UUID FK → clients
+reference   TEXT
 date        DATE
 total       NUMERIC(12,2)
 paid        NUMERIC(12,2) DEFAULT 0
@@ -221,6 +222,16 @@ unit_price    NUMERIC(12,2)
 subtotal      NUMERIC GENERATED → quantity * unit_price
 ```
 
+### document_sequences
+```
+id           UUID PK
+user_id      UUID FK → auth.users
+type         TEXT (purchase, sale, invoice, receipt...)
+year         INTEGER
+last_number  INTEGER DEFAULT 0
+UNIQUE(user_id, type, year)
+```
+
 ---
 
 ## Transactions atomiques
@@ -260,6 +271,8 @@ subtotal      NUMERIC GENERATED → quantity * unit_price
 ```
 Facture  : FAC-YYYY-NNN
 Reçu     : REC-YYYY-NNN
+Achat    : ACH-YYYY-NNN
+Vente    : VEN-YYYY-NNN
 Devis    : DEV-YYYY-NNN (Phase 2)
 BC       : BC-YYYY-NNN  (Phase 2)
 BL       : BL-YYYY-NNN  (Phase 2)

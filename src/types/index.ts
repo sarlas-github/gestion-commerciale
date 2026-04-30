@@ -172,6 +172,7 @@ export interface Sale {
   id: string
   user_id: string
   client_id: string
+  reference: string | null
   date: string
   total: number
   paid: number

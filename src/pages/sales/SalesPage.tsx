@@ -52,6 +52,11 @@ export const SalesPage = () => {
   const columns = useMemo<ColumnDef<Sale>[]>(
     () => [
       {
+        accessorKey: 'reference',
+        header: 'Référence',
+        cell: ({ row }) => row.original.reference || <span className="text-muted-foreground">—</span>,
+      },
+      {
         accessorKey: 'clients',
         header: 'Client',
         cell: ({ row }) => (row.original as Sale & { clients?: { name: string } }).clients?.name ?? '—',
@@ -60,6 +65,11 @@ export const SalesPage = () => {
         accessorKey: 'date',
         header: 'Date',
         cell: ({ row }) => formatDate(row.original.date),
+      },
+      {
+        accessorKey: 'created_at',
+        header: 'Créé le',
+        cell: ({ row }) => formatDate(row.original.created_at, true),
       },
       {
         accessorKey: 'total',
@@ -167,6 +177,7 @@ export const SalesPage = () => {
         isLoading={isLoading}
         searchPlaceholder="Rechercher par client..."
         exportFileName="ventes"
+        defaultSorting={[{ id: 'created_at', desc: true }]}
         exportMapper={s => ({
           Client: (s as Sale & { clients?: { name: string } }).clients?.name ?? '',
           Date: formatDate(s.date),

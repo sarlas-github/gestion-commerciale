@@ -24,6 +24,7 @@ interface DataTableProps<TData> {
   searchPlaceholder?: string
   exportFileName?: string
   exportMapper?: (row: TData) => Record<string, unknown>
+  defaultSorting?: SortingState
 }
 
 export function DataTable<TData>({
@@ -33,8 +34,9 @@ export function DataTable<TData>({
   searchPlaceholder = 'Rechercher...',
   exportFileName = 'export',
   exportMapper,
+  defaultSorting = [],
 }: DataTableProps<TData>) {
-  const [sorting, setSorting] = useState<SortingState>([])
+  const [sorting, setSorting] = useState<SortingState>(defaultSorting)
   const [globalFilter, setGlobalFilter] = useState('')
 
   const table = useReactTable({

@@ -216,12 +216,14 @@ faits:
 - mask telephone numero marocain (XX XX XX XX XX)
 - achat : popup d'ajout de produit utilise ProductForm (conforme à products/new)
 - achat : colonne "Pièces" ajoutée et intégrée au calcul du total (Qté * Pièces * PU)
----
-pending:
 -referece pas optionnel, des la creation on doit trouver le bon numero seuqentiel
 et l alimenter avec, si a la sauvegardee ca existe on l augmente, meme chose pour la
 vente avec le bon prefix: ACH, VEN reciproquement
 - toutes les lignes dans la grille doivent etre sorté en decroissance par date par defaut, et quand on fait un ajout de ligne nrmalement si le filtre par defaut est appliqué on doit l avoir en premier
+---
+pending:
+- enlever la liste de noms qui s affiche par le navigateur quand on veut saisir un nouveau produit
+-
 ```
 
 ---

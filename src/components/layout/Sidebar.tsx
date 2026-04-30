@@ -21,6 +21,7 @@ import {
 import { cn } from '@/lib/utils'
 import { useAuth } from '@/hooks/useAuth'
 import { useStockAlertCount } from '@/hooks/useProducts'
+import { useCompany } from '@/hooks/useCompany'
 import { Button } from '@/components/ui/button'
 import { Separator } from '@/components/ui/separator'
 
@@ -96,6 +97,7 @@ export const Sidebar = ({ onClose }: SidebarProps) => {
   const navigate = useNavigate()
   const { signOut } = useAuth()
   const { data: alertCount = 0 } = useStockAlertCount()
+  const { data: company } = useCompany()
   const [expandedItems, setExpandedItems] = useState<string[]>(['Paiements', 'États'])
 
   const isActive = (href: string) => location.pathname.startsWith(href)
@@ -136,11 +138,15 @@ export const Sidebar = ({ onClose }: SidebarProps) => {
     <div className="flex h-full w-60 flex-col bg-card border-r">
       {/* En-tête */}
       <div className="flex items-center gap-3 px-4 py-4 border-b">
-        <div className="flex h-8 w-8 items-center justify-center rounded-md bg-primary text-primary-foreground">
-          <Building2 className="h-5 w-5" />
+        <div className="flex h-8 w-8 items-center justify-center rounded-md bg-primary text-primary-foreground overflow-hidden shrink-0">
+          {company?.logo_url ? (
+            <img src={company.logo_url} alt="Logo" className="h-full w-full object-contain" />
+          ) : (
+            <Building2 className="h-5 w-5" />
+          )}
         </div>
         <div className="flex-1 min-w-0">
-          <p className="text-sm font-semibold truncate">Mon Entreprise</p>
+          <p className="text-sm font-semibold truncate">{company?.name ?? 'Mon Entreprise'}</p>
           <p className="text-xs text-muted-foreground">Gestion Commerciale</p>
         </div>
         {onClose && (

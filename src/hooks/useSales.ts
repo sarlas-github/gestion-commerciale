@@ -22,6 +22,7 @@ export interface SalePaymentInput {
 export interface CreateSalePayload {
   client_id: string
   date: string
+  reference?: string
   note: string
   items: SaleItemInput[]
   payments: SalePaymentInput[]
@@ -72,6 +73,57 @@ async function getNextDocumentNumber(
   return `${prefix}-${year}-${String(nextNumber).padStart(3, '0')}`
 }
 
+export async function getNextSaleNumber(
+  userId: string,
+  year: number
+): Promise<string> {
+  const { data: existing } = await supabase
+    .from('document_sequences')
+    .select('id, last_number')
+    .eq('user_id', userId)
+    .eq('type', 'sale')
+    .eq('year', year)
+    .maybeSingle()
+
+  let nextNumber: number
+
+  if (existing) {
+    nextNumber = existing.last_number + 1
+    await supabase
+      .from('document_sequences')
+      .update({ last_number: nextNumber })
+      .eq('id', existing.id)
+  } else {
+    nextNumber = 1
+    await supabase
+      .from('document_sequences')
+      .insert({ user_id: userId, type: 'sale', year, last_number: 1 })
+  }
+
+  return `VEN-${year}-${String(nextNumber).padStart(3, '0')}`
+}
+
+export const useNextSaleNumber = () => {
+  return useQuery({
+    queryKey: ['next-sale-number'],
+    queryFn: async () => {
+      const user = await getCurrentUser()
+      const year = new Date().getFullYear()
+      const { data: existing } = await supabase
+        .from('document_sequences')
+        .select('last_number')
+        .eq('user_id', user.id)
+        .eq('type', 'sale')
+        .eq('year', year)
+        .maybeSingle()
+      
+      const nextNumber = (existing?.last_number || 0) + 1
+      return `VEN-${year}-${String(nextNumber).padStart(3, '0')}`
+    },
+    staleTime: 0,
+  })
+}
+
 // ── Queries ───────────────────────────────────────────────────────────────────
 
 export const useSales = () =>
@@ -82,6 +134,7 @@ export const useSales = () =>
         .from('sales')
         .select('*, clients(id, name)')
         .order('date', { ascending: false })
+        .order('created_at', { ascending: false })
 
       if (error) throw error
       return (data ?? []) as Sale[]
@@ -128,6 +181,7 @@ export const useCreateSale = () => {
           user_id: uid,
           client_id: payload.client_id,
           date: saleDate,
+          reference: payload.reference || (await getNextSaleNumber(uid, year)),
           total,
           paid,
           status,

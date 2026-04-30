@@ -40,7 +40,7 @@ async function getCurrentUser() {
   return user
 }
 
-async function getNextPurchaseNumber(
+export async function getNextPurchaseNumber(
   userId: string,
   year: number
 ): Promise<string> {
@@ -70,6 +70,28 @@ async function getNextPurchaseNumber(
   return `ACH-${year}-${String(nextNumber).padStart(3, '0')}`
 }
 
+export const useNextPurchaseNumber = () => {
+  return useQuery({
+    queryKey: ['next-purchase-number'],
+    queryFn: async () => {
+      const user = await getCurrentUser()
+      const year = new Date().getFullYear()
+      // Note: On ne l'incrémente pas ici, juste lecture pour affichage
+      const { data: existing } = await supabase
+        .from('document_sequences')
+        .select('last_number')
+        .eq('user_id', user.id)
+        .eq('type', 'purchase')
+        .eq('year', year)
+        .maybeSingle()
+      
+      const nextNumber = (existing?.last_number || 0) + 1
+      return `ACH-${year}-${String(nextNumber).padStart(3, '0')}`
+    },
+    staleTime: 0, // Toujours revérifier à l'ouverture du formulaire
+  })
+}
+
 // ── Queries ───────────────────────────────────────────────────────────────────
 
 export const usePurchases = () =>
@@ -80,6 +102,7 @@ export const usePurchases = () =>
         .from('purchases')
         .select('*, suppliers(id, name)')
         .order('date', { ascending: false })
+        .order('created_at', { ascending: false })
 
       if (error) throw error
       return (data ?? []) as Purchase[]

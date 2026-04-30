@@ -71,7 +71,19 @@ src/
     └── reports/
 ```
 
+## Règle d'or RLS Supabase
+
+Toute nouvelle table DOIT avoir :
+1. ALTER TABLE xxx ENABLE ROW LEVEL SECURITY
+2. CREATE POLICY "user_xxx" ON xxx
+   FOR ALL USING (user_id = auth.uid())
+
+Dans le code React :
+- INSERT → toujours inclure user_id: session.user.id
+- SELECT/UPDATE/DELETE → RLS filtre automatiquement
+
 ---
+
 
 ## 🔑 Variables d'environnement (.env)
 ```
