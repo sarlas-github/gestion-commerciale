@@ -22,6 +22,7 @@ import { cn } from '@/lib/utils'
 import { useAuth } from '@/hooks/useAuth'
 import { useStockAlertCount } from '@/hooks/useProducts'
 import { useCompany } from '@/hooks/useCompany'
+import { useQueryClient } from '@tanstack/react-query'
 import { Button } from '@/components/ui/button'
 import { Separator } from '@/components/ui/separator'
 
@@ -98,6 +99,7 @@ export const Sidebar = ({ onClose }: SidebarProps) => {
   const { signOut } = useAuth()
   const { data: alertCount = 0 } = useStockAlertCount()
   const { data: company } = useCompany()
+  const queryClient = useQueryClient()
   const [expandedItems, setExpandedItems] = useState<string[]>(['Paiements', 'États'])
 
   const isActive = (href: string) => location.pathname.startsWith(href)
@@ -110,6 +112,7 @@ export const Sidebar = ({ onClose }: SidebarProps) => {
 
   const handleSignOut = async () => {
     await signOut()
+    queryClient.clear()
     navigate('/login')
   }
 
