@@ -118,7 +118,8 @@ export const useClientMonthlyState = (clientId: string, year: number, month: num
     queryKey: ['clients', clientId, 'state', year, month],
     queryFn: async () => {
       const startDate = `${year}-${String(month).padStart(2, '0')}-01`
-      const endDate = new Date(year, month, 0).toISOString().split('T')[0]
+      const lastDay = new Date(year, month, 0).getDate()
+      const endDate = `${year}-${String(month).padStart(2, '0')}-${String(lastDay).padStart(2, '0')}`
 
       const { data: sales, error } = await supabase
         .from('sales')
@@ -129,9 +130,10 @@ export const useClientMonthlyState = (clientId: string, year: number, month: num
 
       if (error) throw error
 
-      const totalVentes = (sales ?? []).reduce((s, v) => s + (v.total ?? 0), 0)
-      const totalPaye = (sales ?? []).reduce((s, v) => s + (v.paid ?? 0), 0)
-      const resteAPayer = totalVentes - totalPaye
+      const rows = sales ?? []
+      const totalVentes = rows.reduce((s, v) => s + Number(v.total ?? 0), 0)
+      const totalPaye   = rows.reduce((s, v) => s + Number(v.paid ?? 0), 0)
+      const resteAPayer = rows.reduce((s, v) => s + Number(v.remaining ?? 0), 0)
 
       return { totalVentes, totalPaye, resteAPayer }
     },

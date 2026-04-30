@@ -44,7 +44,8 @@ async function getCurrentUser() {
 
 export async function getNextPurchaseNumber(
   userId: string,
-  year: number
+  year: number,
+  providedRef?: string
 ): Promise<string> {
   const { data: existing } = await supabase
     .from('document_sequences')
@@ -55,20 +56,31 @@ export async function getNextPurchaseNumber(
     .maybeSingle()
 
   let nextNumber: number
+  let providedNumber = 0
+
+  if (providedRef && providedRef.startsWith(`ACH-${year}-`)) {
+    const match = providedRef.match(/-(\d+)$/)
+    if (match) providedNumber = parseInt(match[1], 10)
+  }
 
   if (existing) {
-    nextNumber = existing.last_number + 1
+    if (providedNumber > 0) {
+      nextNumber = Math.max(existing.last_number, providedNumber)
+    } else {
+      nextNumber = existing.last_number + 1
+    }
     await supabase
       .from('document_sequences')
       .update({ last_number: nextNumber })
       .eq('id', existing.id)
   } else {
-    nextNumber = 1
+    nextNumber = providedNumber > 0 ? providedNumber : 1
     await supabase
       .from('document_sequences')
-      .insert({ user_id: userId, type: 'purchase', year, last_number: 1 })
+      .insert({ user_id: userId, type: 'purchase', year, last_number: nextNumber })
   }
 
+  if (providedRef) return providedRef
   return `ACH-${year}-${String(nextNumber).padStart(3, '0')}`
 }
 
@@ -78,8 +90,7 @@ export const useNextPurchaseNumber = () => {
     queryFn: async () => {
       const user = await getCurrentUser()
       const year = new Date().getFullYear()
-      // Note: On ne l'incrémente pas ici, juste lecture pour affichage
-      const { data: existing } = await supabase
+      const { data: existing, error: seqErr } = await supabase
         .from('document_sequences')
         .select('last_number')
         .eq('user_id', user.id)
@@ -87,10 +98,35 @@ export const useNextPurchaseNumber = () => {
         .eq('year', year)
         .maybeSingle()
       
-      const nextNumber = (existing?.last_number || 0) + 1
+      if (seqErr) console.error("Error fetching sequence", seqErr)
+
+      let nextNumber = (existing?.last_number || 0) + 1
+
+      // Auto-heal: Check actual purchases in case sequence is out of sync
+      if (nextNumber === 1) {
+        const { data: maxPurchase } = await supabase
+          .from('purchases')
+          .select('reference')
+          .eq('user_id', user.id)
+          .ilike('reference', `ACH-${year}-%`)
+          .order('reference', { ascending: false })
+          .limit(1)
+          .maybeSingle()
+          
+        if (maxPurchase && maxPurchase.reference) {
+          const match = maxPurchase.reference.match(/-(\d+)$/)
+          if (match) {
+            const maxNum = parseInt(match[1], 10)
+            if (maxNum >= nextNumber) {
+              nextNumber = maxNum + 1
+            }
+          }
+        }
+      }
+
       return `ACH-${year}-${String(nextNumber).padStart(3, '0')}`
     },
-    staleTime: 0, // Toujours revérifier à l'ouverture du formulaire
+    staleTime: 0,
   })
 }
 
@@ -142,9 +178,9 @@ export const useCreatePurchase = () => {
       const paid = payload.payments.reduce((s, p) => s + p.amount, 0)
       const status = getPaymentStatus(paid, total)
 
-      // 2. INSERT purchase
+      // 2. INSERT purchase — utiliser la référence fournie ou générer
       const year = new Date(payload.date).getFullYear()
-      const reference = payload.reference || (await getNextPurchaseNumber(uid, year))
+      const reference = await getNextPurchaseNumber(uid, year, payload.reference)
 
       const { data: purchase, error: pErr } = await supabase
         .from('purchases')
@@ -252,6 +288,7 @@ export const useCreatePurchase = () => {
     },
     onSuccess: () => {
       qc.invalidateQueries({ queryKey: ['purchases'] })
+      qc.invalidateQueries({ queryKey: ['next-purchase-number'] })
       qc.invalidateQueries({ queryKey: ['suppliers'] })
       qc.invalidateQueries({ queryKey: ['products'] })
       qc.invalidateQueries({ queryKey: ['stock-movements'] })
@@ -403,6 +440,7 @@ export const useDeletePurchase = () => {
     },
     onSuccess: () => {
       qc.invalidateQueries({ queryKey: ['purchases'] })
+      qc.invalidateQueries({ queryKey: ['next-purchase-number'] })
       qc.invalidateQueries({ queryKey: ['suppliers'] })
       toast.success('Achat supprimé')
     },

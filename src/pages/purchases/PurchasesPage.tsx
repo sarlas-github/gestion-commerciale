@@ -28,12 +28,29 @@ export const PurchasesPage = () => {
       {
         accessorKey: 'reference',
         header: 'Référence',
-        cell: ({ row }) => row.original.reference || <span className="text-muted-foreground">—</span>,
+        cell: ({ row }) => row.original.reference ? (
+          <span
+            className="text-primary underline underline-offset-2 cursor-pointer font-medium hover:text-primary/80"
+            onClick={() => navigate(`/purchases/${row.original.id}/edit`)}
+          >
+            {row.original.reference}
+          </span>
+        ) : <span className="text-muted-foreground">—</span>,
       },
       {
         accessorKey: 'suppliers',
         header: 'Fournisseur',
-        cell: ({ row }) => (row.original as Purchase & { suppliers?: { name: string } }).suppliers?.name ?? '—',
+        cell: ({ row }) => {
+          const supplier = (row.original as Purchase & { suppliers?: { id: string, name: string } }).suppliers
+          return supplier ? (
+            <span
+              className="text-primary underline underline-offset-2 cursor-pointer font-medium hover:text-primary/80"
+              onClick={() => navigate(`/suppliers/${supplier.id}`)}
+            >
+              {supplier.name}
+            </span>
+          ) : '—'
+        },
       },
       {
         accessorKey: 'date',

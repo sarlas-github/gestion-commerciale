@@ -77,7 +77,8 @@ async function getNextDocumentNumber(
 
 export async function getNextSaleNumber(
   userId: string,
-  year: number
+  year: number,
+  providedRef?: string
 ): Promise<string> {
   const { data: existing } = await supabase
     .from('document_sequences')
@@ -88,20 +89,31 @@ export async function getNextSaleNumber(
     .maybeSingle()
 
   let nextNumber: number
+  let providedNumber = 0
+
+  if (providedRef && providedRef.startsWith(`VEN-${year}-`)) {
+    const match = providedRef.match(/-(\d+)$/)
+    if (match) providedNumber = parseInt(match[1], 10)
+  }
 
   if (existing) {
-    nextNumber = existing.last_number + 1
+    if (providedNumber > 0) {
+      nextNumber = Math.max(existing.last_number, providedNumber)
+    } else {
+      nextNumber = existing.last_number + 1
+    }
     await supabase
       .from('document_sequences')
       .update({ last_number: nextNumber })
       .eq('id', existing.id)
   } else {
-    nextNumber = 1
+    nextNumber = providedNumber > 0 ? providedNumber : 1
     await supabase
       .from('document_sequences')
-      .insert({ user_id: userId, type: 'sale', year, last_number: 1 })
+      .insert({ user_id: userId, type: 'sale', year, last_number: nextNumber })
   }
 
+  if (providedRef) return providedRef
   return `VEN-${year}-${String(nextNumber).padStart(3, '0')}`
 }
 
@@ -111,7 +123,7 @@ export const useNextSaleNumber = () => {
     queryFn: async () => {
       const user = await getCurrentUser()
       const year = new Date().getFullYear()
-      const { data: existing } = await supabase
+      const { data: existing, error: seqErr } = await supabase
         .from('document_sequences')
         .select('last_number')
         .eq('user_id', user.id)
@@ -119,7 +131,32 @@ export const useNextSaleNumber = () => {
         .eq('year', year)
         .maybeSingle()
       
-      const nextNumber = (existing?.last_number || 0) + 1
+      if (seqErr) console.error("Error fetching sequence", seqErr)
+
+      let nextNumber = (existing?.last_number || 0) + 1
+
+      // Auto-heal: Check actual sales in case sequence is out of sync
+      if (nextNumber === 1) {
+        const { data: maxSale } = await supabase
+          .from('sales')
+          .select('reference')
+          .eq('user_id', user.id)
+          .ilike('reference', `VEN-${year}-%`)
+          .order('reference', { ascending: false })
+          .limit(1)
+          .maybeSingle()
+          
+        if (maxSale && maxSale.reference) {
+          const match = maxSale.reference.match(/-(\d+)$/)
+          if (match) {
+            const maxNum = parseInt(match[1], 10)
+            if (maxNum >= nextNumber) {
+              nextNumber = maxNum + 1
+            }
+          }
+        }
+      }
+
       return `VEN-${year}-${String(nextNumber).padStart(3, '0')}`
     },
     staleTime: 0,
@@ -177,13 +214,15 @@ export const useCreateSale = () => {
       const status = getPaymentStatus(paid, total)
 
       // 2. INSERT sale (remaining est GENERATED — GOTCHA #6)
+      const reference = await getNextSaleNumber(uid, year, payload.reference)
+
       const { data: sale, error: sErr } = await supabase
         .from('sales')
         .insert({
           user_id: uid,
           client_id: payload.client_id,
           date: saleDate,
-          reference: payload.reference || (await getNextSaleNumber(uid, year)),
+          reference: reference,
           total,
           paid,
           status,
@@ -337,6 +376,7 @@ export const useCreateSale = () => {
     },
     onSuccess: () => {
       qc.invalidateQueries({ queryKey: ['sales'] })
+      qc.invalidateQueries({ queryKey: ['next-sale-number'] })
       qc.invalidateQueries({ queryKey: ['clients'] })
       qc.invalidateQueries({ queryKey: ['products'] })
       qc.invalidateQueries({ queryKey: ['stock-movements'] })
@@ -354,13 +394,13 @@ export const useUpdateSale = () => {
   const qc = useQueryClient()
   return useMutation({
     mutationFn: async (payload: UpdateSalePayload) => {
-      const { id, client_id, date, note, items, payments } = payload
+      const { id, client_id, date, reference, note, items, payments } = payload
       const user = await getCurrentUser()
 
       // 1. Récupère la vente actuelle (avec items)
-      const { error: sErr } = await supabase
+      const { data: oldSale, error: sErr } = await supabase
         .from('sales')
-        .select('id')
+        .select('id, reference')
         .eq('id', id)
         .single()
       if (sErr) throw sErr
@@ -376,6 +416,7 @@ export const useUpdateSale = () => {
         .update({
           client_id,
           date,
+          reference: reference || oldSale.reference,
           note: note || null,
           total,
           paid,
@@ -552,6 +593,7 @@ export const useDeleteSale = () => {
     },
     onSuccess: () => {
       qc.invalidateQueries({ queryKey: ['sales'] })
+      qc.invalidateQueries({ queryKey: ['next-sale-number'] })
       qc.invalidateQueries({ queryKey: ['clients'] })
       qc.invalidateQueries({ queryKey: ['products'] })
       qc.invalidateQueries({ queryKey: ['stock-alerts'] })

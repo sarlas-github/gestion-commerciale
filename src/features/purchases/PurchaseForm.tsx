@@ -1,4 +1,4 @@
-import { useState, useCallback, useEffect } from 'react'
+import { useState, useCallback, useRef, useEffect } from 'react'
 import { useNavigate } from 'react-router-dom'
 import { Controller, useForm, useFieldArray } from 'react-hook-form'
 import { zodResolver } from '@hookform/resolvers/zod'
@@ -11,10 +11,10 @@ import { Badge } from '@/components/ui/badge'
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from '@/components/ui/dialog'
 import { useSuppliers, useCreateSupplier } from '@/hooks/useSuppliers'
 import { useProducts, useCreateProduct } from '@/hooks/useProducts'
-import { useNextPurchaseNumber } from '@/hooks/usePurchases'
 import { SupplierForm, type SupplierFormValues } from '@/features/suppliers/SupplierForm'
 import { ProductForm, type ProductFormData } from '@/features/products/ProductForm'
 import { formatCurrency, getPaymentStatus, toISODate } from '@/lib/utils'
+import { useNextPurchaseNumber } from '@/hooks/usePurchases'
 import type { Purchase } from '@/types'
 
 // ── Schéma Zod ────────────────────────────────────────────────────────────────
@@ -74,12 +74,13 @@ export const PurchaseForm = ({ existing, onSubmit, isLoading = false }: Purchase
 
   // Modales création rapide
   const [showNewSupplier, setShowNewSupplier] = useState(false)
-  const [showNewProduct, setShowNewProduct] = useState(false)
+  const [showNewProductIdx, setShowNewProductIdx] = useState<number | null>(null)
 
   const { data: suppliers = [] } = useSuppliers()
   const { data: products = [] } = useProducts()
   const createSupplier = useCreateSupplier()
   const createProduct = useCreateProduct()
+  const { data: nextRef } = useNextPurchaseNumber()
 
   // Valeurs par défaut pour l'édition
   const defaultItems = existing?.purchase_items?.map(i => ({
@@ -115,15 +116,19 @@ export const PurchaseForm = ({ existing, onSubmit, isLoading = false }: Purchase
     },
   })
 
-  const { data: nextRef } = useNextPurchaseNumber()
-
   useEffect(() => {
-    if (!existing && nextRef) {
+    if (!existing && nextRef && !watch('reference')) {
       setValue('reference', nextRef)
     }
-  }, [existing, nextRef, setValue])
+  }, [existing, nextRef, setValue, watch])
 
-  const { fields: itemFields, prepend: prependItem, remove: removeItem } = useFieldArray({
+  // Ne pas pré-remplir : la référence est générée atomiquement à la sauvegarde
+  // (pré-remplir cassait l'incrémentation car payload.reference était déjà défini)
+
+  const [newItemIdx, setNewItemIdx] = useState<number | null>(null)
+  const selectRefs = useRef<Map<number, HTMLSelectElement>>(new Map())
+
+  const { fields: itemFields, append: appendItem, remove: removeItem } = useFieldArray({
     control,
     name: 'items',
   })
@@ -148,27 +153,32 @@ export const PurchaseForm = ({ existing, onSubmit, isLoading = false }: Purchase
   // Création rapide fournisseur
   const handleQuickSupplier = useCallback(
     async (values: SupplierFormValues) => {
-      await createSupplier.mutateAsync({
+      const newSupplier = await createSupplier.mutateAsync({
         name: values.name,
         phone: values.phone || null,
         address: values.address || null,
         ice: values.ice || null,
       })
+      setValue('supplier_id', newSupplier.id)
       setShowNewSupplier(false)
     },
-    [createSupplier]
+    [createSupplier, setValue]
   )
 
   // Création rapide produit
   const handleQuickProduct = useCallback(async (data: ProductFormData) => {
-    await createProduct.mutateAsync({
+    const newProduct = await createProduct.mutateAsync({
       name: data.name,
       type: data.type,
       pieces_count: data.pieces_count,
       stock_alert: data.stock_alert,
     })
-    setShowNewProduct(false)
-  }, [createProduct])
+    if (showNewProductIdx !== null) {
+      setValue(`items.${showNewProductIdx}.product_id`, newProduct.id)
+      setValue(`items.${showNewProductIdx}.pieces_count`, newProduct.pieces_count)
+    }
+    setShowNewProductIdx(null)
+  }, [createProduct, showNewProductIdx, setValue])
 
   // Changement de produit sur une ligne
   const handleProductChange = (idx: number, productId: string) => {
@@ -195,14 +205,14 @@ export const PurchaseForm = ({ existing, onSubmit, isLoading = false }: Purchase
       </Dialog>
 
       {/* Modale création rapide produit */}
-      <Dialog open={showNewProduct} onOpenChange={setShowNewProduct}>
+      <Dialog open={showNewProductIdx !== null} onOpenChange={(open) => !open && setShowNewProductIdx(null)}>
         <DialogContent>
           <DialogHeader>
             <DialogTitle>Nouveau produit</DialogTitle>
           </DialogHeader>
           <ProductForm
             onSubmit={handleQuickProduct}
-            onCancel={() => setShowNewProduct(false)}
+            onCancel={() => setShowNewProductIdx(null)}
             isLoading={createProduct.isPending}
           />
         </DialogContent>
@@ -303,7 +313,13 @@ export const PurchaseForm = ({ existing, onSubmit, isLoading = false }: Purchase
                 variant="outline"
                 size="sm"
                 onClick={() => {
-                  prependItem({ product_id: '', quantity: 1, unit_price: 0, pieces_count: 1 })
+                  appendItem({ product_id: '', quantity: 1, unit_price: 0, pieces_count: 1 })
+                  const newIdx = itemFields.length
+                  setNewItemIdx(newIdx)
+                  setTimeout(() => {
+                    selectRefs.current.get(newIdx)?.focus()
+                    setNewItemIdx(null)
+                  }, 100)
                 }}
               >
                 <Plus className="mr-1.5 h-4 w-4" />
@@ -354,11 +370,16 @@ export const PurchaseForm = ({ existing, onSubmit, isLoading = false }: Purchase
                                 <select
                                   className="flex h-8 w-full rounded-md border border-input bg-background px-2 text-sm focus-visible:outline-none focus-visible:ring-1 focus-visible:ring-ring"
                                   value={f.value}
+                                  ref={el => {
+                                    f.ref(el)
+                                    if (el) selectRefs.current.set(idx, el)
+                                    else selectRefs.current.delete(idx)
+                                  }}
+                                  autoFocus={newItemIdx === idx}
                                   onChange={e => {
                                     f.onChange(e.target.value)
                                     handleProductChange(idx, e.target.value)
                                   }}
-                                  ref={f.ref}
                                 >
                                   <option value="">— Produit —</option>
                                   {products.map(p => (
@@ -373,7 +394,7 @@ export const PurchaseForm = ({ existing, onSubmit, isLoading = false }: Purchase
                               size="icon"
                               className="h-8 w-8 shrink-0"
                               title="Nouveau produit"
-                              onClick={() => setShowNewProduct(true)}
+                              onClick={() => setShowNewProductIdx(idx)}
                             >
                               <Plus className="h-3.5 w-3.5" />
                             </Button>

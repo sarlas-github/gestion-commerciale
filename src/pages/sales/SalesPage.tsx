@@ -54,12 +54,29 @@ export const SalesPage = () => {
       {
         accessorKey: 'reference',
         header: 'Référence',
-        cell: ({ row }) => row.original.reference || <span className="text-muted-foreground">—</span>,
+        cell: ({ row }) => row.original.reference ? (
+          <span
+            className="text-primary underline underline-offset-2 cursor-pointer font-medium hover:text-primary/80"
+            onClick={() => navigate(`/sales/${row.original.id}/edit`)}
+          >
+            {row.original.reference}
+          </span>
+        ) : <span className="text-muted-foreground">—</span>,
       },
       {
         accessorKey: 'clients',
         header: 'Client',
-        cell: ({ row }) => (row.original as Sale & { clients?: { name: string } }).clients?.name ?? '—',
+        cell: ({ row }) => {
+          const client = (row.original as Sale & { clients?: { id: string, name: string } }).clients
+          return client ? (
+            <span
+              className="text-primary underline underline-offset-2 cursor-pointer font-medium hover:text-primary/80"
+              onClick={() => navigate(`/clients/${client.id}`)}
+            >
+              {client.name}
+            </span>
+          ) : '—'
+        },
       },
       {
         accessorKey: 'date',

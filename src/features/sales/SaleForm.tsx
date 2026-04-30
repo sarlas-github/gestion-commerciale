@@ -1,4 +1,4 @@
-import { useState, useCallback, useEffect } from 'react'
+import { useState, useCallback, useRef, useEffect } from 'react'
 import { useNavigate } from 'react-router-dom'
 import { Controller, useForm, useFieldArray } from 'react-hook-form'
 import { zodResolver } from '@hookform/resolvers/zod'
@@ -71,12 +71,13 @@ export const SaleForm = ({ existing, onSubmit, isLoading = false }: SaleFormProp
     existing && existing.client_payments && existing.client_payments.length > 0
 
   const [showNewClient, setShowNewClient] = useState(false)
-  const [showNewProduct, setShowNewProduct] = useState(false)
+  const [showNewProductIdx, setShowNewProductIdx] = useState<number | null>(null)
 
   const { data: clients = [] } = useClients()
   const { data: products = [] } = useProducts()
   const createClient = useCreateClient()
   const createProduct = useCreateProduct()
+  const { data: nextRef } = useNextSaleNumber()
 
   const defaultItems = existing?.sale_items?.map(i => ({
     original_id: i.id,
@@ -111,15 +112,18 @@ export const SaleForm = ({ existing, onSubmit, isLoading = false }: SaleFormProp
     },
   })
 
-  const { data: nextRef } = useNextSaleNumber()
-
   useEffect(() => {
-    if (!existing && nextRef) {
+    if (!existing && nextRef && !watch('reference')) {
       setValue('reference', nextRef)
     }
-  }, [existing, nextRef, setValue])
+  }, [existing, nextRef, setValue, watch])
 
-  const { fields: itemFields, prepend: prependItem, remove: removeItem } = useFieldArray({
+  // Ne pas pré-remplir : généré atomiquement à la sauvegarde
+
+  const [newItemIdx, setNewItemIdx] = useState<number | null>(null)
+  const selectRefs = useRef<Map<number, HTMLSelectElement>>(new Map())
+
+  const { fields: itemFields, append: appendItem, remove: removeItem } = useFieldArray({
     control,
     name: 'items',
   })
@@ -142,27 +146,32 @@ export const SaleForm = ({ existing, onSubmit, isLoading = false }: SaleFormProp
 
   const handleQuickClient = useCallback(
     async (values: ClientFormValues) => {
-      await createClient.mutateAsync({
+      const newClient = await createClient.mutateAsync({
         name: values.name,
         phone: values.phone || null,
         address: values.address || null,
         ice: values.ice || null,
       })
+      setValue('client_id', newClient.id)
       setShowNewClient(false)
     },
-    [createClient]
+    [createClient, setValue]
   )
 
   // Création rapide produit
   const handleQuickProduct = useCallback(async (data: ProductFormData) => {
-    await createProduct.mutateAsync({
+    const newProduct = await createProduct.mutateAsync({
       name: data.name,
       type: data.type,
       pieces_count: data.pieces_count,
       stock_alert: data.stock_alert,
     })
-    setShowNewProduct(false)
-  }, [createProduct])
+    if (showNewProductIdx !== null) {
+      setValue(`items.${showNewProductIdx}.product_id`, newProduct.id)
+      setValue(`items.${showNewProductIdx}.pieces_count`, newProduct.pieces_count)
+    }
+    setShowNewProductIdx(null)
+  }, [createProduct, showNewProductIdx, setValue])
 
   const handleProductChange = (idx: number, productId: string) => {
     const product = products.find(p => p.id === productId)
@@ -186,14 +195,14 @@ export const SaleForm = ({ existing, onSubmit, isLoading = false }: SaleFormProp
         </DialogContent>
       </Dialog>
 
-      <Dialog open={showNewProduct} onOpenChange={setShowNewProduct}>
+      <Dialog open={showNewProductIdx !== null} onOpenChange={(open) => !open && setShowNewProductIdx(null)}>
         <DialogContent>
           <DialogHeader>
             <DialogTitle>Nouveau produit</DialogTitle>
           </DialogHeader>
           <ProductForm
             onSubmit={handleQuickProduct}
-            onCancel={() => setShowNewProduct(false)}
+            onCancel={() => setShowNewProductIdx(null)}
             isLoading={createProduct.isPending}
           />
         </DialogContent>
@@ -297,7 +306,15 @@ export const SaleForm = ({ existing, onSubmit, isLoading = false }: SaleFormProp
                 type="button"
                 variant="outline"
                 size="sm"
-                onClick={() => prependItem({ product_id: '', quantity: 1, unit_price: 0, pieces_count: 1 })}
+                onClick={() => {
+                  appendItem({ product_id: '', quantity: 1, unit_price: 0, pieces_count: 1 })
+                  const newIdx = itemFields.length
+                  setNewItemIdx(newIdx)
+                  setTimeout(() => {
+                    selectRefs.current.get(newIdx)?.focus()
+                    setNewItemIdx(null)
+                  }, 100)
+                }}
               >
                 <Plus className="mr-1.5 h-4 w-4" />
                 Ajouter une ligne
@@ -353,11 +370,16 @@ export const SaleForm = ({ existing, onSubmit, isLoading = false }: SaleFormProp
                                   <select
                                     className="flex h-8 w-full rounded-md border border-input bg-background px-2 text-sm focus-visible:outline-none focus-visible:ring-1 focus-visible:ring-ring"
                                     value={f.value}
+                                    ref={el => {
+                                      f.ref(el)
+                                      if (el) selectRefs.current.set(idx, el)
+                                      else selectRefs.current.delete(idx)
+                                    }}
+                                    autoFocus={newItemIdx === idx}
                                     onChange={e => {
                                       f.onChange(e.target.value)
                                       handleProductChange(idx, e.target.value)
                                     }}
-                                    ref={f.ref}
                                   >
                                     <option value="">— Produit —</option>
                                     {products.map(p => (
@@ -379,7 +401,7 @@ export const SaleForm = ({ existing, onSubmit, isLoading = false }: SaleFormProp
                               size="icon"
                               className="h-8 w-8 shrink-0"
                               title="Nouveau produit"
-                              onClick={() => setShowNewProduct(true)}
+                              onClick={() => setShowNewProductIdx(idx)}
                             >
                               <Plus className="h-3.5 w-3.5" />
                             </Button>

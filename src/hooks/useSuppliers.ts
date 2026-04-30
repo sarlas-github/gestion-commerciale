@@ -115,7 +115,8 @@ export const useSupplierMonthlyState = (supplierId: string, year: number, month:
     queryKey: ['suppliers', supplierId, 'state', year, month],
     queryFn: async () => {
       const startDate = `${year}-${String(month).padStart(2, '0')}-01`
-      const endDate = new Date(year, month, 0).toISOString().split('T')[0]
+      const lastDay = new Date(year, month, 0).getDate()
+      const endDate = `${year}-${String(month).padStart(2, '0')}-${String(lastDay).padStart(2, '0')}`
 
       const { data: purchases, error } = await supabase
         .from('purchases')
@@ -126,9 +127,10 @@ export const useSupplierMonthlyState = (supplierId: string, year: number, month:
 
       if (error) throw error
 
-      const totalAchats = (purchases ?? []).reduce((s, p) => s + (p.total ?? 0), 0)
-      const totalPaye = (purchases ?? []).reduce((s, p) => s + (p.paid ?? 0), 0)
-      const resteAPayer = totalAchats - totalPaye
+      const rows = purchases ?? []
+      const totalAchats = rows.reduce((s, p) => s + Number(p.total ?? 0), 0)
+      const totalPaye   = rows.reduce((s, p) => s + Number(p.paid ?? 0), 0)
+      const resteAPayer = rows.reduce((s, p) => s + Number(p.remaining ?? 0), 0)
 
       return { totalAchats, totalPaye, resteAPayer }
     },

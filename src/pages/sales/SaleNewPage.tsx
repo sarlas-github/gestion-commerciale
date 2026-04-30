@@ -13,6 +13,7 @@ export const SaleNewPage = () => {
     await createSale.mutateAsync({
       client_id: values.client_id,
       date: values.date,
+      reference: values.reference ?? '',
       note: values.note ?? '',
       items: values.items.map(i => ({
         product_id: i.product_id,
