@@ -132,7 +132,7 @@ export const StockMovementsPage = () => {
       <PageHeader title="Mouvements stock" />
 
       <div className="mb-4 flex flex-wrap gap-2">
-        <Select value={typeFilter} onValueChange={setTypeFilter}>
+        <Select value={typeFilter} onValueChange={v => setTypeFilter(v ?? 'all')}>
           <SelectTrigger className="w-36">
             <SelectValue />
           </SelectTrigger>
@@ -144,7 +144,7 @@ export const StockMovementsPage = () => {
           </SelectContent>
         </Select>
 
-        <Select value={month} onValueChange={setMonth}>
+        <Select value={month} onValueChange={v => setMonth(v ?? month)}>
           <SelectTrigger className="w-36">
             <SelectValue />
           </SelectTrigger>
@@ -157,7 +157,7 @@ export const StockMovementsPage = () => {
           </SelectContent>
         </Select>
 
-        <Select value={year} onValueChange={setYear}>
+        <Select value={year} onValueChange={v => setYear(v ?? year)}>
           <SelectTrigger className="w-24">
             <SelectValue />
           </SelectTrigger>

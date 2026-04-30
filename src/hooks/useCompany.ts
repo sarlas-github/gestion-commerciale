@@ -83,10 +83,10 @@ export const useUpsertCompany = () => {
         logo_url,
       }
 
-      const existingCompany = qc.getQueryData<import('@/types').Company | null>(['company'])
+      const existingCompany = qc.getQueryData<Company | null>(['company'])
 
       if (existingCompany?.id) {
-        const { id: _, user_id: __, ...updatePayload } = payload
+        const { user_id: _, ...updatePayload } = payload
         const { error } = await supabase
           .from('companies')
           .update(updatePayload)

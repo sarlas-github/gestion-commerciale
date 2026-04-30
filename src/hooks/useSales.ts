@@ -7,6 +7,7 @@ import type { Sale } from '@/types'
 // ── Types ─────────────────────────────────────────────────────────────────────
 
 export interface SaleItemInput {
+  original_id?: string
   product_id: string
   quantity: number
   pieces_count: number
@@ -16,14 +17,14 @@ export interface SaleItemInput {
 export interface SalePaymentInput {
   date: string
   amount: number
-  note: string
+  note?: string
 }
 
 export interface CreateSalePayload {
   client_id: string
   date: string
   reference?: string
-  note: string
+  note?: string
   items: SaleItemInput[]
   payments: SalePaymentInput[]
 }
@@ -355,9 +356,9 @@ export const useUpdateSale = () => {
       const user = await getCurrentUser()
 
       // 1. Récupère la vente actuelle (avec items)
-      const { data: oldSale, error: sErr } = await supabase
+      const { error: sErr } = await supabase
         .from('sales')
-        .select('*, sale_items(*)')
+        .select('id')
         .eq('id', id)
         .single()
       if (sErr) throw sErr
@@ -482,6 +483,7 @@ export const useUpdateSale = () => {
         .eq('sale_id', id)
         .eq('type', 'invoice')
         .maybeSingle()
+      if (docFetchErr) throw docFetchErr
 
       if (document) {
         const { error: upDocErr } = await supabase
@@ -500,30 +502,27 @@ export const useUpdateSale = () => {
           .eq('id', document.id)
         if (upDocErr) throw upDocErr
 
-        // Update document items if items changed
-        if (itemsChanged) {
-          const { error: delDiErr } = await supabase.from('document_items').delete().eq('document_id', document.id)
-          if (delDiErr) throw delDiErr
-          
-          const { data: products, error: prodErr } = await supabase
-            .from('products')
-            .select('id, name')
-            .in('id', items.map(i => i.product_id))
-          if (prodErr) throw prodErr
-          const productMap = Object.fromEntries((products ?? []).map(p => [p.id, p]))
+        const { error: delDiErr } = await supabase.from('document_items').delete().eq('document_id', document.id)
+        if (delDiErr) throw delDiErr
 
-          const { error: insDiErr } = await supabase.from('document_items').insert(
-            items.map(i => ({
-              document_id: document.id,
-              product_id: i.product_id,
-              product_name: productMap[i.product_id]?.name ?? 'Produit inconnu',
-              quantity: i.quantity,
-              unit_price: i.unit_price,
-              // pieces_count supprimé car colonne absente en BDD
-            }))
-          )
-          if (insDiErr) throw insDiErr
-        }
+        const { data: products, error: prodErr } = await supabase
+          .from('products')
+          .select('id, name')
+          .in('id', items.map(i => i.product_id))
+        if (prodErr) throw prodErr
+        const productMap = Object.fromEntries((products ?? []).map(p => [p.id, p]))
+
+        const { error: insDiErr } = await supabase.from('document_items').insert(
+          items.map(i => ({
+            document_id: document.id,
+            product_id: i.product_id,
+            product_name: productMap[i.product_id]?.name ?? 'Produit inconnu',
+            quantity: i.quantity,
+            pieces_count: i.pieces_count,
+            unit_price: i.unit_price,
+          }))
+        )
+        if (insDiErr) throw insDiErr
       }
     },
     onSuccess: (_, { id }) => {

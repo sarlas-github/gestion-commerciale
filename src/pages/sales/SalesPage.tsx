@@ -69,7 +69,7 @@ export const SalesPage = () => {
       {
         accessorKey: 'created_at',
         header: 'Créé le',
-        cell: ({ row }) => formatDate(row.original.created_at, true),
+        cell: ({ row }) => formatDate(row.original.created_at),
       },
       {
         accessorKey: 'total',

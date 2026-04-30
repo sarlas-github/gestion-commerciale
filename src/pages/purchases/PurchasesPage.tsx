@@ -43,7 +43,7 @@ export const PurchasesPage = () => {
       {
         accessorKey: 'created_at',
         header: 'Créé le',
-        cell: ({ row }) => formatDate(row.original.created_at, true), // true for showing time if needed
+        cell: ({ row }) => formatDate(row.original.created_at),
       },
       {
         accessorKey: 'total',

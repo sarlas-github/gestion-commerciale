@@ -1,6 +1,6 @@
 import * as React from "react"
 import { Input } from "@/components/ui/input"
-import { formatPhone, unformatPhone } from "@/lib/utils"
+import { formatPhone } from "@/lib/utils"
 
 interface PhoneInputProps extends Omit<React.ComponentProps<"input">, "onChange" | "value"> {
   value: string

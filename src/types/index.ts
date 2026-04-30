@@ -106,7 +106,7 @@ export interface StockMovement {
   date: string
   created_at: string
   // Join
-  products?: Pick<Product, 'id' | 'name'>
+  products?: Pick<Product, 'id' | 'name' | 'pieces_count'>
 }
 
 export type CreateStockMovementInput = Omit<StockMovement, 'id' | 'user_id' | 'created_at' | 'products'>
@@ -145,7 +145,7 @@ export interface PurchaseItem {
   unit_price: number
   subtotal: number
   // Joins
-  products?: Pick<Product, 'id' | 'name'>
+  products?: Pick<Product, 'id' | 'name' | 'pieces_count'>
 }
 
 export type CreatePurchaseItemInput = Omit<PurchaseItem, 'id' | 'subtotal' | 'products'>
@@ -200,7 +200,7 @@ export interface SaleItem {
   unit_price: number
   subtotal: number
   // Joins
-  products?: Pick<Product, 'id' | 'name'>
+  products?: Pick<Product, 'id' | 'name' | 'pieces_count'>
 }
 
 export type CreateSaleItemInput = Omit<SaleItem, 'id' | 'subtotal' | 'products'>

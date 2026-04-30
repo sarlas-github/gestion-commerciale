@@ -7,6 +7,7 @@ import type { Purchase } from '@/types'
 // ── Types ─────────────────────────────────────────────────────────────────────
 
 export interface PurchaseItemInput {
+  original_id?: string
   product_id: string
   quantity: number
   unit_price: number
@@ -16,14 +17,14 @@ export interface PurchaseItemInput {
 export interface SupplierPaymentInput {
   date: string
   amount: number
-  note: string
+  note?: string
 }
 
 export interface CreatePurchasePayload {
   supplier_id: string
   date: string
   reference?: string
-  note: string
+  note?: string
   items: PurchaseItemInput[]
   payments: SupplierPaymentInput[]
 }

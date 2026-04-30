@@ -70,7 +70,6 @@ export const PurchaseForm = ({ existing, onSubmit, isLoading = false }: Purchase
   // Mode édition avec paiements → lignes produits non modifiables
   const hasExistingPayments =
     existing && existing.supplier_payments && existing.supplier_payments.length > 0
-  const isEditMode = Boolean(existing)
 
   // Modales création rapide
   const [showNewSupplier, setShowNewSupplier] = useState(false)
@@ -335,6 +334,7 @@ export const PurchaseForm = ({ existing, onSubmit, isLoading = false }: Purchase
                   const pieces = Number(watchedItems[idx]?.pieces_count) || 1
                   const price = Number(watchedItems[idx]?.unit_price) || 0
                   const subtotal = qty * pieces * price
+                  void subtotal
                   return (
                     <tr key={field.id}>
                       {/* Produit */}

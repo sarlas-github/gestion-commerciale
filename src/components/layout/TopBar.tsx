@@ -1,4 +1,3 @@
-import { useState } from 'react'
 import { useLocation } from 'react-router-dom'
 import { Menu, Bell } from 'lucide-react'
 import { Button } from '@/components/ui/button'

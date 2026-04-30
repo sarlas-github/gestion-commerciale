@@ -327,6 +327,7 @@ export const SaleForm = ({ existing, onSubmit, isLoading = false }: SaleFormProp
                   const pieces = Number(watchedItems[idx]?.pieces_count) || 1
                   const price = Number(watchedItems[idx]?.unit_price) || 0
                   const subtotal = qty * pieces * price
+                  void subtotal
                   const selectedProductId = watchedItems[idx]?.product_id
                   const productData = products.find(p => p.id === selectedProductId)
                   const availableStock = productData?.stock?.quantity ?? 0

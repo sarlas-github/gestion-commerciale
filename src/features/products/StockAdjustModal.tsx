@@ -2,7 +2,7 @@ import { useEffect } from 'react'
 import { useForm, Controller } from 'react-hook-form'
 import { zodResolver } from '@hookform/resolvers/zod'
 import { z } from 'zod'
-import { Loader2, CheckCircle2, AlertTriangle } from 'lucide-react'
+import { Loader2 } from 'lucide-react'
 import {
   Dialog,
   DialogContent,
@@ -40,7 +40,6 @@ export const StockAdjustModal = ({
   const currentQty = product?.stock?.quantity ?? 0
 
   const {
-    register,
     handleSubmit,
     watch,
     reset,
