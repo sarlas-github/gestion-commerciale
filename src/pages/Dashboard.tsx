@@ -41,18 +41,18 @@ const KPICard = ({
   color?: 'red' | 'green'
 }) => (
   <div className={cn(
-    'rounded-lg border bg-card p-5 space-y-1',
+    'rounded-lg border bg-card p-3 sm:p-5 space-y-1',
     color === 'red' && 'border-red-200 bg-red-50',
   )}>
-    <p className="text-xs font-medium text-muted-foreground uppercase tracking-wide">{label}</p>
+    <p className="text-[10px] sm:text-xs font-medium text-muted-foreground uppercase tracking-wide truncate">{label}</p>
     <p className={cn(
-      'text-2xl font-bold',
+      'text-lg sm:text-2xl font-bold truncate',
       color === 'red' && 'text-red-600',
       color === 'green' && 'text-green-600',
     )}>
       {value}
     </p>
-    <p className="text-xs text-muted-foreground">{sub}</p>
+    <p className="text-[10px] sm:text-xs text-muted-foreground truncate">{sub}</p>
   </div>
 )
 
@@ -154,7 +154,7 @@ export const Dashboard = () => {
       ) : (
         <>
           {/* ── KPIs ── */}
-          <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-3 mb-6">
+          <div className="grid grid-cols-2 gap-3 sm:grid-cols-2 lg:grid-cols-3 mb-6">
             {/* Ligne 1 : Ventes */}
             <KPICard label="💰 CA Ventes" value={formatCurrency(data?.ca ?? 0)} sub={`Total facturé ${periodSub}`} />
             <KPICard label="✅ Encaissé" value={formatCurrency(data?.encaisse ?? 0)} sub={`Reçu des clients ${periodSub}`} color="green" />
