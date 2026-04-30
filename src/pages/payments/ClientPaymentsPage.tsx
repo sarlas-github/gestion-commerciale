@@ -66,6 +66,11 @@ export const ClientPaymentsPage = () => {
       cell: ({ row }) => <span className="font-medium">{formatCurrency(row.original.amount)}</span>,
     },
     {
+      accessorKey: 'methode_paiement',
+      header: 'Méthode',
+      cell: ({ row }) => row.original.methode_paiement || '—',
+    },
+    {
       accessorKey: 'note',
       header: 'Note',
       cell: ({ row }) => row.original.note || '—',
@@ -110,6 +115,7 @@ export const ClientPaymentsPage = () => {
           Client: p.client_name,
           Référence: p.doc_number ?? '',
           Montant: p.amount,
+          Méthode: p.methode_paiement ?? '',
           Note: p.note ?? '',
         })}
       />

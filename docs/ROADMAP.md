@@ -223,7 +223,10 @@ vente avec le bon prefix: ACH, VEN reciproquement
 ---
 pending:
 - enlever la liste de noms qui s affiche par le navigateur quand on veut saisir un nouveau produit
--
+- tdb stats par mois
+- visualiser editer double en grille achat, enlever visualiser
+- mobile system cards
+-les grilles des états ne respectent pas les regles ux de grille d ajout par defaut tri filtre et pagination
 ```
 
 ---

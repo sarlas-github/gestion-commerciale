@@ -171,6 +171,7 @@ const TabPaiements = ({ supplierId }: { supplierId: string }) => {
       },
     },
     { accessorKey: 'amount', header: 'Montant', cell: ({ row }) => formatCurrency(row.original.amount) },
+    { accessorKey: 'methode_paiement', header: 'Méthode', cell: ({ row }) => row.original.methode_paiement || '—' },
     { accessorKey: 'note', header: 'Note', cell: ({ row }) => row.original.note || '—' },
   ], [])
 
@@ -187,6 +188,7 @@ const TabPaiements = ({ supplierId }: { supplierId: string }) => {
         exportMapper={p => ({
           Date: formatDate((p as SupplierPayment).date),
           Montant: (p as SupplierPayment).amount,
+          Méthode: (p as SupplierPayment).methode_paiement ?? '',
           Note: (p as SupplierPayment).note ?? '',
         })}
       />

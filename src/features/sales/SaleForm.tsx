@@ -31,6 +31,7 @@ const paymentSchema = z.object({
   date: z.string().min(1, 'Date obligatoire'),
   amount: z.number({ invalid_type_error: 'Entrer un montant' }).min(0),
   note: z.string().optional().or(z.literal('')),
+  methode_paiement: z.string().optional().or(z.literal('')),
 })
 
 export const saleSchema = z.object({
@@ -89,6 +90,7 @@ export const SaleForm = ({ existing, onSubmit, isLoading = false }: SaleFormProp
     date: p.date,
     amount: p.amount,
     note: p.note ?? '',
+    methode_paiement: p.methode_paiement ?? '',
   })) ?? []
 
   const {
@@ -490,7 +492,7 @@ export const SaleForm = ({ existing, onSubmit, isLoading = false }: SaleFormProp
               type="button"
               variant="outline"
               size="sm"
-              onClick={() => appendPayment({ date: today, amount: remaining > 0 ? remaining : 0, note: '' })}
+              onClick={() => appendPayment({ date: today, amount: remaining > 0 ? remaining : 0, note: '', methode_paiement: '' })}
             >
               <Plus className="mr-1.5 h-4 w-4" />
               Ajouter un paiement
@@ -504,6 +506,7 @@ export const SaleForm = ({ existing, onSubmit, isLoading = false }: SaleFormProp
                   <tr className="border-b text-left text-muted-foreground">
                     <th className="pb-2 font-medium">Date</th>
                     <th className="pb-2 font-medium">Montant</th>
+                    <th className="pb-2 font-medium">Méthode</th>
                     <th className="pb-2 font-medium">Note</th>
                     <th className="pb-2 w-8" />
                   </tr>
@@ -541,6 +544,28 @@ export const SaleForm = ({ existing, onSubmit, isLoading = false }: SaleFormProp
                               onFocus={e => e.target.select()}
                               ref={f.ref}
                             />
+                          )}
+                        />
+                      </td>
+                      <td className="py-2 pr-3">
+                        <Controller
+                          name={`payments.${idx}.methode_paiement`}
+                          control={control}
+                          render={({ field: f }) => (
+                            <select
+                              className="flex h-8 rounded-md border border-input bg-background px-2 text-sm focus-visible:outline-none focus-visible:ring-1 focus-visible:ring-ring"
+                              value={f.value ?? ''}
+                              onChange={f.onChange}
+                              ref={f.ref}
+                            >
+                              <option value="">—</option>
+                              <option value="Espèces">Espèces</option>
+                              <option value="Virement bancaire">Virement bancaire</option>
+                              <option value="Chèque">Chèque</option>
+                              <option value="Effet">Effet</option>
+                              <option value="Traite">Traite</option>
+                              <option value="Carte bancaire">Carte bancaire</option>
+                            </select>
                           )}
                         />
                       </td>

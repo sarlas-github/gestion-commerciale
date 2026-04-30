@@ -18,6 +18,7 @@ export interface SalePaymentInput {
   date: string
   amount: number
   note?: string
+  methode_paiement?: string | null
 }
 
 export interface CreateSalePayload {
@@ -262,6 +263,7 @@ export const useCreateSale = () => {
               amount: p.amount,
               date: p.date,
               note: p.note || null,
+              methode_paiement: p.methode_paiement || null,
             }))
           )
         if (payErr) throw payErr
@@ -468,6 +470,7 @@ export const useUpdateSale = () => {
             amount: p.amount,
             date: p.date,
             note: p.note || null,
+            methode_paiement: p.methode_paiement || null,
           }))
         )
         if (insPayErr) throw insPayErr

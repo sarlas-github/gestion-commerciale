@@ -6,6 +6,7 @@ export interface SupplierPaymentRow {
   date: string
   amount: number
   note: string | null
+  methode_paiement: string | null
   purchase_id: string
   supplier_name: string
   purchase_reference: string | null
@@ -30,6 +31,7 @@ export const useAllSupplierPayments = () =>
           date: p.date,
           amount: p.amount,
           note: p.note ?? null,
+          methode_paiement: p.methode_paiement ?? null,
           purchase_id: p.purchase_id,
           supplier_name: supplier?.name ?? '—',
           purchase_reference: purchase?.reference ?? null,

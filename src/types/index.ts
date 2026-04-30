@@ -159,6 +159,7 @@ export interface SupplierPayment {
   amount: number
   date: string
   note: string | null
+  methode_paiement: string | null
   created_at: string
   // Joins
   purchases?: Pick<Purchase, 'id' | 'reference'> & { suppliers?: Pick<Supplier, 'id' | 'name'> }
@@ -214,6 +215,7 @@ export interface ClientPayment {
   amount: number
   date: string
   note: string | null
+  methode_paiement: string | null
   created_at: string
   // Joins
   sales?: Pick<Sale, 'id'> & { clients?: Pick<Client, 'id' | 'name'> }
@@ -289,6 +291,7 @@ export interface PurchaseFormData {
     date: string
     amount: number
     note: string
+    methode_paiement: string
   }>
 }
 
@@ -306,6 +309,7 @@ export interface SaleFormData {
     date: string
     amount: number
     note: string
+    methode_paiement: string
   }>
 }
 

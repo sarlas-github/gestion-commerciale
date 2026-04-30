@@ -154,6 +154,7 @@ const TabPaiements = ({ clientId }: { clientId: string }) => {
   const columns = useMemo<ColumnDef<ClientPayment>[]>(() => [
     { accessorKey: 'date', header: 'Date', cell: ({ row }) => formatDate(row.original.date) },
     { accessorKey: 'amount', header: 'Montant', cell: ({ row }) => formatCurrency(row.original.amount) },
+    { accessorKey: 'methode_paiement', header: 'Méthode', cell: ({ row }) => row.original.methode_paiement || '—' },
     { accessorKey: 'note', header: 'Note', cell: ({ row }) => row.original.note || '—' },
   ], [])
 
@@ -170,6 +171,7 @@ const TabPaiements = ({ clientId }: { clientId: string }) => {
         exportMapper={p => ({
           Date: formatDate(p.date),
           Montant: p.amount,
+          Méthode: p.methode_paiement ?? '',
           Note: p.note ?? '',
         })}
       />

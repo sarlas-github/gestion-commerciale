@@ -123,13 +123,14 @@ subtotal     NUMERIC GENERATED → quantity * unit_price
 
 ### supplier_payments
 ```
-id           UUID PK
-user_id      UUID FK → auth.users
-purchase_id  UUID FK → purchases
-amount       NUMERIC(12,2)
-date         DATE
-note         TEXT
-created_at   TIMESTAMPTZ
+id                UUID PK
+user_id           UUID FK → auth.users
+purchase_id       UUID FK → purchases
+amount            NUMERIC(12,2)
+date              DATE
+note              TEXT
+methode_paiement  TEXT (nullable) ← ENUM: 'Espèces', 'Virement bancaire', 'Chèque', 'Effet', 'Traite', 'Carte bancaire'
+created_at        TIMESTAMPTZ
 ```
 
 ### sales
@@ -161,13 +162,14 @@ subtotal      NUMERIC GENERATED → quantity * unit_price
 
 ### client_payments
 ```
-id          UUID PK
-user_id     UUID FK → auth.users
-sale_id     UUID FK → sales
-amount      NUMERIC(12,2)
-date        DATE
-note        TEXT
-created_at  TIMESTAMPTZ
+id                UUID PK
+user_id           UUID FK → auth.users
+sale_id           UUID FK → sales
+amount            NUMERIC(12,2)
+date              DATE
+note              TEXT
+methode_paiement  TEXT (nullable) ← ENUM: 'Espèces', 'Virement bancaire', 'Chèque', 'Effet', 'Traite', 'Carte bancaire'
+created_at        TIMESTAMPTZ
 ```
 
 ### documents
