@@ -14,10 +14,14 @@ export interface ClientReportData {
   totals: { total_ventes: number; total_paye: number; reste: number }
 }
 
+// month=0 signifie toute l'année
 export const useClientReport = (year: number, month: number) => {
-  const startDate = `${year}-${String(month).padStart(2, '0')}-01`
-  const lastDay = new Date(year, month, 0).getDate()
-  const endDate = `${year}-${String(month).padStart(2, '0')}-${lastDay}`
+  const startDate = month === 0
+    ? `${year}-01-01`
+    : `${year}-${String(month).padStart(2, '0')}-01`
+  const endDate = month === 0
+    ? `${year}-12-31`
+    : `${year}-${String(month).padStart(2, '0')}-${new Date(year, month, 0).getDate()}`
 
   return useQuery({
     queryKey: ['client-report', year, month],

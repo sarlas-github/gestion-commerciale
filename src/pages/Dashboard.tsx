@@ -1,6 +1,6 @@
 import { useState } from 'react'
 import { useNavigate } from 'react-router-dom'
-import { ChevronLeft, ChevronRight, Loader2 } from 'lucide-react'
+import { Loader2 } from 'lucide-react'
 import {
   ResponsiveContainer,
   LineChart, Line, CartesianGrid, XAxis, YAxis,
@@ -8,8 +8,14 @@ import {
   PieChart, Pie, Cell, Legend,
   Tooltip,
 } from 'recharts'
-import { Button } from '@/components/ui/button'
+import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+} from '@/components/ui/select'
 import { useDashboard } from '@/hooks/useDashboard'
+import { useAvailableYears } from '@/hooks/useAvailableYears'
 import { formatCurrency, cn } from '@/lib/utils'
 
 // ── Constantes ────────────────────────────────────────────────────────────────
@@ -50,22 +56,42 @@ const KPICard = ({
   </div>
 )
 
-const ChartCard = ({ title, children, empty }: { title: string; children: React.ReactNode; empty?: boolean }) => (
+const ChartCard = ({
+  title,
+  children,
+  empty,
+  emptyText = 'Aucune donnée',
+}: {
+  title: string
+  children: React.ReactNode
+  empty?: boolean
+  emptyText?: string
+}) => (
   <div className="rounded-lg border bg-card p-5 space-y-3">
     <h3 className="text-sm font-semibold text-foreground">{title}</h3>
     {empty ? (
       <div className="flex h-48 items-center justify-center text-sm text-muted-foreground">
-        Aucune donnée ce mois
+        {emptyText}
       </div>
     ) : children}
   </div>
 )
 
-const TooltipMAD = ({ active, payload, label }: { active?: boolean; payload?: Array<{ value: number }>; label?: string }) => {
+// Tooltip adapté : "Jour X" en vue mensuelle, nom du mois en vue annuelle
+const TooltipMAD = ({
+  active,
+  payload,
+  label,
+}: {
+  active?: boolean
+  payload?: Array<{ value: number }>
+  label?: string
+}) => {
   if (!active || !payload?.length) return null
+  const isNumeric = !isNaN(Number(label))
   return (
     <div className="rounded-md border bg-background px-3 py-2 text-xs shadow-md">
-      <p className="font-medium mb-1">{label !== undefined ? `Jour ${label}` : ''}</p>
+      <p className="font-medium mb-1">{isNumeric ? `Jour ${label}` : label}</p>
       <p className="text-primary">{formatCurrency(payload[0].value)}</p>
     </div>
   )
@@ -77,34 +103,47 @@ export const Dashboard = () => {
   const navigate = useNavigate()
   const now = new Date()
   const [year, setYear] = useState(now.getFullYear())
-  const [month, setMonth] = useState(now.getMonth() + 1)
+  const [month, setMonth] = useState(now.getMonth() + 1) // 0 = toute l'année
 
+  const { data: availableYears = [now.getFullYear()] } = useAvailableYears('sales')
   const { data, isLoading } = useDashboard(year, month)
 
-  const prev = () => {
-    if (month === 1) { setYear(y => y - 1); setMonth(12) }
-    else setMonth(m => m - 1)
-  }
-  const next = () => {
-    if (month === 12) { setYear(y => y + 1); setMonth(1) }
-    else setMonth(m => m + 1)
-  }
+  const isYearView = month === 0
+  const periodSub = isYearView ? "cette année" : "ce mois"
 
   return (
     <div className="space-y-6">
-      {/* ── En-tête + MonthPicker ── */}
+      {/* ── En-tête + Sélecteurs période ── */}
       <div className="flex items-center justify-between flex-wrap gap-3">
         <h1 className="text-xl font-semibold">Dashboard</h1>
+
         <div className="flex items-center gap-2">
-          <Button variant="outline" size="icon" className="h-8 w-8" onClick={prev}>
-            <ChevronLeft className="h-4 w-4" />
-          </Button>
-          <span className="min-w-[140px] text-center text-sm font-semibold">
-            {MONTHS_FR[month - 1]} {year}
-          </span>
-          <Button variant="outline" size="icon" className="h-8 w-8" onClick={next}>
-            <ChevronRight className="h-4 w-4" />
-          </Button>
+          {/* Année */}
+          <Select value={String(year)} onValueChange={(v) => v && setYear(Number(v))}>
+            <SelectTrigger size="sm" className="w-24">
+              <span className="flex-1 text-left">{year}</span>
+            </SelectTrigger>
+            <SelectContent>
+              {availableYears.map((y) => (
+                <SelectItem key={y} value={String(y)}>{y}</SelectItem>
+              ))}
+            </SelectContent>
+          </Select>
+
+          {/* Mois */}
+          <Select value={String(month)} onValueChange={(v) => v !== null && setMonth(Number(v))}>
+            <SelectTrigger size="sm" className="w-40">
+              <span className="flex-1 text-left">
+                {isYearView ? 'Tous les mois' : MONTHS_FR[month - 1]}
+              </span>
+            </SelectTrigger>
+            <SelectContent>
+              <SelectItem value="0">Tous les mois</SelectItem>
+              {MONTHS_FR.map((label, i) => (
+                <SelectItem key={i + 1} value={String(i + 1)}>{label}</SelectItem>
+              ))}
+            </SelectContent>
+          </Select>
         </div>
       </div>
 
@@ -116,12 +155,12 @@ export const Dashboard = () => {
         <>
           {/* ── KPIs ── */}
           <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-3">
-            <KPICard label="💰 CA" value={formatCurrency(data?.ca ?? 0)} sub="Ventes du mois" />
-            <KPICard label="✅ Encaissé" value={formatCurrency(data?.encaisse ?? 0)} sub="Paiements reçus" color="green" />
+            <KPICard label="💰 CA" value={formatCurrency(data?.ca ?? 0)} sub={`Ventes ${periodSub}`} />
+            <KPICard label="✅ Encaissé" value={formatCurrency(data?.encaisse ?? 0)} sub={`Paiements reçus ${periodSub}`} color="green" />
             <KPICard label="🔴 À recevoir" value={formatCurrency(data?.aRecevoir ?? 0)} sub="Impayés clients" color={(data?.aRecevoir ?? 0) > 0 ? 'red' : undefined} />
             <KPICard label="🔴 À payer" value={formatCurrency(data?.aPayer ?? 0)} sub="Impayés fournisseurs" color={(data?.aPayer ?? 0) > 0 ? 'red' : undefined} />
-            <KPICard label="📦 Ventes" value={String(data?.nbVentes ?? 0)} sub="ce mois" />
-            <KPICard label="📈 Marge" value={formatCurrency(data?.marge ?? 0)} sub="CA − Achats" color={(data?.marge ?? 0) < 0 ? 'red' : (data?.marge ?? 0) > 0 ? 'green' : undefined} />
+            <KPICard label="📦 Ventes" value={String(data?.nbVentes ?? 0)} sub={periodSub} />
+            <KPICard label="📈 Marge" value={formatCurrency(data?.marge ?? 0)} sub={`CA − Achats ${periodSub}`} color={(data?.marge ?? 0) < 0 ? 'red' : (data?.marge ?? 0) > 0 ? 'green' : undefined} />
           </div>
 
           {/* ── Alertes stock ── */}
@@ -151,10 +190,11 @@ export const Dashboard = () => {
 
           {/* ── Graphiques ── */}
           <div className="grid gap-6 lg:grid-cols-2">
-            {/* Évolution ventes par jour */}
+            {/* Évolution ventes */}
             <ChartCard
-              title="📈 Évolution ventes / jour"
+              title={isYearView ? '📈 Évolution ventes / mois' : '📈 Évolution ventes / jour'}
               empty={(data?.ventesParJour ?? []).every(d => d.total === 0)}
+              emptyText={`Aucune donnée ${periodSub}`}
             >
               <ResponsiveContainer width="100%" height={200}>
                 <LineChart data={data?.ventesParJour} margin={{ top: 4, right: 8, left: 0, bottom: 0 }}>
@@ -162,7 +202,7 @@ export const Dashboard = () => {
                   <XAxis
                     dataKey="day"
                     tick={{ fontSize: 10 }}
-                    interval={4}
+                    interval={isYearView ? 0 : 4}
                   />
                   <YAxis
                     tick={{ fontSize: 10 }}
@@ -176,7 +216,11 @@ export const Dashboard = () => {
             </ChartCard>
 
             {/* Top 5 produits */}
-            <ChartCard title="🏆 Top 5 produits" empty={(data?.top5Produits ?? []).length === 0}>
+            <ChartCard
+              title="🏆 Top 5 produits"
+              empty={(data?.top5Produits ?? []).length === 0}
+              emptyText={`Aucune donnée ${periodSub}`}
+            >
               <ResponsiveContainer width="100%" height={200}>
                 <BarChart
                   layout="vertical"
@@ -189,12 +233,7 @@ export const Dashboard = () => {
                     tick={{ fontSize: 10 }}
                     tickFormatter={v => v === 0 ? '0' : `${(v / 1000).toFixed(0)}k`}
                   />
-                  <YAxis
-                    type="category"
-                    dataKey="name"
-                    tick={{ fontSize: 10 }}
-                    width={90}
-                  />
+                  <YAxis type="category" dataKey="name" tick={{ fontSize: 10 }} width={90} />
                   <Tooltip formatter={(v: number) => [formatCurrency(v), 'Total']} />
                   <Bar dataKey="total" fill="#3b82f6" radius={[0, 4, 4, 0]} />
                 </BarChart>
@@ -202,7 +241,11 @@ export const Dashboard = () => {
             </ChartCard>
 
             {/* Top 5 clients */}
-            <ChartCard title="👥 Top 5 clients" empty={(data?.top5Clients ?? []).length === 0}>
+            <ChartCard
+              title="👥 Top 5 clients"
+              empty={(data?.top5Clients ?? []).length === 0}
+              emptyText={`Aucune donnée ${periodSub}`}
+            >
               <ResponsiveContainer width="100%" height={200}>
                 <BarChart
                   layout="vertical"
@@ -215,12 +258,7 @@ export const Dashboard = () => {
                     tick={{ fontSize: 10 }}
                     tickFormatter={v => v === 0 ? '0' : `${(v / 1000).toFixed(0)}k`}
                   />
-                  <YAxis
-                    type="category"
-                    dataKey="name"
-                    tick={{ fontSize: 10 }}
-                    width={90}
-                  />
+                  <YAxis type="category" dataKey="name" tick={{ fontSize: 10 }} width={90} />
                   <Tooltip formatter={(v: number) => [formatCurrency(v), 'Total']} />
                   <Bar dataKey="total" fill="#22c55e" radius={[0, 4, 4, 0]} />
                 </BarChart>
@@ -228,7 +266,11 @@ export const Dashboard = () => {
             </ChartCard>
 
             {/* Répartition ventes par produit */}
-            <ChartCard title="🥧 Répartition par produit" empty={(data?.repartitionProduits ?? []).length === 0}>
+            <ChartCard
+              title="🥧 Répartition par produit"
+              empty={(data?.repartitionProduits ?? []).length === 0}
+              emptyText={`Aucune donnée ${periodSub}`}
+            >
               <ResponsiveContainer width="100%" height={200}>
                 <PieChart>
                   <Pie

@@ -119,10 +119,13 @@ Structure avec groupes :
 [ADMIN]       → Paramètres
 ```
 
-- Largeur fixe 240px desktop
 - Item actif → fond coloré
 - Badge 🔴 sur Produits si alertes stock actives
-- Mobile → drawer hamburger
+- **Mobile** → drawer hamburger (pas de double bouton X : SheetContent `showCloseButton=false`, seul le X dans l'en-tête Sidebar est affiché)
+- **Desktop** → sidebar collapsible via bouton `‹` / `›` dans l'en-tête
+  - Étendue : 240px, icônes + labels + titres de sections
+  - Réduite : 64px, icônes seules, tooltip `title` au survol, séparateurs à la place des titres
+  - Section FINANCES en mode réduit : icônes directement liées au premier enfant (pas d'accordion)
 
 ---
 
@@ -166,7 +169,19 @@ quantity = 0                    → 🔴 rouge  "Rupture"
 - Utilisé sur : Dashboard, États clients, États fournisseurs, Fiche client/fournisseur onglet État
 
 
-## 12. Responsive
+## 12. TopBar — Compte utilisateur
+
+La barre supérieure ne comporte **pas** d'icône de notification. À la place, un menu déroulant compte utilisateur est affiché à droite :
+
+- **Trigger** : avatar avec initiales (fond primaire) + nom affiché sur ≥ sm
+- **Dropdown** : entête non-interactive (avatar + nom complet + email si différent du nom) puis item "Déconnexion" (variante destructive)
+- Composants : `Avatar`, `AvatarFallback`, `DropdownMenu` / `DropdownMenuContent` / `DropdownMenuTrigger` / `DropdownMenuItem`
+- Le nom affiché suit la priorité : `user_metadata.full_name` › `user_metadata.name` › `email`
+- La déconnexion vide le cache React Query avant de rediriger vers `/login`
+
+---
+
+## 13. Responsive
 L'app doit être fully responsive (mobile + desktop) :
 - Sidebar cachée sur mobile → drawer hamburger
 - Tables scrollables horizontalement sur mobile
@@ -175,7 +190,7 @@ L'app doit être fully responsive (mobile + desktop) :
 
 ---
 
-## 13. Numéros de téléphone (Maroc)
+## 14. Numéros de téléphone (Maroc)
 
 Tout numéro de téléphone doit être affiché et saisi selon le format marocain :
 - **Format** : `XX XX XX XX XX` (ex: `06 69 29 58 00`)

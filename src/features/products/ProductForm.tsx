@@ -69,6 +69,7 @@ export const ProductForm = ({
             <Input
               id="pf-name"
               placeholder="Nom du produit"
+              autoComplete="off"
               {...field}
               aria-invalid={Boolean(errors.name)}
             />

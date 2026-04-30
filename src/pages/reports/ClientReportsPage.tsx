@@ -1,11 +1,20 @@
-import { useRef, useState } from 'react'
-import { ChevronLeft, ChevronRight, Loader2, FileDown, Sheet } from 'lucide-react'
-import * as XLSX from 'xlsx'
+import { useMemo, useRef, useState } from 'react'
+import { FileDown } from 'lucide-react'
+import { type ColumnDef } from '@tanstack/react-table'
 import jsPDF from 'jspdf'
 import html2canvas from 'html2canvas'
 import { Button } from '@/components/ui/button'
+import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+} from '@/components/ui/select'
+import { TableCell, TableRow } from '@/components/ui/table'
 import { PageHeader } from '@/components/shared/PageHeader'
+import { DataTable } from '@/components/shared/DataTable'
 import { useClientReport } from '@/hooks/useClientReport'
+import { useAvailableYears } from '@/hooks/useAvailableYears'
 import { formatCurrency } from '@/lib/utils'
 
 const MONTHS_FR = [
@@ -13,34 +22,54 @@ const MONTHS_FR = [
   'Juillet', 'Août', 'Septembre', 'Octobre', 'Novembre', 'Décembre',
 ]
 
+type DebtFilter = 'all' | 'with_debt' | 'paid'
+
+const DEBT_LABELS: Record<DebtFilter, string> = {
+  all: 'Tous',
+  with_debt: 'Avec dettes 🔴',
+  paid: 'Soldés 🟢',
+}
+
+type ClientReportRow = {
+  client_id: string
+  client_name: string
+  total_ventes: number
+  total_paye: number
+  reste: number
+}
+
 export const ClientReportsPage = () => {
   const now = new Date()
   const [year, setYear] = useState(now.getFullYear())
-  const [month, setMonth] = useState(now.getMonth() + 1)
+  const [month, setMonth] = useState(now.getMonth() + 1) // 0 = tous les mois
+  const [debtFilter, setDebtFilter] = useState<DebtFilter>('all')
   const tableRef = useRef<HTMLDivElement>(null)
 
+  const { data: availableYears = [now.getFullYear()] } = useAvailableYears('sales')
   const { data, isLoading } = useClientReport(year, month)
-  const rows = data?.rows ?? []
-  const totals = data?.totals ?? { total_ventes: 0, total_paye: 0, reste: 0 }
+  const rows = (data?.rows ?? []) as ClientReportRow[]
 
-  const prev = () => month === 1 ? (setYear(y => y - 1), setMonth(12)) : setMonth(m => m - 1)
-  const next = () => month === 12 ? (setYear(y => y + 1), setMonth(1)) : setMonth(m => m + 1)
+  const filteredRows = useMemo(() => {
+    if (debtFilter === 'with_debt') return rows.filter((r) => r.reste > 0)
+    if (debtFilter === 'paid') return rows.filter((r) => r.reste === 0)
+    return rows
+  }, [rows, debtFilter])
 
-  const exportExcel = () => {
-    const exportData = [
-      ...rows.map(r => ({
-        Client: r.client_name,
-        'Total ventes': r.total_ventes,
-        'Payé': r.total_paye,
-        'Reste': r.reste,
-      })),
-      { Client: 'TOTAL', 'Total ventes': totals.total_ventes, 'Payé': totals.total_paye, 'Reste': totals.reste },
-    ]
-    const ws = XLSX.utils.json_to_sheet(exportData)
-    const wb = XLSX.utils.book_new()
-    XLSX.utils.book_append_sheet(wb, ws, 'État clients')
-    XLSX.writeFile(wb, `etat-clients-${MONTHS_FR[month - 1]}-${year}.xlsx`)
-  }
+  const filteredTotals = useMemo(
+    () =>
+      filteredRows.reduce(
+        (acc, r) => ({
+          total_ventes: acc.total_ventes + r.total_ventes,
+          total_paye: acc.total_paye + r.total_paye,
+          reste: acc.reste + r.reste,
+        }),
+        { total_ventes: 0, total_paye: 0, reste: 0 }
+      ),
+    [filteredRows]
+  )
+
+  const periodLabel = month === 0 ? `Année ${year}` : `${MONTHS_FR[month - 1]} ${year}`
+  const periodSlug = month === 0 ? `${year}` : `${MONTHS_FR[month - 1]}-${year}`
 
   const exportPDF = async () => {
     const el = tableRef.current
@@ -52,89 +81,149 @@ export const ClientReportsPage = () => {
     const imgWidth = pageWidth - 20
     const imgHeight = (canvas.height * imgWidth) / canvas.width
     pdf.setFontSize(14)
-    pdf.text(`État clients — ${MONTHS_FR[month - 1]} ${year}`, 10, 12)
+    pdf.text(`État clients — ${periodLabel}`, 10, 12)
     pdf.addImage(imgData, 'PNG', 10, 20, imgWidth, imgHeight)
-    pdf.save(`etat-clients-${MONTHS_FR[month - 1]}-${year}.pdf`)
+    pdf.save(`etat-clients-${periodSlug}.pdf`)
   }
+
+  const columns = useMemo<ColumnDef<ClientReportRow>[]>(
+    () => [
+      {
+        accessorKey: 'client_name',
+        header: 'Client',
+        cell: ({ row }) => <span className="font-medium">{row.original.client_name}</span>,
+      },
+      {
+        accessorKey: 'total_ventes',
+        header: 'Total ventes',
+        cell: ({ row }) => formatCurrency(row.original.total_ventes),
+      },
+      {
+        accessorKey: 'total_paye',
+        header: 'Payé',
+        cell: ({ row }) => (
+          <span className="text-green-600">{formatCurrency(row.original.total_paye)}</span>
+        ),
+      },
+      {
+        accessorKey: 'reste',
+        header: 'Reste',
+        cell: ({ row }) => (
+          <span className={row.original.reste > 0 ? 'font-semibold text-red-600' : 'font-semibold text-green-600'}>
+            {formatCurrency(row.original.reste)}{' '}
+            {row.original.reste > 0 ? '🔴' : '🟢'}
+          </span>
+        ),
+      },
+    ],
+    []
+  )
+
+  const tableFooter = filteredRows.length > 0 ? (
+    <TableRow>
+      <TableCell className="font-bold">TOTAL</TableCell>
+      <TableCell className="font-bold">{formatCurrency(filteredTotals.total_ventes)}</TableCell>
+      <TableCell className="font-bold text-green-600">{formatCurrency(filteredTotals.total_paye)}</TableCell>
+      <TableCell className={`font-bold ${filteredTotals.reste > 0 ? 'text-red-600' : 'text-green-600'}`}>
+        {formatCurrency(filteredTotals.reste)}
+      </TableCell>
+    </TableRow>
+  ) : undefined
 
   return (
     <div className="space-y-6">
       <PageHeader
         title="État clients"
         actions={
-          <div className="flex items-center gap-2">
-            <Button variant="outline" size="sm" onClick={exportPDF} disabled={rows.length === 0}>
-              <FileDown className="mr-2 h-4 w-4" />
-              Export PDF
-            </Button>
-            <Button variant="outline" size="sm" onClick={exportExcel} disabled={rows.length === 0}>
-              <Sheet className="mr-2 h-4 w-4" />
-              Export Excel
-            </Button>
-          </div>
+          <Button variant="outline" size="sm" onClick={exportPDF} disabled={filteredRows.length === 0}>
+            <FileDown className="mr-2 h-4 w-4" />
+            Export PDF
+          </Button>
         }
       />
 
-      {/* MonthPicker */}
-      <div className="flex items-center gap-2">
-        <Button variant="outline" size="icon" className="h-8 w-8" onClick={prev}>
-          <ChevronLeft className="h-4 w-4" />
-        </Button>
-        <span className="min-w-[140px] text-center text-sm font-semibold">
-          {MONTHS_FR[month - 1]} {year}
-        </span>
-        <Button variant="outline" size="icon" className="h-8 w-8" onClick={next}>
-          <ChevronRight className="h-4 w-4" />
-        </Button>
+      {/* Sélecteurs période + filtre dettes */}
+      <div className="flex flex-wrap items-center gap-3">
+        {/* Année */}
+        <Select value={String(year)} onValueChange={(v) => v && setYear(Number(v))}>
+          <SelectTrigger size="sm" className="w-24">
+            <span className="flex-1 text-left">{year}</span>
+          </SelectTrigger>
+          <SelectContent>
+            {availableYears.map((y) => (
+              <SelectItem key={y} value={String(y)}>{y}</SelectItem>
+            ))}
+          </SelectContent>
+        </Select>
+
+        {/* Mois */}
+        <Select value={String(month)} onValueChange={(v) => v !== null && setMonth(Number(v))}>
+          <SelectTrigger size="sm" className="w-40">
+            <span className="flex-1 text-left">
+              {month === 0 ? 'Tous les mois' : MONTHS_FR[month - 1]}
+            </span>
+          </SelectTrigger>
+          <SelectContent>
+            <SelectItem value="0">Tous les mois</SelectItem>
+            {MONTHS_FR.map((label, i) => (
+              <SelectItem key={i + 1} value={String(i + 1)}>{label}</SelectItem>
+            ))}
+          </SelectContent>
+        </Select>
+
+        {/* Filtre dettes */}
+        <div className="flex items-center gap-2 ml-auto">
+          <span className="text-sm text-muted-foreground">Afficher :</span>
+          <Select value={debtFilter} onValueChange={(v) => v && setDebtFilter(v as DebtFilter)}>
+            <SelectTrigger size="sm" className="w-44">
+              <span className="flex-1 text-left">{DEBT_LABELS[debtFilter]}</span>
+            </SelectTrigger>
+            <SelectContent>
+              <SelectItem value="all">Tous</SelectItem>
+              <SelectItem value="with_debt">Avec dettes 🔴</SelectItem>
+              <SelectItem value="paid">Soldés 🟢</SelectItem>
+            </SelectContent>
+          </Select>
+        </div>
       </div>
 
-      {/* Table */}
-      <div className="rounded-lg border bg-card">
-        {isLoading ? (
-          <div className="flex h-40 items-center justify-center">
-            <Loader2 className="h-5 w-5 animate-spin text-muted-foreground" />
-          </div>
-        ) : rows.length === 0 ? (
-          <div className="flex h-40 items-center justify-center text-sm text-muted-foreground">
-            Aucune vente pour cette période.
-          </div>
-        ) : (
-          <div ref={tableRef} className="overflow-x-auto p-4">
-            <table className="w-full text-sm">
-              <thead>
-                <tr className="border-b text-left text-muted-foreground">
-                  <th className="pb-3 font-medium">Client</th>
-                  <th className="pb-3 font-medium text-right">Total ventes</th>
-                  <th className="pb-3 font-medium text-right">Payé</th>
-                  <th className="pb-3 font-medium text-right">Reste</th>
-                </tr>
-              </thead>
-              <tbody className="divide-y">
-                {rows.map(r => (
-                  <tr key={r.client_id}>
-                    <td className="py-3 font-medium">{r.client_name}</td>
-                    <td className="py-3 text-right">{formatCurrency(r.total_ventes)}</td>
-                    <td className="py-3 text-right text-green-600">{formatCurrency(r.total_paye)}</td>
-                    <td className="py-3 text-right">
-                      <span className={r.reste > 0 ? 'text-red-600 font-semibold' : 'text-green-600 font-semibold'}>
-                        {formatCurrency(r.reste)} {r.reste > 0 ? '🔴' : '🟢'}
-                      </span>
-                    </td>
-                  </tr>
-                ))}
-              </tbody>
-              <tfoot>
-                <tr className="border-t-2 border-foreground/20 font-bold">
-                  <td className="pt-3">TOTAL</td>
-                  <td className="pt-3 text-right">{formatCurrency(totals.total_ventes)}</td>
-                  <td className="pt-3 text-right">{formatCurrency(totals.total_paye)}</td>
-                  <td className="pt-3 text-right">{formatCurrency(totals.reste)}</td>
-                </tr>
-              </tfoot>
-            </table>
-          </div>
-        )}
+      <div ref={tableRef}>
+        <DataTable
+          columns={columns}
+          data={filteredRows}
+          isLoading={isLoading}
+          searchPlaceholder="Rechercher un client..."
+          exportFileName={`etat-clients-${periodSlug}`}
+          exportMapper={(r) => ({
+            Client: r.client_name,
+            'Total ventes': r.total_ventes,
+            Payé: r.total_paye,
+            Reste: r.reste,
+          })}
+          defaultSorting={[{ id: 'client_name', desc: false }]}
+          footer={tableFooter}
+        />
       </div>
+
+      {/* Total mobile uniquement (le footer du tableau gère le desktop) */}
+      {filteredRows.length > 0 && (
+        <div className="sm:hidden rounded-lg border bg-card px-4 py-3 space-y-1 text-sm font-bold">
+          <div className="flex justify-between">
+            <span className="text-muted-foreground font-normal">Total ventes</span>
+            <span>{formatCurrency(filteredTotals.total_ventes)}</span>
+          </div>
+          <div className="flex justify-between">
+            <span className="text-muted-foreground font-normal">Payé</span>
+            <span className="text-green-600">{formatCurrency(filteredTotals.total_paye)}</span>
+          </div>
+          <div className="flex justify-between">
+            <span className="text-muted-foreground font-normal">Reste</span>
+            <span className={filteredTotals.reste > 0 ? 'text-red-600' : 'text-green-600'}>
+              {formatCurrency(filteredTotals.reste)}
+            </span>
+          </div>
+        </div>
+      )}
     </div>
   )
 }

@@ -23,10 +23,17 @@ export interface DashboardData {
   stockAlerts: StockAlertItem[]
 }
 
+const MONTHS_SHORT = ['Jan', 'Fév', 'Mar', 'Avr', 'Mai', 'Jui', 'Jul', 'Aoû', 'Sep', 'Oct', 'Nov', 'Déc']
+
+// month=0 signifie toute l'année
 export const useDashboard = (year: number, month: number) => {
-  const startDate = `${year}-${String(month).padStart(2, '0')}-01`
-  const lastDay = new Date(year, month, 0).getDate()
-  const endDate = `${year}-${String(month).padStart(2, '0')}-${lastDay}`
+  const startDate = month === 0
+    ? `${year}-01-01`
+    : `${year}-${String(month).padStart(2, '0')}-01`
+  const endDate = month === 0
+    ? `${year}-12-31`
+    : `${year}-${String(month).padStart(2, '0')}-${new Date(year, month, 0).getDate()}`
+  const lastDay = month === 0 ? 0 : new Date(year, month, 0).getDate()
 
   return useQuery({
     queryKey: ['dashboard', year, month],
@@ -64,16 +71,30 @@ export const useDashboard = (year: number, month: number) => {
       const nbVentes = sales.length
       const marge = ca - totalAchats
 
-      // ── Ventes par jour (tous les jours du mois) ──────────────────────
-      const ventesMap = new Map<string, number>()
-      for (const sale of sales) {
-        const day = sale.date.slice(8, 10)
-        ventesMap.set(day, (ventesMap.get(day) ?? 0) + sale.total)
+      // ── Évolution des ventes ──────────────────────────────────────────
+      let ventesParJour: { day: string; total: number }[]
+
+      if (month === 0) {
+        // Vue annuelle : agrégation par mois
+        const ventesMap = new Map<string, number>()
+        for (const sale of sales) {
+          const monthIdx = parseInt(sale.date.slice(5, 7)) - 1
+          const key = MONTHS_SHORT[monthIdx]
+          ventesMap.set(key, (ventesMap.get(key) ?? 0) + sale.total)
+        }
+        ventesParJour = MONTHS_SHORT.map((m) => ({ day: m, total: ventesMap.get(m) ?? 0 }))
+      } else {
+        // Vue mensuelle : agrégation par jour
+        const ventesMap = new Map<string, number>()
+        for (const sale of sales) {
+          const day = sale.date.slice(8, 10)
+          ventesMap.set(day, (ventesMap.get(day) ?? 0) + sale.total)
+        }
+        ventesParJour = Array.from({ length: lastDay }, (_, i) => {
+          const day = String(i + 1).padStart(2, '0')
+          return { day: String(i + 1), total: ventesMap.get(day) ?? 0 }
+        })
       }
-      const ventesParJour = Array.from({ length: lastDay }, (_, i) => {
-        const day = String(i + 1).padStart(2, '0')
-        return { day: String(i + 1), total: ventesMap.get(day) ?? 0 }
-      })
 
       // ── Top 5 clients ─────────────────────────────────────────────────
       const clientsMap = new Map<string, { name: string; total: number }>()

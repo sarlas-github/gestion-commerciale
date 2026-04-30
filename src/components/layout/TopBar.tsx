@@ -1,7 +1,16 @@
-import { useLocation } from 'react-router-dom'
-import { Menu, Bell } from 'lucide-react'
+import { useLocation, useNavigate } from 'react-router-dom'
+import { Menu, LogOut } from 'lucide-react'
 import { Button } from '@/components/ui/button'
 import { Separator } from '@/components/ui/separator'
+import { Avatar, AvatarFallback } from '@/components/ui/avatar'
+import {
+  DropdownMenu,
+  DropdownMenuContent,
+  DropdownMenuItem,
+  DropdownMenuTrigger,
+} from '@/components/ui/dropdown-menu'
+import { useAuth } from '@/hooks/useAuth'
+import { useQueryClient } from '@tanstack/react-query'
 
 interface TopBarProps {
   onMenuOpen: () => void
@@ -27,8 +36,17 @@ const pageTitles: Record<string, string> = {
   '/settings': 'Paramètres',
 }
 
+const getInitials = (name: string): string => {
+  const parts = name.trim().split(/\s+/)
+  if (parts.length === 1) return parts[0].charAt(0).toUpperCase()
+  return (parts[0].charAt(0) + parts[parts.length - 1].charAt(0)).toUpperCase()
+}
+
 export const TopBar = ({ onMenuOpen }: TopBarProps) => {
   const location = useLocation()
+  const navigate = useNavigate()
+  const { user, signOut } = useAuth()
+  const queryClient = useQueryClient()
 
   const getPageTitle = () => {
     const exactMatch = pageTitles[location.pathname]
@@ -40,6 +58,19 @@ export const TopBar = ({ onMenuOpen }: TopBarProps) => {
 
     return prefix ? pageTitles[prefix] : 'Gestion Commerciale'
   }
+
+  const handleSignOut = async () => {
+    await signOut()
+    queryClient.clear()
+    navigate('/login')
+  }
+
+  const displayName: string | null =
+    user?.user_metadata?.full_name ||
+    user?.user_metadata?.name ||
+    user?.email ||
+    null
+  const initials = displayName ? getInitials(displayName) : ''
 
   return (
     <header className="flex h-14 items-center gap-4 border-b bg-card px-4 lg:px-6">
@@ -59,11 +90,46 @@ export const TopBar = ({ onMenuOpen }: TopBarProps) => {
       {/* Titre de la page */}
       <h1 className="text-base font-semibold">{getPageTitle()}</h1>
 
-      <div className="ml-auto flex items-center gap-2">
-        <Button variant="ghost" size="icon" className="relative">
-          <Bell className="h-5 w-5" />
-          <span className="sr-only">Notifications</span>
-        </Button>
+      {/* Compte utilisateur */}
+      <div className="ml-auto flex items-center">
+        <DropdownMenu>
+          <DropdownMenuTrigger className="flex items-center gap-2 rounded-md px-2 py-1.5 text-sm font-medium transition-colors hover:bg-muted outline-none">
+            <Avatar size="sm">
+              <AvatarFallback className="bg-primary text-primary-foreground text-xs font-semibold">
+                {initials}
+              </AvatarFallback>
+            </Avatar>
+            {displayName && (
+              <span className="hidden sm:block max-w-[160px] truncate text-sm">
+                {displayName}
+              </span>
+            )}
+          </DropdownMenuTrigger>
+          <DropdownMenuContent align="end" className="w-56">
+            {/* Entête non-interactive : nom complet + email */}
+            <div className="flex items-center gap-2 px-2 py-2 border-b mb-1">
+              <Avatar size="sm">
+                <AvatarFallback className="bg-primary text-primary-foreground text-xs font-semibold">
+                  {initials}
+                </AvatarFallback>
+              </Avatar>
+              <div className="flex flex-col min-w-0">
+                <span className="text-sm font-semibold truncate leading-tight">
+                  {displayName ?? user?.email ?? '—'}
+                </span>
+                {user?.email && displayName !== user.email && (
+                  <span className="text-xs text-muted-foreground truncate">
+                    {user.email}
+                  </span>
+                )}
+              </div>
+            </div>
+            <DropdownMenuItem onClick={handleSignOut} variant="destructive">
+              <LogOut className="h-4 w-4" />
+              Déconnexion
+            </DropdownMenuItem>
+          </DropdownMenuContent>
+        </DropdownMenu>
       </div>
     </header>
   )

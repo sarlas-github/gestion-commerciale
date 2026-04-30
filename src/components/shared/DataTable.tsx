@@ -1,4 +1,4 @@
-import { useState } from 'react'
+import { useState, type ReactNode } from 'react'
 import {
   useReactTable,
   getCoreRowModel,
@@ -13,7 +13,7 @@ import * as XLSX from 'xlsx'
 import { ArrowUp, ArrowDown, ArrowUpDown, ChevronLeft, ChevronRight, Download } from 'lucide-react'
 import { Button } from '@/components/ui/button'
 import { Input } from '@/components/ui/input'
-import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table'
+import { Table, TableBody, TableCell, TableFooter, TableHead, TableHeader, TableRow } from '@/components/ui/table'
 import { Skeleton } from '@/components/ui/skeleton'
 import { DEFAULT_PAGE_SIZE } from '@/lib/utils'
 
@@ -25,6 +25,8 @@ interface DataTableProps<TData> {
   exportFileName?: string
   exportMapper?: (row: TData) => Record<string, unknown>
   defaultSorting?: SortingState
+  hideExport?: boolean
+  footer?: ReactNode
 }
 
 export function DataTable<TData>({
@@ -35,6 +37,8 @@ export function DataTable<TData>({
   exportFileName = 'export',
   exportMapper,
   defaultSorting = [],
+  hideExport = false,
+  footer,
 }: DataTableProps<TData>) {
   const [sorting, setSorting] = useState<SortingState>(defaultSorting)
   const [globalFilter, setGlobalFilter] = useState('')
@@ -107,6 +111,10 @@ export function DataTable<TData>({
     )
   }
 
+  const headerMap = new Map(
+    table.getHeaderGroups()[0]?.headers.map(h => [h.id, h]) ?? []
+  )
+
   return (
     <div className="space-y-4">
       {/* Recherche + Export */}
@@ -117,14 +125,74 @@ export function DataTable<TData>({
           onChange={e => setGlobalFilter(e.target.value)}
           className="max-w-sm"
         />
-        <Button variant="outline" size="sm" onClick={handleExport}>
-          <Download className="mr-1.5 h-3.5 w-3.5" />
-          Export Excel
-        </Button>
+        {!hideExport && (
+          <Button variant="outline" size="sm" onClick={handleExport}>
+            <Download className="mr-1.5 h-3.5 w-3.5" />
+            Export Excel
+          </Button>
+        )}
       </div>
 
-      {/* Tableau */}
-      <div className="rounded-lg border overflow-hidden">
+      {/* Mobile: cards */}
+      <div className="block sm:hidden space-y-3">
+        {isLoading ? (
+          Array.from({ length: 3 }).map((_, i) => (
+            <div key={i} className="rounded-lg border p-4 space-y-2">
+              <Skeleton className="h-5 w-2/3" />
+              <Skeleton className="h-4 w-full" />
+              <Skeleton className="h-4 w-3/4" />
+            </div>
+          ))
+        ) : table.getRowModel().rows.length === 0 ? (
+          <div className="rounded-lg border p-8 text-center text-sm text-muted-foreground">
+            Aucun résultat
+          </div>
+        ) : (
+          table.getRowModel().rows.map(row => {
+            const allCells = row.getVisibleCells()
+            const actionsCells = allCells.filter(c => c.column.id === 'actions')
+            const dataCells = allCells.filter(c => c.column.id !== 'actions')
+
+            return (
+              <div key={row.id} className="rounded-lg border bg-card p-4">
+                {dataCells[0] && (
+                  <div className="font-medium text-sm mb-3">
+                    {flexRender(dataCells[0].column.columnDef.cell, dataCells[0].getContext())}
+                  </div>
+                )}
+                <div className="space-y-1.5">
+                  {dataCells.slice(1).map(cell => {
+                    const header = headerMap.get(cell.column.id)
+                    const headerLabel = header
+                      ? flexRender(header.column.columnDef.header, header.getContext())
+                      : null
+                    return (
+                      <div key={cell.id} className="flex items-center justify-between gap-3 text-sm">
+                        <span className="text-muted-foreground shrink-0">{headerLabel}</span>
+                        <span className="text-right">
+                          {flexRender(cell.column.columnDef.cell, cell.getContext())}
+                        </span>
+                      </div>
+                    )
+                  })}
+                </div>
+                {actionsCells.length > 0 && (
+                  <div className="flex justify-end mt-3 pt-2 border-t">
+                    {actionsCells.map(cell => (
+                      <span key={cell.id}>
+                        {flexRender(cell.column.columnDef.cell, cell.getContext())}
+                      </span>
+                    ))}
+                  </div>
+                )}
+              </div>
+            )
+          })
+        )}
+      </div>
+
+      {/* Desktop: table */}
+      <div className="hidden sm:block rounded-lg border overflow-hidden">
         <Table>
           <TableHeader>
             {table.getHeaderGroups().map(hg => (
@@ -185,6 +253,7 @@ export function DataTable<TData>({
               ))
             )}
           </TableBody>
+          {footer && <TableFooter>{footer}</TableFooter>}
         </Table>
       </div>
 

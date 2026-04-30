@@ -8,6 +8,7 @@ import { Sheet, SheetContent } from '@/components/ui/sheet'
 export const AppLayout = () => {
   const { user, loading } = useAuth()
   const [mobileOpen, setMobileOpen] = useState(false)
+  const [sidebarCollapsed, setSidebarCollapsed] = useState(false)
 
   if (loading) {
     return (
@@ -25,12 +26,15 @@ export const AppLayout = () => {
     <div className="flex h-screen overflow-hidden bg-background">
       {/* Sidebar desktop */}
       <aside className="hidden lg:flex lg:shrink-0">
-        <Sidebar />
+        <Sidebar
+          collapsed={sidebarCollapsed}
+          onToggleCollapse={() => setSidebarCollapsed((v) => !v)}
+        />
       </aside>
 
-      {/* Sidebar mobile (drawer) */}
+      {/* Sidebar mobile (drawer) — showCloseButton=false car Sidebar a son propre bouton X */}
       <Sheet open={mobileOpen} onOpenChange={setMobileOpen}>
-        <SheetContent side="left" className="p-0 w-60">
+        <SheetContent side="left" className="p-0 w-60" showCloseButton={false}>
           <Sidebar onClose={() => setMobileOpen(false)} />
         </SheetContent>
       </Sheet>

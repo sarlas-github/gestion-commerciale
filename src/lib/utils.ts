@@ -5,13 +5,12 @@ export function cn(...inputs: ClassValue[]) {
   return twMerge(clsx(inputs))
 }
 
-// Format monnaie MAD — Format : 1 234,00 MAD
+// Format monnaie MAD — Format : 1 200,00 MAD
 export const formatCurrency = (amount: number): string => {
-  return new Intl.NumberFormat('fr-MA', {
-    style: 'currency',
-    currency: 'MAD',
+  return new Intl.NumberFormat('fr-FR', {
     minimumFractionDigits: 2,
-  }).format(amount)
+    maximumFractionDigits: 2,
+  }).format(amount) + ' MAD'
 }
 
 // Format date en français

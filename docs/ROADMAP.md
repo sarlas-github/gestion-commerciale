@@ -220,13 +220,26 @@ faits:
 et l alimenter avec, si a la sauvegardee ca existe on l augmente, meme chose pour la
 vente avec le bon prefix: ACH, VEN reciproquement
 - toutes les lignes dans la grille doivent etre sorté en decroissance par date par defaut, et quand on fait un ajout de ligne nrmalement si le filtre par defaut est appliqué on doit l avoir en premier
+- enlever la liste de noms qui s affiche par le navigateur quand on veut saisir un nouveau produit
+- visualiser editer meme chose en grille achat, enlever visualiser
+- mobile system cards dans les grilles , faut pas avoir scroll horizontal dans grille
+fix autours de menu :
+- a fixer dans mobile ca s'affiche 2 foix la croix pour cloturer, enlever la barre supplementaire en rouge qui a juste le croix
+- ajouter aussi dans pc: menu collapsible, qui s ouvre et se ferme
+- l icone de notification,a e remplacer avec systeme de compte en login quand je clique au dessus je vois nom complet avec possibilité de déconnexion
+il faut ajuster doc md de ux pour specifier ces ajustements
+- changements etats
+- le meme systeme de selection de periode doit se faire dans tdb
+- tdb les stats a faire par mois, il faut qu il peut selectionner directement le mois
+ou l année
 ---
 pending:
-- enlever la liste de noms qui s affiche par le navigateur quand on veut saisir un nouveau produit
-- tdb stats par mois
-- visualiser editer double en grille achat, enlever visualiser
-- mobile system cards
--les grilles des états ne respectent pas les regles ux de grille d ajout par defaut tri filtre et pagination
+fixe cela :
+- dans vente et achat, si ja'ajoute par bouton + l'itemdoit etre par defaut sélectionner
+- y a un bug dans onglet état spécifique de client ou fournisseur : le calcul ne se fait pas
+- y a un bug dans reference de coté achat et vente : ca doit etre incrementielmntn il fait valeur fixe
+- masque menu paramétrage, et documents
+
 ```
 
 ---
