@@ -8,7 +8,6 @@ import {
   ShoppingCart,
   Users,
   TrendingUp,
-  FileText,
   CreditCard,
   BarChart3,
   Settings,

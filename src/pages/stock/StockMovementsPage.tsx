@@ -9,7 +9,6 @@ import {
   SelectContent,
   SelectItem,
   SelectTrigger,
-  SelectValue,
 } from '@/components/ui/select'
 import { PurchaseQuickViewModal } from '@/features/purchases/PurchaseQuickViewModal'
 import { useStockMovements, type StockMovementRow } from '@/hooks/useStockMovements'
