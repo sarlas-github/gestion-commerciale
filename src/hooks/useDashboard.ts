@@ -13,9 +13,12 @@ export interface DashboardData {
   ca: number
   encaisse: number
   aRecevoir: number
+  totalAchats: number
+  decaisse: number
   aPayer: number
   nbVentes: number
   marge: number
+  panierMoyen: number
   ventesParJour: { day: string; total: number }[]
   top5Produits: { name: string; total: number }[]
   top5Clients: { name: string; total: number }[]
@@ -46,7 +49,7 @@ export const useDashboard = (year: number, month: number) => {
           .lte('date', endDate),
         supabase
           .from('purchases')
-          .select('total, remaining')
+          .select('total, paid, remaining')
           .gte('date', startDate)
           .lte('date', endDate),
         supabase
@@ -67,9 +70,11 @@ export const useDashboard = (year: number, month: number) => {
       const encaisse = sales.reduce((s, x) => s + x.paid, 0)
       const aRecevoir = sales.reduce((s, x) => s + x.remaining, 0)
       const totalAchats = purchases.reduce((s, x) => s + x.total, 0)
+      const decaisse = purchases.reduce((s, x) => s + x.paid, 0)
       const aPayer = purchases.reduce((s, x) => s + x.remaining, 0)
       const nbVentes = sales.length
       const marge = ca - totalAchats
+      const panierMoyen = nbVentes > 0 ? ca / nbVentes : 0
 
       // ── Évolution des ventes ──────────────────────────────────────────
       let ventesParJour: { day: string; total: number }[]
@@ -140,7 +145,7 @@ export const useDashboard = (year: number, month: number) => {
         .sort((a, b) => a.quantity - b.quantity)
 
       return {
-        ca, encaisse, aRecevoir, aPayer, nbVentes, marge,
+        ca, encaisse, aRecevoir, totalAchats, decaisse, aPayer, nbVentes, marge, panierMoyen,
         ventesParJour, top5Produits, top5Clients, repartitionProduits,
         stockAlerts,
       } as DashboardData

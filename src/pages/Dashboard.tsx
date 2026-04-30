@@ -154,13 +154,21 @@ export const Dashboard = () => {
       ) : (
         <>
           {/* ── KPIs ── */}
-          <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-3">
-            <KPICard label="💰 CA" value={formatCurrency(data?.ca ?? 0)} sub={`Ventes ${periodSub}`} />
-            <KPICard label="✅ Encaissé" value={formatCurrency(data?.encaisse ?? 0)} sub={`Paiements reçus ${periodSub}`} color="green" />
+          <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-3 mb-6">
+            {/* Ligne 1 : Ventes */}
+            <KPICard label="💰 CA Ventes" value={formatCurrency(data?.ca ?? 0)} sub={`Total facturé ${periodSub}`} />
+            <KPICard label="✅ Encaissé" value={formatCurrency(data?.encaisse ?? 0)} sub={`Reçu des clients ${periodSub}`} color="green" />
             <KPICard label="🔴 À recevoir" value={formatCurrency(data?.aRecevoir ?? 0)} sub="Impayés clients" color={(data?.aRecevoir ?? 0) > 0 ? 'red' : undefined} />
-            <KPICard label="🔴 À payer" value={formatCurrency(data?.aPayer ?? 0)} sub="Impayés fournisseurs" color={(data?.aPayer ?? 0) > 0 ? 'red' : undefined} />
-            <KPICard label="📦 Ventes" value={String(data?.nbVentes ?? 0)} sub={periodSub} />
+            
+            {/* Ligne 2 : Achats */}
+            <KPICard label="🛒 Total Achats" value={formatCurrency(data?.totalAchats ?? 0)} sub={`Dépenses engagées ${periodSub}`} />
+            <KPICard label="💸 Décaissé" value={formatCurrency(data?.decaisse ?? 0)} sub={`Payé aux fournisseurs ${periodSub}`} color="green" />
+            <KPICard label="🔴 À payer" value={formatCurrency(data?.aPayer ?? 0)} sub="Dettes fournisseurs" color={(data?.aPayer ?? 0) > 0 ? 'red' : undefined} />
+            
+            {/* Ligne 3 : Performance */}
             <KPICard label="📈 Marge" value={formatCurrency(data?.marge ?? 0)} sub={`CA − Achats ${periodSub}`} color={(data?.marge ?? 0) < 0 ? 'red' : (data?.marge ?? 0) > 0 ? 'green' : undefined} />
+            <KPICard label="📦 Nb. Ventes" value={String(data?.nbVentes ?? 0)} sub={`Factures ${periodSub}`} />
+            <KPICard label="📊 Panier Moyen" value={formatCurrency(data?.panierMoyen ?? 0)} sub={`Par vente ${periodSub}`} />
           </div>
 
           {/* ── Alertes stock ── */}

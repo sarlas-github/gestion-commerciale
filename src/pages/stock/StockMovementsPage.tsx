@@ -44,7 +44,7 @@ export const StockMovementsPage = () => {
       movements.filter(m => {
         if (typeFilter !== 'all' && m.type !== typeFilter) return false
         const d = new Date(m.date)
-        if (String(d.getMonth() + 1) !== month) return false
+        if (month !== '0' && String(d.getMonth() + 1) !== month) return false
         if (String(d.getFullYear()) !== year) return false
         return true
       }),
@@ -131,35 +131,12 @@ export const StockMovementsPage = () => {
     <div>
       <PageHeader title="Mouvements stock" />
 
-      <div className="mb-4 flex flex-wrap gap-2">
-        <Select value={typeFilter} onValueChange={v => setTypeFilter(v ?? 'all')}>
-          <SelectTrigger className="w-36">
-            <SelectValue />
-          </SelectTrigger>
-          <SelectContent>
-            <SelectItem value="all">Tous les types</SelectItem>
-            <SelectItem value="in">IN</SelectItem>
-            <SelectItem value="out">OUT</SelectItem>
-            <SelectItem value="adjust">ADJUST</SelectItem>
-          </SelectContent>
-        </Select>
-
-        <Select value={month} onValueChange={v => setMonth(v ?? month)}>
-          <SelectTrigger className="w-36">
-            <SelectValue />
-          </SelectTrigger>
-          <SelectContent>
-            {MONTHS.map((m, i) => (
-              <SelectItem key={i + 1} value={String(i + 1)}>
-                {m}
-              </SelectItem>
-            ))}
-          </SelectContent>
-        </Select>
-
+      {/* Sélecteurs période + filtre type */}
+      <div className="mb-4 flex flex-wrap items-center gap-3">
+        {/* Année */}
         <Select value={year} onValueChange={v => setYear(v ?? year)}>
-          <SelectTrigger className="w-24">
-            <SelectValue />
+          <SelectTrigger size="sm" className="w-24">
+            <span className="flex-1 text-left">{year}</span>
           </SelectTrigger>
           <SelectContent>
             {years.map(y => (
@@ -169,6 +146,41 @@ export const StockMovementsPage = () => {
             ))}
           </SelectContent>
         </Select>
+
+        {/* Mois */}
+        <Select value={month} onValueChange={v => setMonth(v ?? month)}>
+          <SelectTrigger size="sm" className="w-40">
+            <span className="flex-1 text-left">
+              {month === '0' ? 'Tous les mois' : MONTHS[Number(month) - 1]}
+            </span>
+          </SelectTrigger>
+          <SelectContent>
+            <SelectItem value="0">Tous les mois</SelectItem>
+            {MONTHS.map((m, i) => (
+              <SelectItem key={i + 1} value={String(i + 1)}>
+                {m}
+              </SelectItem>
+            ))}
+          </SelectContent>
+        </Select>
+
+        {/* Filtre Type */}
+        <div className="flex items-center gap-2 ml-auto">
+          <span className="text-sm text-muted-foreground">Type :</span>
+          <Select value={typeFilter} onValueChange={v => setTypeFilter(v ?? 'all')}>
+            <SelectTrigger size="sm" className="w-40">
+              <span className="flex-1 text-left">
+                {typeFilter === 'all' ? 'Tous les types' : typeFilter === 'in' ? 'IN 🟢' : typeFilter === 'out' ? 'OUT 🔴' : 'ADJUST 🔵'}
+              </span>
+            </SelectTrigger>
+            <SelectContent>
+              <SelectItem value="all">Tous les types</SelectItem>
+              <SelectItem value="in">IN 🟢</SelectItem>
+              <SelectItem value="out">OUT 🔴</SelectItem>
+              <SelectItem value="adjust">ADJUST 🔵</SelectItem>
+            </SelectContent>
+          </Select>
+        </div>
       </div>
 
       <DataTable

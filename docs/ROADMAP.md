@@ -232,13 +232,16 @@ il faut ajuster doc md de ux pour specifier ces ajustements
 - le meme systeme de selection de periode doit se faire dans tdb
 - tdb les stats a faire par mois, il faut qu il peut selectionner directement le mois
 ou l année
----
-pending:
 fixe cela :
-- dans vente et achat, si ja'ajoute par bouton + l'itemdoit etre par defaut sélectionner
+- dans vente et achat, si ja'ajoute par bouton + l'item doit etre par defaut sélectionner
 - y a un bug dans onglet état spécifique de client ou fournisseur : le calcul ne se fait pas
 - y a un bug dans reference de coté achat et vente : ca doit etre incrementielmntn il fait valeur fixe
 - masque menu paramétrage, et documents
+---
+pending:
+-mouvement de stock: la representation doit etre meme que dans etat fournisseur de header
+-dans paramétrage valeur TVA : a la tte prmeiere ouverture l'application doit avoir valeur par defaut: 0 et bien sur l utilisateur peut la cahnager et sa sauvegarde. et dans calcul de total cout de produit 
+que ce soit 
 
 ```
 
