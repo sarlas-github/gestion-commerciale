@@ -1,5 +1,4 @@
 import { useState } from 'react'
-import { useNavigate } from 'react-router-dom'
 import { type ColumnDef } from '@tanstack/react-table'
 import { Pencil, Package2, Trash2, Plus } from 'lucide-react'
 import { Button } from '@/components/ui/button'
@@ -7,6 +6,7 @@ import { DataTable } from '@/components/shared/DataTable'
 import { PageHeader } from '@/components/shared/PageHeader'
 import { ConfirmDialog } from '@/components/shared/ConfirmDialog'
 import { StockAdjustModal } from '@/features/products/StockAdjustModal'
+import { ProductModal } from '@/features/products/ProductModal'
 import { useProducts, useDeleteProduct } from '@/hooks/useProducts'
 import type { ProductWithStock } from '@/types'
 import { cn } from '@/lib/utils'
@@ -23,14 +23,28 @@ const TYPE_LABELS: Record<string, string> = {
 }
 
 export const ProductsPage = () => {
-  const navigate = useNavigate()
   const { data: products = [], isLoading } = useProducts()
   const deleteProduct = useDeleteProduct()
 
   const [adjustProduct, setAdjustProduct] = useState<ProductWithStock | null>(null)
   const [deleteId, setDeleteId] = useState<string | null>(null)
+  
+  const [isModalOpen, setIsModalOpen] = useState(false)
+  const [editingProduct, setEditingProduct] = useState<ProductWithStock | null>(null)
 
   const deleteTarget = products.find(p => p.id === deleteId)
+
+  const handleOpenModal = (product?: ProductWithStock) => {
+    setEditingProduct(product || null)
+    setIsModalOpen(true)
+  }
+
+  const handleCloseModal = (open: boolean) => {
+    if (!open) {
+      setIsModalOpen(false)
+      setTimeout(() => setEditingProduct(null), 200)
+    }
+  }
 
   const columns: ColumnDef<ProductWithStock>[] = [
     {
@@ -74,7 +88,7 @@ export const ProductsPage = () => {
             variant="ghost"
             size="icon-sm"
             title="Modifier"
-            onClick={() => navigate(`/products/${row.original.id}/edit`)}
+            onClick={() => handleOpenModal(row.original)}
           >
             <Pencil className="h-4 w-4" />
           </Button>
@@ -111,7 +125,7 @@ export const ProductsPage = () => {
       <PageHeader
         title="Produits"
         actions={
-          <Button onClick={() => navigate('/products/new')}>
+          <Button onClick={() => handleOpenModal()}>
             <Plus className="mr-1.5 h-4 w-4" />
             Nouveau produit
           </Button>
@@ -148,6 +162,12 @@ export const ProductsPage = () => {
         confirmLabel="Supprimer"
         onConfirm={handleDelete}
         loading={deleteProduct.isPending}
+      />
+
+      <ProductModal
+        product={editingProduct}
+        open={isModalOpen}
+        onOpenChange={handleCloseModal}
       />
     </div>
   )

@@ -9,10 +9,10 @@ import { Input } from '@/components/ui/input'
 import { Label } from '@/components/ui/label'
 import { Badge } from '@/components/ui/badge'
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from '@/components/ui/dialog'
-import { useSuppliers, useCreateSupplier } from '@/hooks/useSuppliers'
-import { useProducts, useCreateProduct } from '@/hooks/useProducts'
-import { SupplierForm, type SupplierFormValues } from '@/features/suppliers/SupplierForm'
-import { ProductForm, type ProductFormData } from '@/features/products/ProductForm'
+import { useSuppliers } from '@/hooks/useSuppliers'
+import { useProducts } from '@/hooks/useProducts'
+import { SupplierModal } from '@/features/suppliers/SupplierModal'
+import { ProductModal } from '@/features/products/ProductModal'
 import { formatCurrency, getPaymentStatus, toISODate } from '@/lib/utils'
 import { useNextPurchaseNumber } from '@/hooks/usePurchases'
 import type { Purchase } from '@/types'
@@ -78,8 +78,6 @@ export const PurchaseForm = ({ existing, onSubmit, isLoading = false }: Purchase
 
   const { data: suppliers = [] } = useSuppliers()
   const { data: products = [] } = useProducts()
-  const createSupplier = useCreateSupplier()
-  const createProduct = useCreateProduct()
   const { data: nextRef } = useNextPurchaseNumber()
 
   // Valeurs par défaut pour l'édition
@@ -151,34 +149,22 @@ export const PurchaseForm = ({ existing, onSubmit, isLoading = false }: Purchase
   const status = getPaymentStatus(paid, total)
 
   // Création rapide fournisseur
-  const handleQuickSupplier = useCallback(
-    async (values: SupplierFormValues) => {
-      const newSupplier = await createSupplier.mutateAsync({
-        name: values.name,
-        phone: values.phone || null,
-        address: values.address || null,
-        ice: values.ice || null,
-      })
-      setValue('supplier_id', newSupplier.id)
+  const handleQuickSupplierSuccess = useCallback(
+    (supplier: any) => {
+      setValue('supplier_id', supplier.id)
       setShowNewSupplier(false)
     },
-    [createSupplier, setValue]
+    [setValue]
   )
 
   // Création rapide produit
-  const handleQuickProduct = useCallback(async (data: ProductFormData) => {
-    const newProduct = await createProduct.mutateAsync({
-      name: data.name,
-      type: data.type,
-      pieces_count: data.pieces_count,
-      stock_alert: data.stock_alert,
-    })
+  const handleQuickProductSuccess = useCallback((product: any) => {
     if (showNewProductIdx !== null) {
-      setValue(`items.${showNewProductIdx}.product_id`, newProduct.id)
-      setValue(`items.${showNewProductIdx}.pieces_count`, newProduct.pieces_count)
+      setValue(`items.${showNewProductIdx}.product_id`, product.id)
+      setValue(`items.${showNewProductIdx}.pieces_count`, product.pieces_count)
     }
     setShowNewProductIdx(null)
-  }, [createProduct, showNewProductIdx, setValue])
+  }, [showNewProductIdx, setValue])
 
   // Changement de produit sur une ligne
   const handleProductChange = (idx: number, productId: string) => {
@@ -190,33 +176,19 @@ export const PurchaseForm = ({ existing, onSubmit, isLoading = false }: Purchase
 
   return (
     <>
-      {/* Modale création rapide fournisseur */}
-      <Dialog open={showNewSupplier} onOpenChange={setShowNewSupplier}>
-        <DialogContent>
-          <DialogHeader>
-            <DialogTitle>Nouveau fournisseur</DialogTitle>
-          </DialogHeader>
-          <SupplierForm
-            onSubmit={handleQuickSupplier}
-            onCancel={() => setShowNewSupplier(false)}
-            isLoading={createSupplier.isPending}
-          />
-        </DialogContent>
-      </Dialog>
+      <SupplierModal
+        supplier={null}
+        open={showNewSupplier}
+        onOpenChange={setShowNewSupplier}
+        onSuccess={handleQuickSupplierSuccess}
+      />
 
-      {/* Modale création rapide produit */}
-      <Dialog open={showNewProductIdx !== null} onOpenChange={(open) => !open && setShowNewProductIdx(null)}>
-        <DialogContent>
-          <DialogHeader>
-            <DialogTitle>Nouveau produit</DialogTitle>
-          </DialogHeader>
-          <ProductForm
-            onSubmit={handleQuickProduct}
-            onCancel={() => setShowNewProductIdx(null)}
-            isLoading={createProduct.isPending}
-          />
-        </DialogContent>
-      </Dialog>
+      <ProductModal
+        product={null}
+        open={showNewProductIdx !== null}
+        onOpenChange={(open) => !open && setShowNewProductIdx(null)}
+        onSuccess={handleQuickProductSuccess}
+      />
 
       <form onSubmit={handleSubmit(onSubmit)} noValidate className="space-y-8">
         {/* ── Entête ── */}

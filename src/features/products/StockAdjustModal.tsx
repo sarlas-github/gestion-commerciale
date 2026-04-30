@@ -3,13 +3,7 @@ import { useForm, Controller } from 'react-hook-form'
 import { zodResolver } from '@hookform/resolvers/zod'
 import { z } from 'zod'
 import { Loader2 } from 'lucide-react'
-import {
-  Dialog,
-  DialogContent,
-  DialogHeader,
-  DialogTitle,
-  DialogFooter,
-} from '@/components/ui/dialog'
+import { ResponsiveModal } from '@/components/shared/ResponsiveModal'
 import { Button } from '@/components/ui/button'
 import { Input } from '@/components/ui/input'
 import { Label } from '@/components/ui/label'
@@ -71,14 +65,13 @@ export const StockAdjustModal = ({
   }
 
   return (
-    <Dialog open={open} onOpenChange={onOpenChange}>
-      <DialogContent className="sm:max-w-md">
-        <DialogHeader>
-          <DialogTitle>Correction stock</DialogTitle>
-        </DialogHeader>
-
-        <form onSubmit={handleSubmit(onSubmit)} noValidate className="space-y-4">
-          {/* Produit (lecture seule) */}
+    <ResponsiveModal
+      open={open}
+      onOpenChange={onOpenChange}
+      title="Correction stock"
+    >
+      <form onSubmit={handleSubmit(onSubmit)} noValidate className="space-y-4">
+        {/* Produit (lecture seule) */}
           <div className="space-y-1.5">
             <Label>Produit</Label>
             <div className="flex h-8 items-center rounded-lg border border-input bg-muted/30 px-2.5 text-sm">
@@ -154,7 +147,7 @@ export const StockAdjustModal = ({
             </span>
           </div>
 
-          <DialogFooter>
+          <div className="flex justify-end gap-2 pt-4">
             <Button
               type="button"
               variant="outline"
@@ -172,9 +165,8 @@ export const StockAdjustModal = ({
               )}
               Enregistrer
             </Button>
-          </DialogFooter>
+          </div>
         </form>
-      </DialogContent>
-    </Dialog>
+    </ResponsiveModal>
   )
 }

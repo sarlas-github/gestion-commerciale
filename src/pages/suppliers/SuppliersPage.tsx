@@ -1,4 +1,4 @@
-import { useMemo } from 'react'
+import { useMemo, useState } from 'react'
 import { useNavigate } from 'react-router-dom'
 import { type ColumnDef } from '@tanstack/react-table'
 import { Eye, Pencil, Trash2, Plus } from 'lucide-react'
@@ -9,7 +9,8 @@ import { Button } from '@/components/ui/button'
 import { Badge } from '@/components/ui/badge'
 import { useSuppliers, useDeleteSupplier, type SupplierWithStats } from '@/hooks/useSuppliers'
 import { formatCurrency, formatPhone } from '@/lib/utils'
-import { useState } from 'react'
+import { SupplierModal } from '@/features/suppliers/SupplierModal'
+import type { Supplier } from '@/types'
 
 // Badge statut fournisseur
 const StatusBadge = ({ status }: { status: 'ok' | 'partial' | 'unpaid' }) => {
@@ -22,9 +23,24 @@ export const SuppliersPage = () => {
   const navigate = useNavigate()
   const { data: suppliers = [], isLoading } = useSuppliers()
   const deleteSupplier = useDeleteSupplier()
+  
   const [deleteTarget, setDeleteTarget] = useState<SupplierWithStats | null>(null)
+  const [isModalOpen, setIsModalOpen] = useState(false)
+  const [editingSupplier, setEditingSupplier] = useState<Supplier | null>(null)
 
   const handleCloseDelete = () => setDeleteTarget(null)
+
+  const handleOpenModal = (supplier?: Supplier) => {
+    setEditingSupplier(supplier || null)
+    setIsModalOpen(true)
+  }
+
+  const handleCloseModal = (open: boolean) => {
+    if (!open) {
+      setIsModalOpen(false)
+      setTimeout(() => setEditingSupplier(null), 200)
+    }
+  }
 
   const columns = useMemo<ColumnDef<SupplierWithStats>[]>(
     () => [
@@ -76,7 +92,7 @@ export const SuppliersPage = () => {
               size="icon"
               className="h-8 w-8"
               title="Modifier"
-              onClick={() => navigate(`/suppliers/${row.original.id}/edit`)}
+              onClick={() => handleOpenModal(row.original)}
             >
               <Pencil className="h-4 w-4" />
             </Button>
@@ -101,7 +117,7 @@ export const SuppliersPage = () => {
       <PageHeader
         title="Fournisseurs"
         actions={
-          <Button onClick={() => navigate('/suppliers/new')}>
+          <Button onClick={() => handleOpenModal()}>
             <Plus className="mr-2 h-4 w-4" />
             Nouveau fournisseur
           </Button>
@@ -135,6 +151,12 @@ export const SuppliersPage = () => {
           }
         }}
         loading={deleteSupplier.isPending}
+      />
+
+      <SupplierModal
+        supplier={editingSupplier}
+        open={isModalOpen}
+        onOpenChange={handleCloseModal}
       />
     </div>
   )

@@ -9,10 +9,10 @@ import { Input } from '@/components/ui/input'
 import { Label } from '@/components/ui/label'
 import { Badge } from '@/components/ui/badge'
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from '@/components/ui/dialog'
-import { useClients, useCreateClient } from '@/hooks/useClients'
-import { useProducts, useCreateProduct } from '@/hooks/useProducts'
-import { ClientForm, type ClientFormValues } from '@/features/clients/ClientForm'
-import { ProductForm, type ProductFormData } from '@/features/products/ProductForm'
+import { useClients } from '@/hooks/useClients'
+import { useProducts } from '@/hooks/useProducts'
+import { ClientModal } from '@/features/clients/ClientModal'
+import { ProductModal } from '@/features/products/ProductModal'
 import { formatCurrency, getPaymentStatus, toISODate } from '@/lib/utils'
 import { useNextSaleNumber } from '@/hooks/useSales'
 import type { Sale } from '@/types'
@@ -75,8 +75,6 @@ export const SaleForm = ({ existing, onSubmit, isLoading = false }: SaleFormProp
 
   const { data: clients = [] } = useClients()
   const { data: products = [] } = useProducts()
-  const createClient = useCreateClient()
-  const createProduct = useCreateProduct()
   const { data: nextRef } = useNextSaleNumber()
 
   const defaultItems = existing?.sale_items?.map(i => ({
@@ -144,34 +142,22 @@ export const SaleForm = ({ existing, onSubmit, isLoading = false }: SaleFormProp
   const remaining = total - paid
   const status = getPaymentStatus(paid, total)
 
-  const handleQuickClient = useCallback(
-    async (values: ClientFormValues) => {
-      const newClient = await createClient.mutateAsync({
-        name: values.name,
-        phone: values.phone || null,
-        address: values.address || null,
-        ice: values.ice || null,
-      })
-      setValue('client_id', newClient.id)
+  const handleQuickClientSuccess = useCallback(
+    (client: any) => {
+      setValue('client_id', client.id)
       setShowNewClient(false)
     },
-    [createClient, setValue]
+    [setValue]
   )
 
   // Création rapide produit
-  const handleQuickProduct = useCallback(async (data: ProductFormData) => {
-    const newProduct = await createProduct.mutateAsync({
-      name: data.name,
-      type: data.type,
-      pieces_count: data.pieces_count,
-      stock_alert: data.stock_alert,
-    })
+  const handleQuickProductSuccess = useCallback((product: any) => {
     if (showNewProductIdx !== null) {
-      setValue(`items.${showNewProductIdx}.product_id`, newProduct.id)
-      setValue(`items.${showNewProductIdx}.pieces_count`, newProduct.pieces_count)
+      setValue(`items.${showNewProductIdx}.product_id`, product.id)
+      setValue(`items.${showNewProductIdx}.pieces_count`, product.pieces_count)
     }
     setShowNewProductIdx(null)
-  }, [createProduct, showNewProductIdx, setValue])
+  }, [showNewProductIdx, setValue])
 
   const handleProductChange = (idx: number, productId: string) => {
     const product = products.find(p => p.id === productId)
@@ -182,31 +168,19 @@ export const SaleForm = ({ existing, onSubmit, isLoading = false }: SaleFormProp
 
   return (
     <>
-      <Dialog open={showNewClient} onOpenChange={setShowNewClient}>
-        <DialogContent>
-          <DialogHeader>
-            <DialogTitle>Nouveau client</DialogTitle>
-          </DialogHeader>
-          <ClientForm
-            onSubmit={handleQuickClient}
-            onCancel={() => setShowNewClient(false)}
-            isLoading={createClient.isPending}
-          />
-        </DialogContent>
-      </Dialog>
+      <ClientModal
+        client={null}
+        open={showNewClient}
+        onOpenChange={setShowNewClient}
+        onSuccess={handleQuickClientSuccess}
+      />
 
-      <Dialog open={showNewProductIdx !== null} onOpenChange={(open) => !open && setShowNewProductIdx(null)}>
-        <DialogContent>
-          <DialogHeader>
-            <DialogTitle>Nouveau produit</DialogTitle>
-          </DialogHeader>
-          <ProductForm
-            onSubmit={handleQuickProduct}
-            onCancel={() => setShowNewProductIdx(null)}
-            isLoading={createProduct.isPending}
-          />
-        </DialogContent>
-      </Dialog>
+      <ProductModal
+        product={null}
+        open={showNewProductIdx !== null}
+        onOpenChange={(open) => !open && setShowNewProductIdx(null)}
+        onSuccess={handleQuickProductSuccess}
+      />
 
       <form onSubmit={handleSubmit(onSubmit)} noValidate className="space-y-8">
         {/* ── Entête ── */}

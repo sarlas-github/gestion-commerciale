@@ -14,17 +14,13 @@ import { Dashboard } from '@/pages/Dashboard'
 
 // Products
 import { ProductsPage } from '@/pages/products/ProductsPage'
-import { ProductNewPage } from '@/pages/products/ProductNewPage'
-import { ProductEditPage } from '@/pages/products/ProductEditPage'
 
 // Stock
 import { StockMovementsPage } from '@/pages/stock/StockMovementsPage'
 
 // Suppliers
 import { SuppliersPage } from '@/pages/suppliers/SuppliersPage'
-import { SupplierNewPage } from '@/pages/suppliers/SupplierNewPage'
 import { SupplierDetailPage } from '@/pages/suppliers/SupplierDetailPage'
-import { SupplierEditPage } from '@/pages/suppliers/SupplierEditPage'
 
 // Purchases
 import { PurchasesPage } from '@/pages/purchases/PurchasesPage'
@@ -33,9 +29,7 @@ import { PurchaseEditPage } from '@/pages/purchases/PurchaseEditPage'
 
 // Clients
 import { ClientsPage } from '@/pages/clients/ClientsPage'
-import { ClientNewPage } from '@/pages/clients/ClientNewPage'
 import { ClientDetailPage } from '@/pages/clients/ClientDetailPage'
-import { ClientEditPage } from '@/pages/clients/ClientEditPage'
 
 // Sales
 import { SalesPage } from '@/pages/sales/SalesPage'
@@ -80,17 +74,13 @@ export const App = () => {
 
           {/* Produits */}
           <Route path="/products" element={<ProductsPage />} />
-          <Route path="/products/new" element={<ProductNewPage />} />
-          <Route path="/products/:id/edit" element={<ProductEditPage />} />
 
           {/* Stock */}
           <Route path="/stock/movements" element={<StockMovementsPage />} />
 
           {/* Fournisseurs */}
           <Route path="/suppliers" element={<SuppliersPage />} />
-          <Route path="/suppliers/new" element={<SupplierNewPage />} />
           <Route path="/suppliers/:id" element={<SupplierDetailPage />} />
-          <Route path="/suppliers/:id/edit" element={<SupplierEditPage />} />
 
           {/* Achats */}
           <Route path="/purchases" element={<PurchasesPage />} />
@@ -99,9 +89,7 @@ export const App = () => {
 
           {/* Clients */}
           <Route path="/clients" element={<ClientsPage />} />
-          <Route path="/clients/new" element={<ClientNewPage />} />
           <Route path="/clients/:id" element={<ClientDetailPage />} />
-          <Route path="/clients/:id/edit" element={<ClientEditPage />} />
 
           {/* Ventes */}
           <Route path="/sales" element={<SalesPage />} />

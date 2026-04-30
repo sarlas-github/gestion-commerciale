@@ -244,6 +244,18 @@ pending:
 que ce soit 
 
 ```
+pending
+-est ce possible pour 
+nouveau/edit de produit , de founisseur, de client
+de la traiter avec popup comme on a pour correction de stock
+tu me suis ?
+
+ajout champ date creation + tri dans tous les grilles par date de création ordre décroissant
+et le tri sur data de creation doit etre visible
+
+notif  bardans mobile 
+
+
 
 ---
 

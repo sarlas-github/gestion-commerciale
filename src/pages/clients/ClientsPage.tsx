@@ -9,6 +9,8 @@ import { Button } from '@/components/ui/button'
 import { Badge } from '@/components/ui/badge'
 import { useClients, useDeleteClient, type ClientWithStats } from '@/hooks/useClients'
 import { formatCurrency, formatPhone } from '@/lib/utils'
+import { ClientModal } from '@/features/clients/ClientModal'
+import type { Client } from '@/types'
 
 const StatusBadge = ({ status }: { status: 'ok' | 'partial' | 'unpaid' }) => {
   if (status === 'ok') return <Badge className="bg-green-100 text-green-800 hover:bg-green-100">🟢 OK</Badge>
@@ -20,7 +22,22 @@ export const ClientsPage = () => {
   const navigate = useNavigate()
   const { data: clients = [], isLoading } = useClients()
   const deleteClient = useDeleteClient()
+  
   const [deleteTarget, setDeleteTarget] = useState<ClientWithStats | null>(null)
+  const [isModalOpen, setIsModalOpen] = useState(false)
+  const [editingClient, setEditingClient] = useState<Client | null>(null)
+
+  const handleOpenModal = (client?: Client) => {
+    setEditingClient(client || null)
+    setIsModalOpen(true)
+  }
+
+  const handleCloseModal = (open: boolean) => {
+    if (!open) {
+      setIsModalOpen(false)
+      setTimeout(() => setEditingClient(null), 200)
+    }
+  }
 
   const columns = useMemo<ColumnDef<ClientWithStats>[]>(
     () => [
@@ -69,7 +86,7 @@ export const ClientsPage = () => {
               size="icon"
               className="h-8 w-8"
               title="Modifier"
-              onClick={() => navigate(`/clients/${row.original.id}/edit`)}
+              onClick={() => handleOpenModal(row.original)}
             >
               <Pencil className="h-4 w-4" />
             </Button>
@@ -94,7 +111,7 @@ export const ClientsPage = () => {
       <PageHeader
         title="Clients"
         actions={
-          <Button onClick={() => navigate('/clients/new')}>
+          <Button onClick={() => handleOpenModal()}>
             <Plus className="mr-2 h-4 w-4" />
             Nouveau client
           </Button>
@@ -128,6 +145,12 @@ export const ClientsPage = () => {
           }
         }}
         loading={deleteClient.isPending}
+      />
+
+      <ClientModal
+        client={editingClient}
+        open={isModalOpen}
+        onOpenChange={handleCloseModal}
       />
     </div>
   )
