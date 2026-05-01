@@ -36,7 +36,7 @@ export const PurchaseEditPage = () => {
       <PageHeader
         title={`Achat — ${purchase.reference ?? 'Sans référence'}`}
         actions={
-          <Button variant="ghost" size="sm" onClick={() => navigate('/purchases')}>
+          <Button variant="ghost" size="sm" onClick={() => navigate(-1)}>
             <ArrowLeft className="mr-2 h-4 w-4" />
             Retour
           </Button>

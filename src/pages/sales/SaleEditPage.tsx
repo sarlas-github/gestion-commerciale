@@ -36,7 +36,7 @@ export const SaleEditPage = () => {
       <PageHeader
         title={`Vente — ${sale.clients?.name ?? 'Client inconnu'}`}
         actions={
-          <Button variant="ghost" size="sm" onClick={() => navigate('/sales')}>
+          <Button variant="ghost" size="sm" onClick={() => navigate(-1)}>
             <ArrowLeft className="mr-2 h-4 w-4" />
             Retour
           </Button>

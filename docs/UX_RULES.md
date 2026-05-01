@@ -190,10 +190,20 @@ L'app doit être fully responsive (mobile + desktop) :
 
 ---
 
-## 14. Numéros de téléphone (Maroc)
+## 15. Liens cliquables et Navigation
 
-Tout numéro de téléphone doit être affiché et saisi selon le format marocain :
-- **Format** : `XX XX XX XX XX` (ex: `06 69 29 58 00`)
-- **Saisie** : Utiliser un masque de saisie qui ajoute les espaces automatiquement.
-- **Affichage** : Toujours formater avec des espaces dans les tableaux et les fiches détails.
-- **Stockage** : Stocker uniquement les chiffres (10 caractères) en base de données pour faciliter les recherches.
+### Colonnes de tableau standardisées
+Pour favoriser une navigation fluide, les colonnes identifiant une entité (Référence, Client, Fournisseur) doivent être cliquables :
+- **Style visuel** : Bouton flex avec `Link2` de `lucide-react` (icône à gauche) + texte.
+- **Classes CSS** : `text-primary hover:underline text-sm`.
+- **Comportement** : Redirection vers la page de détail ou ouverture d'une modale de vue rapide (QuickView).
+- **Icône** : `<Link2 className="h-3.5 w-3.5" />` avec un `gap-1`.
+
+### Bouton "Retour"
+Dans toutes les pages de détail ou d'édition, le bouton "Retour" placé dans le `PageHeader` (ou en haut de page) doit :
+- Utiliser `navigate(-1)` au lieu d'une route fixe.
+- Garantir que l'utilisateur revient à son contexte précédent (filtres, pagination, page d'origine).
+- **Style** : Variante `ghost`, icône `ArrowLeft`.
+
+### Vue Rapide (QuickView)
+Pour les entités complexes (Ventes, Achats), privilégier une modale de vue rapide au clic sur la référence dans les listes transversales (ex: Mouvements de stock) pour éviter de perdre le contexte de recherche.

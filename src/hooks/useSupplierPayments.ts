@@ -8,6 +8,7 @@ export interface SupplierPaymentRow {
   note: string | null
   methode_paiement: string | null
   purchase_id: string
+  supplier_id: string | null
   supplier_name: string
   purchase_reference: string | null
 }
@@ -33,6 +34,7 @@ export const useAllSupplierPayments = () =>
           note: p.note ?? null,
           methode_paiement: p.methode_paiement ?? null,
           purchase_id: p.purchase_id,
+          supplier_id: supplier?.id ?? null,
           supplier_name: supplier?.name ?? '—',
           purchase_reference: purchase?.reference ?? null,
         } as SupplierPaymentRow

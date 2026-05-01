@@ -1,7 +1,7 @@
 import { useMemo, useState } from 'react'
 import { useNavigate } from 'react-router-dom'
 import { type ColumnDef } from '@tanstack/react-table'
-import { Pencil, Trash2, Plus } from 'lucide-react'
+import { Pencil, Trash2, Plus, Link2 } from 'lucide-react'
 import { DataTable } from '@/components/shared/DataTable'
 import { PageHeader } from '@/components/shared/PageHeader'
 import { ConfirmDialog } from '@/components/shared/ConfirmDialog'
@@ -55,12 +55,13 @@ export const SalesPage = () => {
         accessorKey: 'reference',
         header: 'Référence',
         cell: ({ row }) => row.original.reference ? (
-          <span
-            className="text-primary underline underline-offset-2 cursor-pointer font-medium hover:text-primary/80"
+          <button
+            className="flex items-center gap-1 text-primary hover:underline text-sm"
             onClick={() => navigate(`/sales/${row.original.id}/edit`)}
           >
+            <Link2 className="h-3.5 w-3.5" />
             {row.original.reference}
-          </span>
+          </button>
         ) : <span className="text-muted-foreground">—</span>,
       },
       {
@@ -69,12 +70,13 @@ export const SalesPage = () => {
         cell: ({ row }) => {
           const client = (row.original as Sale & { clients?: { id: string, name: string } }).clients
           return client ? (
-            <span
-              className="text-primary underline underline-offset-2 cursor-pointer font-medium hover:text-primary/80"
+            <button
+              className="flex items-center gap-1 text-primary hover:underline text-sm"
               onClick={() => navigate(`/clients/${client.id}`)}
             >
+              <Link2 className="h-3.5 w-3.5" />
               {client.name}
-            </span>
+            </button>
           ) : '—'
         },
       },

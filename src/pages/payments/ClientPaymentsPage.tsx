@@ -46,6 +46,15 @@ export const ClientPaymentsPage = () => {
     {
       accessorKey: 'client_name',
       header: 'Client',
+      cell: ({ row }) => row.original.client_id ? (
+        <button
+          className="flex items-center gap-1 text-primary hover:underline text-sm"
+          onClick={() => navigate(`/clients/${row.original.client_id}`)}
+        >
+          <Link2 className="h-3.5 w-3.5" />
+          {row.original.client_name}
+        </button>
+      ) : row.original.client_name,
     },
     {
       id: 'reference',

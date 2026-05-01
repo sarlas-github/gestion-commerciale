@@ -1,5 +1,4 @@
 import { useState, useMemo } from 'react'
-import { useNavigate } from 'react-router-dom'
 import { type ColumnDef } from '@tanstack/react-table'
 import { Link2 } from 'lucide-react'
 import { PageHeader } from '@/components/shared/PageHeader'
@@ -11,6 +10,7 @@ import {
   SelectTrigger,
 } from '@/components/ui/select'
 import { PurchaseQuickViewModal } from '@/features/purchases/PurchaseQuickViewModal'
+import { SaleQuickViewModal } from '@/features/sales/SaleQuickViewModal'
 import { useStockMovements, type StockMovementRow } from '@/hooks/useStockMovements'
 import { formatDate } from '@/lib/utils'
 
@@ -26,7 +26,6 @@ const MONTHS = [
 ]
 
 export const StockMovementsPage = () => {
-  const navigate = useNavigate()
   const { data: movements = [], isLoading } = useStockMovements()
 
   const now = new Date()
@@ -35,6 +34,7 @@ export const StockMovementsPage = () => {
   const [year, setYear] = useState(String(now.getFullYear()))
 
   const [purchaseModalId, setPurchaseModalId] = useState<string | null>(null)
+  const [saleModalId, setSaleModalId] = useState<string | null>(null)
 
   const years = Array.from({ length: 3 }, (_, i) => String(now.getFullYear() - i))
 
@@ -101,18 +101,18 @@ export const StockMovementsPage = () => {
         const handleClick = () => {
           if (reference_type === 'purchase') {
             setPurchaseModalId(reference_id)
-          } else {
-            navigate(`/sales/${reference_id}`)
+          } else if (reference_type === 'sale') {
+            setSaleModalId(reference_id)
           }
         }
 
         return (
           <button
             onClick={handleClick}
-            className="flex items-center gap-1 text-sm text-primary hover:underline font-medium"
+            className="flex items-center gap-1 text-primary hover:underline text-sm"
           >
+            <Link2 className="h-3.5 w-3.5" />
             {label}
-            <Link2 className="h-3 w-3 shrink-0" />
           </button>
         )
       },
@@ -205,6 +205,12 @@ export const StockMovementsPage = () => {
         purchaseId={purchaseModalId}
         open={purchaseModalId !== null}
         onOpenChange={open => { if (!open) setPurchaseModalId(null) }}
+      />
+
+      <SaleQuickViewModal
+        saleId={saleModalId}
+        open={saleModalId !== null}
+        onOpenChange={open => { if (!open) setSaleModalId(null) }}
       />
     </div>
   )

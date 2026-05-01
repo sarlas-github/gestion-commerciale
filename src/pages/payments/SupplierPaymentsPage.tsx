@@ -46,6 +46,15 @@ export const SupplierPaymentsPage = () => {
     {
       accessorKey: 'supplier_name',
       header: 'Fournisseur',
+      cell: ({ row }) => row.original.supplier_id ? (
+        <button
+          className="flex items-center gap-1 text-primary hover:underline text-sm"
+          onClick={() => navigate(`/suppliers/${row.original.supplier_id}`)}
+        >
+          <Link2 className="h-3.5 w-3.5" />
+          {row.original.supplier_name}
+        </button>
+      ) : row.original.supplier_name,
     },
     {
       id: 'reference',

@@ -31,7 +31,7 @@ export const useStockMovements = () =>
       if (error) throw error
       const movements = (data ?? []) as Omit<StockMovementRow, 'refLabel'>[]
 
-      // Batch-fetch les références des achats pour afficher ex. "ACH-001"
+      // Batch-fetch les références (Achats et Ventes) pour afficher ex. "ACH-001" ou "VEN-001"
       const purchaseIds = [
         ...new Set(
           movements
@@ -39,8 +39,16 @@ export const useStockMovements = () =>
             .map(m => m.reference_id!)
         ),
       ]
+      const saleIds = [
+        ...new Set(
+          movements
+            .filter(m => m.reference_type === 'sale' && m.reference_id)
+            .map(m => m.reference_id!)
+        ),
+      ]
 
       let refMap: Record<string, string | null> = {}
+      
       if (purchaseIds.length > 0) {
         const { data: purchases } = await supabase
           .from('purchases')
@@ -51,10 +59,20 @@ export const useStockMovements = () =>
         })
       }
 
+      if (saleIds.length > 0) {
+        const { data: sales } = await supabase
+          .from('sales')
+          .select('id, reference')
+          .in('id', saleIds)
+        sales?.forEach(s => {
+          refMap[s.id] = s.reference ?? null
+        })
+      }
+
       return movements.map(m => ({
         ...m,
         refLabel:
-          m.reference_type === 'purchase' && m.reference_id
+          (m.reference_type === 'purchase' || m.reference_type === 'sale') && m.reference_id
             ? (refMap[m.reference_id] ?? null)
             : null,
       })) as StockMovementRow[]

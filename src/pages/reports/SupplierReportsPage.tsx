@@ -1,5 +1,6 @@
 import { useMemo, useRef, useState } from 'react'
-import { FileDown } from 'lucide-react'
+import { FileDown, Link2 } from 'lucide-react'
+import { useNavigate } from 'react-router-dom'
 import { type ColumnDef } from '@tanstack/react-table'
 import jsPDF from 'jspdf'
 import html2canvas from 'html2canvas'
@@ -39,6 +40,7 @@ type SupplierReportRow = {
 }
 
 export const SupplierReportsPage = () => {
+  const navigate = useNavigate()
   const now = new Date()
   const [year, setYear] = useState(now.getFullYear())
   const [month, setMonth] = useState(now.getMonth() + 1) // 0 = tous les mois
@@ -91,7 +93,15 @@ export const SupplierReportsPage = () => {
       {
         accessorKey: 'supplier_name',
         header: 'Fournisseur',
-        cell: ({ row }) => <span className="font-medium">{row.original.supplier_name}</span>,
+        cell: ({ row }) => (
+          <button
+            className="flex items-center gap-1 text-primary hover:underline text-sm font-medium"
+            onClick={() => navigate(`/suppliers/${row.original.supplier_id}`)}
+          >
+            <Link2 className="h-3.5 w-3.5" />
+            {row.original.supplier_name}
+          </button>
+        ),
       },
       {
         accessorKey: 'total_achats',

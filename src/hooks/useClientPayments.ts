@@ -8,6 +8,7 @@ export interface ClientPaymentRow {
   note: string | null
   methode_paiement: string | null
   sale_id: string
+  client_id: string | null
   client_name: string
   sale_reference: string | null
 }
@@ -34,6 +35,7 @@ export const useAllClientPayments = () =>
           note: p.note ?? null,
           methode_paiement: p.methode_paiement ?? null,
           sale_id: p.sale_id,
+          client_id: client?.id ?? null,
           client_name: client?.name ?? '—',
           sale_reference: sale?.reference ?? null,
         } as ClientPaymentRow
