@@ -29,7 +29,7 @@ export const SalesPage = () => {
   const [deleteTarget, setDeleteTarget] = useState<Sale | null>(null)
 
   const now = new Date()
-  const [filterMonth, setFilterMonth] = useState<string>('')
+  const [filterMonth, setFilterMonth] = useState<string>(String(now.getMonth() + 1))
   const [filterYear, setFilterYear] = useState<string>(String(now.getFullYear()))
   const [filterStatus, setFilterStatus] = useState<string>('')
 

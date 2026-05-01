@@ -239,6 +239,12 @@ fixe cela :
 - masque menu paramétrage, et documents
 ---
 pending:
+-onglets
+- l affichage dnas l appliation doit etre par défaut par mois, 
+dans ventes par défaut y a tous les mois, aussi paiements fournisseurs, paiements clients, 
+-ajout dans achats choix de periode comme ce qui est fait dans ventes, mois par défaut sélectionné
+ mois actuel
+- changer data dans gmail
 -mouvement de stock: la representation doit etre meme que dans etat fournisseur de header
 -dans paramétrage valeur TVA : a la tte prmeiere ouverture l'application doit avoir valeur par defaut: 0 et bien sur l utilisateur peut la cahnager et sa sauvegarde. et dans calcul de total cout de produit 
 que ce soit 

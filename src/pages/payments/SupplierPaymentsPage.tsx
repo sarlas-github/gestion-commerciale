@@ -17,7 +17,7 @@ export const SupplierPaymentsPage = () => {
   const { data: payments = [], isLoading } = useAllSupplierPayments()
 
   const now = new Date()
-  const [filterMonth, setFilterMonth] = useState<string>('')
+  const [filterMonth, setFilterMonth] = useState<string>(String(now.getMonth() + 1))
   const [filterYear, setFilterYear] = useState<string>(String(now.getFullYear()))
 
   const years = useMemo(() => {

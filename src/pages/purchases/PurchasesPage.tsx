@@ -17,11 +17,37 @@ const StatusBadge = ({ status }: { status: string }) => {
   return <Badge className="bg-red-100 text-red-800 hover:bg-red-100">🔴 Impayé</Badge>
 }
 
+const MONTHS_FR = [
+  'Janvier', 'Février', 'Mars', 'Avril', 'Mai', 'Juin',
+  'Juillet', 'Août', 'Septembre', 'Octobre', 'Novembre', 'Décembre',
+]
+
 export const PurchasesPage = () => {
   const navigate = useNavigate()
   const { data: purchases = [], isLoading } = usePurchases()
   const deletePurchase = useDeletePurchase()
   const [deleteTarget, setDeleteTarget] = useState<Purchase | null>(null)
+
+  const now = new Date()
+  const [filterMonth, setFilterMonth] = useState<string>(String(now.getMonth() + 1))
+  const [filterYear, setFilterYear] = useState<string>(String(now.getFullYear()))
+  const [filterStatus, setFilterStatus] = useState<string>('')
+
+  const years = useMemo(() => {
+    const set = new Set(purchases.map(p => new Date(p.date).getFullYear()))
+    set.add(now.getFullYear())
+    return Array.from(set).sort((a, b) => b - a)
+  }, [purchases])
+
+  const filtered = useMemo(() => {
+    return purchases.filter(p => {
+      const d = new Date(p.date)
+      if (filterYear && d.getFullYear() !== Number(filterYear)) return false
+      if (filterMonth && d.getMonth() + 1 !== Number(filterMonth)) return false
+      if (filterStatus && p.status !== filterStatus) return false
+      return true
+    })
+  }, [purchases, filterYear, filterMonth, filterStatus])
 
   const columns = useMemo<ColumnDef<Purchase>[]>(
     () => [
@@ -129,9 +155,42 @@ export const PurchasesPage = () => {
         }
       />
 
+      {/* Filtres */}
+      <div className="flex flex-wrap gap-3">
+        <select
+          className="h-9 rounded-md border border-input bg-background px-3 text-sm focus-visible:outline-none focus-visible:ring-1 focus-visible:ring-ring"
+          value={filterYear}
+          onChange={e => setFilterYear(e.target.value)}
+        >
+          {years.map(y => (
+            <option key={y} value={y}>{y}</option>
+          ))}
+        </select>
+        <select
+          className="h-9 rounded-md border border-input bg-background px-3 text-sm focus-visible:outline-none focus-visible:ring-1 focus-visible:ring-ring"
+          value={filterMonth}
+          onChange={e => setFilterMonth(e.target.value)}
+        >
+          <option value="">Tous les mois</option>
+          {MONTHS_FR.map((m, i) => (
+            <option key={i + 1} value={i + 1}>{m}</option>
+          ))}
+        </select>
+        <select
+          className="h-9 rounded-md border border-input bg-background px-3 text-sm focus-visible:outline-none focus-visible:ring-1 focus-visible:ring-ring"
+          value={filterStatus}
+          onChange={e => setFilterStatus(e.target.value)}
+        >
+          <option value="">Tous les statuts</option>
+          <option value="unpaid">Impayé</option>
+          <option value="partial">Partiel</option>
+          <option value="paid">Payé</option>
+        </select>
+      </div>
+
       <DataTable
         columns={columns}
-        data={purchases}
+        data={filtered}
         isLoading={isLoading}
         searchPlaceholder="Rechercher par référence, fournisseur..."
         exportFileName="achats"
