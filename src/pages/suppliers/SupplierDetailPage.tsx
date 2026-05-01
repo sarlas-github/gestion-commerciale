@@ -298,18 +298,18 @@ export const SupplierDetailPage = () => {
 
       {/* Onglets */}
       <div className="border-b">
-        <nav className="flex gap-0 -mb-px">
+        <nav className="flex -mb-px">
           {TABS.map(tab => (
             <button
               key={tab.key}
               onClick={() => setActiveTab(tab.key)}
-              className={`flex items-center gap-2 px-5 py-3 text-sm font-medium border-b-2 transition-colors ${
+              className={`flex flex-1 items-center justify-center gap-1.5 px-1 py-3 text-xs sm:text-sm font-medium border-b-2 transition-colors ${
                 activeTab === tab.key
                   ? 'border-primary text-primary'
                   : 'border-transparent text-muted-foreground hover:text-foreground hover:border-muted-foreground/30'
               }`}
             >
-              <tab.icon className="h-4 w-4" />
+              <tab.icon className="h-3.5 w-3.5 sm:h-4 sm:w-4 shrink-0" />
               {tab.label}
             </button>
           ))}

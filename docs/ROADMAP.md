@@ -237,15 +237,11 @@ fixe cela :
 - y a un bug dans onglet état spécifique de client ou fournisseur : le calcul ne se fait pas
 - y a un bug dans reference de coté achat et vente : ca doit etre incrementielmntn il fait valeur fixe
 - masque menu paramétrage, et documents
+- l affichage dnas l appliation doit etre par défaut par mois, 
 ---
 pending:
 -onglets
-- l affichage dnas l appliation doit etre par défaut par mois, 
-dans ventes par défaut y a tous les mois, aussi paiements fournisseurs, paiements clients, 
--ajout dans achats choix de periode comme ce qui est fait dans ventes, mois par défaut sélectionné
- mois actuel
-- changer data dans gmail
--mouvement de stock: la representation doit etre meme que dans etat fournisseur de header
+- changer data dans par mois actuel khadamat
 -dans paramétrage valeur TVA : a la tte prmeiere ouverture l'application doit avoir valeur par defaut: 0 et bien sur l utilisateur peut la cahnager et sa sauvegarde. et dans calcul de total cout de produit 
 que ce soit 
 
