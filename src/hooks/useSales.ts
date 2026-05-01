@@ -382,6 +382,7 @@ export const useCreateSale = () => {
       qc.invalidateQueries({ queryKey: ['stock-movements'] })
       qc.invalidateQueries({ queryKey: ['stock-alerts'] })
       qc.invalidateQueries({ queryKey: ['documents'] })
+      qc.invalidateQueries({ queryKey: ['dashboard'] })
       toast.success('Vente enregistrée avec succès')
     },
     onError: (err: Error) => {
@@ -576,6 +577,7 @@ export const useUpdateSale = () => {
       qc.invalidateQueries({ queryKey: ['products'] })
       qc.invalidateQueries({ queryKey: ['stock-movements'] })
       qc.invalidateQueries({ queryKey: ['stock-alerts'] })
+      qc.invalidateQueries({ queryKey: ['dashboard'] })
       toast.success('Vente mise à jour')
     },
     onError: (err: Error) => {
@@ -597,6 +599,7 @@ export const useDeleteSale = () => {
       qc.invalidateQueries({ queryKey: ['clients'] })
       qc.invalidateQueries({ queryKey: ['products'] })
       qc.invalidateQueries({ queryKey: ['stock-alerts'] })
+      qc.invalidateQueries({ queryKey: ['dashboard'] })
       toast.success('Vente supprimée')
     },
     onError: (err: Error) => {

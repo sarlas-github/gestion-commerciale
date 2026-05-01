@@ -293,6 +293,7 @@ export const useCreatePurchase = () => {
       qc.invalidateQueries({ queryKey: ['products'] })
       qc.invalidateQueries({ queryKey: ['stock-movements'] })
       qc.invalidateQueries({ queryKey: ['stock-alerts'] })
+      qc.invalidateQueries({ queryKey: ['dashboard'] })
       toast.success('Achat enregistré avec succès')
     },
     onError: (err: Error) => {
@@ -423,6 +424,7 @@ export const useUpdatePurchase = () => {
       qc.invalidateQueries({ queryKey: ['products'] })
       qc.invalidateQueries({ queryKey: ['stock-movements'] })
       qc.invalidateQueries({ queryKey: ['stock-alerts'] })
+      qc.invalidateQueries({ queryKey: ['dashboard'] })
       toast.success('Achat mis à jour')
     },
     onError: (err: Error) => {
@@ -442,6 +444,7 @@ export const useDeletePurchase = () => {
       qc.invalidateQueries({ queryKey: ['purchases'] })
       qc.invalidateQueries({ queryKey: ['next-purchase-number'] })
       qc.invalidateQueries({ queryKey: ['suppliers'] })
+      qc.invalidateQueries({ queryKey: ['dashboard'] })
       toast.success('Achat supprimé')
     },
     onError: (err: Error) => {

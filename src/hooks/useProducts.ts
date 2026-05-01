@@ -51,7 +51,7 @@ export const useProducts = () =>
       const { data, error } = await supabase
         .from('products')
         .select('*, stock(*)')
-        .order('name')
+        .order('created_at', { ascending: false })
 
       if (error) throw error
       return (data ?? []).map(p => toProductWithStock(p as Record<string, unknown>))
@@ -77,19 +77,12 @@ export const useProduct = (id: string) =>
 export const useStockAlertCount = () =>
   useQuery({
     queryKey: ['stock-alerts'],
-    queryFn: async () => {
-      const { data, error } = await supabase
-        .from('products')
-        .select('stock_alert, stock(quantity)')
-
-      if (error) throw error
-
-      return (data ?? []).filter(p => {
-        const qty = ((p.stock ?? []) as Array<{ quantity: number }>)[0]?.quantity ?? 0
-        return qty === 0 || qty <= (p.stock_alert ?? 0)
-      }).length
-    },
     staleTime: 60_000,
+    queryFn: async () => {
+      const { data, error } = await supabase.rpc('get_stock_alert_count')
+      if (error) throw error
+      return (data as number) ?? 0
+    },
   })
 
 // ── Mutations ─────────────────────────────────────────────────────────────────

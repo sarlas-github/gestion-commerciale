@@ -16,55 +16,15 @@ export interface ClientReportData {
 
 // month=0 signifie toute l'année
 export const useClientReport = (year: number, month: number) => {
-  const startDate = month === 0
-    ? `${year}-01-01`
-    : `${year}-${String(month).padStart(2, '0')}-01`
-  const endDate = month === 0
-    ? `${year}-12-31`
-    : `${year}-${String(month).padStart(2, '0')}-${new Date(year, month, 0).getDate()}`
-
   return useQuery({
     queryKey: ['client-report', year, month],
     queryFn: async () => {
-      const { data, error } = await supabase
-        .from('sales')
-        .select('total, paid, remaining, clients(id, name)')
-        .gte('date', startDate)
-        .lte('date', endDate)
-
+      const { data, error } = await supabase.rpc('get_client_report', {
+        p_year:  year,
+        p_month: month,
+      })
       if (error) throw error
-
-      const map = new Map<string, ClientReportRow>()
-
-      for (const sale of data ?? []) {
-        const client = Array.isArray(sale.clients) ? sale.clients[0] : sale.clients
-        const clientId = client?.id ?? '__unknown__'
-        const clientName = client?.name ?? '—'
-
-        if (!map.has(clientId)) {
-          map.set(clientId, { client_id: clientId, client_name: clientName, total_ventes: 0, total_paye: 0, reste: 0 })
-        }
-
-        const row = map.get(clientId)!
-        row.total_ventes += sale.total
-        row.total_paye += sale.paid
-        row.reste += sale.remaining
-      }
-
-      const rows = Array.from(map.values()).sort((a, b) =>
-        a.client_name.localeCompare(b.client_name, 'fr')
-      )
-
-      const totals = rows.reduce(
-        (acc, r) => ({
-          total_ventes: acc.total_ventes + r.total_ventes,
-          total_paye: acc.total_paye + r.total_paye,
-          reste: acc.reste + r.reste,
-        }),
-        { total_ventes: 0, total_paye: 0, reste: 0 }
-      )
-
-      return { rows, totals } as ClientReportData
+      return data as unknown as ClientReportData
     },
   })
 }

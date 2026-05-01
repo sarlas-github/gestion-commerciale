@@ -20,34 +20,15 @@ async function getCurrentUser() {
 
 // ── Queries ───────────────────────────────────────────────────────────────────
 
-/** Liste tous les clients avec totaux calculés depuis les ventes */
+/** Liste tous les clients avec totaux calculés (agrégation DB) */
 export const useClients = () =>
   useQuery({
     queryKey: ['clients'],
+    staleTime: 2 * 60 * 1000,
     queryFn: async () => {
-      const { data, error } = await supabase
-        .from('clients')
-        .select('*, sales(total, paid, remaining, status)')
-        .order('name')
-
+      const { data, error } = await supabase.rpc('get_clients_with_stats')
       if (error) throw error
-
-      return (data ?? []).map(c => {
-        const sales = (c.sales ?? []) as Array<{
-          total: number
-          paid: number
-          remaining: number
-          status: string
-        }>
-        const totalDu = sales.reduce((sum, s) => sum + (s.remaining ?? 0), 0)
-        const hasUnpaid = sales.some(s => s.status === 'unpaid' || s.status === 'partial')
-
-        return {
-          ...c,
-          totalDu,
-          paymentStatus: totalDu === 0 ? 'ok' : hasUnpaid ? 'unpaid' : 'partial',
-        } as ClientWithStats
-      })
+      return (data as unknown as ClientWithStats[]) ?? []
     },
   })
 
@@ -112,30 +93,18 @@ export const useClientPayments = (clientId: string) =>
     enabled: Boolean(clientId),
   })
 
-/** État mensuel d'un client */
+/** État mensuel d'un client (agrégation DB) */
 export const useClientMonthlyState = (clientId: string, year: number, month: number) =>
   useQuery({
     queryKey: ['clients', clientId, 'state', year, month],
     queryFn: async () => {
-      const startDate = `${year}-${String(month).padStart(2, '0')}-01`
-      const lastDay = new Date(year, month, 0).getDate()
-      const endDate = `${year}-${String(month).padStart(2, '0')}-${String(lastDay).padStart(2, '0')}`
-
-      const { data: sales, error } = await supabase
-        .from('sales')
-        .select('total, paid, remaining')
-        .eq('client_id', clientId)
-        .gte('date', startDate)
-        .lte('date', endDate)
-
+      const { data, error } = await supabase.rpc('get_client_monthly_stats', {
+        p_client_id: clientId,
+        p_year:      year,
+        p_month:     month,
+      })
       if (error) throw error
-
-      const rows = sales ?? []
-      const totalVentes = rows.reduce((s, v) => s + Number(v.total ?? 0), 0)
-      const totalPaye   = rows.reduce((s, v) => s + Number(v.paid ?? 0), 0)
-      const resteAPayer = rows.reduce((s, v) => s + Number(v.remaining ?? 0), 0)
-
-      return { totalVentes, totalPaye, resteAPayer }
+      return data as unknown as { totalVentes: number; totalPaye: number; resteAPayer: number }
     },
     enabled: Boolean(clientId),
   })

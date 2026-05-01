@@ -13,37 +13,15 @@ async function getCurrentUser() {
 
 // ── Queries ───────────────────────────────────────────────────────────────────
 
-/** Liste tous les fournisseurs avec totaux calculés depuis les achats */
+/** Liste tous les fournisseurs avec totaux calculés (agrégation DB) */
 export const useSuppliers = () =>
   useQuery({
     queryKey: ['suppliers'],
+    staleTime: 2 * 60 * 1000,
     queryFn: async () => {
-      const { data, error } = await supabase
-        .from('suppliers')
-        .select(`
-          *,
-          purchases(total, paid, remaining, status)
-        `)
-        .order('name')
-
+      const { data, error } = await supabase.rpc('get_suppliers_with_stats')
       if (error) throw error
-
-      return (data ?? []).map(s => {
-        const purchases = (s.purchases ?? []) as Array<{
-          total: number
-          paid: number
-          remaining: number
-          status: string
-        }>
-        const totalDu = purchases.reduce((sum, p) => sum + (p.remaining ?? 0), 0)
-        const hasUnpaid = purchases.some(p => p.status === 'unpaid' || p.status === 'partial')
-
-        return {
-          ...s,
-          totalDu,
-          paymentStatus: totalDu === 0 ? 'ok' : hasUnpaid ? 'unpaid' : 'partial',
-        } as SupplierWithStats
-      })
+      return (data as unknown as SupplierWithStats[]) ?? []
     },
   })
 
@@ -109,30 +87,18 @@ export const useSupplierPayments = (supplierId: string) =>
     enabled: Boolean(supplierId),
   })
 
-/** État mensuel d'un fournisseur */
+/** État mensuel d'un fournisseur (agrégation DB) */
 export const useSupplierMonthlyState = (supplierId: string, year: number, month: number) =>
   useQuery({
     queryKey: ['suppliers', supplierId, 'state', year, month],
     queryFn: async () => {
-      const startDate = `${year}-${String(month).padStart(2, '0')}-01`
-      const lastDay = new Date(year, month, 0).getDate()
-      const endDate = `${year}-${String(month).padStart(2, '0')}-${String(lastDay).padStart(2, '0')}`
-
-      const { data: purchases, error } = await supabase
-        .from('purchases')
-        .select('total, paid, remaining, supplier_payments(amount, date)')
-        .eq('supplier_id', supplierId)
-        .gte('date', startDate)
-        .lte('date', endDate)
-
+      const { data, error } = await supabase.rpc('get_supplier_monthly_stats', {
+        p_supplier_id: supplierId,
+        p_year:        year,
+        p_month:       month,
+      })
       if (error) throw error
-
-      const rows = purchases ?? []
-      const totalAchats = rows.reduce((s, p) => s + Number(p.total ?? 0), 0)
-      const totalPaye   = rows.reduce((s, p) => s + Number(p.paid ?? 0), 0)
-      const resteAPayer = rows.reduce((s, p) => s + Number(p.remaining ?? 0), 0)
-
-      return { totalAchats, totalPaye, resteAPayer }
+      return data as unknown as { totalAchats: number; totalPaye: number; resteAPayer: number }
     },
     enabled: Boolean(supplierId),
   })

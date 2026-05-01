@@ -43,7 +43,7 @@ export function ResponsiveModal({
 
   return (
     <Sheet open={open} onOpenChange={onOpenChange}>
-      <SheetContent side="bottom" className="max-h-[90vh] rounded-t-xl px-4 flex flex-col gap-0 pb-8">
+      <SheetContent side="top" style={{ top: '3.5rem' }} className="max-h-[calc(90vh-3.5rem)] rounded-b-xl px-4 flex flex-col gap-0">
         <SheetHeader className="px-0 pb-4 pt-2">
           <SheetTitle>{title}</SheetTitle>
         </SheetHeader>
