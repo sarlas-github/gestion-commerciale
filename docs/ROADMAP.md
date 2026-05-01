@@ -240,7 +240,9 @@ fixe cela :
 - l affichage dnas l appliation doit etre par défaut par mois, 
 ---
 pending:
--onglets
+- pourquoi caude code prend bcp de temps a repondre ? montauntas edes etats finaux contexte
+-  faire les onglets dans forms achat/vente
+- reference meme style cliquable que reference dans mouvement stock
 - changer data dans par mois actuel khadamat
 -dans paramétrage valeur TVA : a la tte prmeiere ouverture l'application doit avoir valeur par defaut: 0 et bien sur l utilisateur peut la cahnager et sa sauvegarde. et dans calcul de total cout de produit 
 que ce soit 

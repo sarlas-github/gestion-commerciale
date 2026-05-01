@@ -78,7 +78,7 @@ export const LoginPage = () => {
             </Button>
           </form>
         </div>
-
+        {/* commenté */}
         {/* <p className="text-center text-sm text-muted-foreground">
           Pas encore de compte ?{' '}
           <Link to="/register" className="font-medium text-primary hover:underline">
