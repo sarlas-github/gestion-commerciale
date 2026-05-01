@@ -56,7 +56,7 @@ export const ClientPaymentsPage = () => {
           onClick={() => navigate(`/sales/${row.original.sale_id}/edit`)}
         >
           <Link2 className="h-3.5 w-3.5" />
-          {row.original.doc_number ?? 'Voir vente'}
+          {row.original.sale_reference ?? 'Voir vente'}
         </button>
       ),
     },
@@ -113,7 +113,7 @@ export const ClientPaymentsPage = () => {
         exportMapper={p => ({
           Date: formatDate(p.date),
           Client: p.client_name,
-          Référence: p.doc_number ?? '',
+          Référence: p.sale_reference ?? '',
           Montant: p.amount,
           Méthode: p.methode_paiement ?? '',
           Note: p.note ?? '',

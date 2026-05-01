@@ -9,7 +9,7 @@ export interface ClientPaymentRow {
   methode_paiement: string | null
   sale_id: string
   client_name: string
-  doc_number: string | null
+  sale_reference: string | null
 }
 
 export const useAllClientPayments = () =>
@@ -18,24 +18,11 @@ export const useAllClientPayments = () =>
     queryFn: async () => {
       const { data, error } = await supabase
         .from('client_payments')
-        .select('*, sales(id, clients(id, name))')
+        .select('*, sales(id, reference, clients(id, name))')
         .order('date', { ascending: false })
 
       if (error) throw error
       const payments = data ?? []
-
-      const saleIds = [...new Set(payments.map(p => p.sale_id).filter(Boolean))]
-      const docMap: Record<string, string | null> = {}
-
-      if (saleIds.length > 0) {
-        const { data: docs } = await supabase
-          .from('documents')
-          .select('sale_id, number')
-          .in('sale_id', saleIds)
-          .eq('type', 'invoice')
-
-        docs?.forEach(d => { docMap[d.sale_id] = d.number })
-      }
 
       return payments.map(p => {
         const sale = Array.isArray(p.sales) ? p.sales[0] : p.sales
@@ -48,7 +35,7 @@ export const useAllClientPayments = () =>
           methode_paiement: p.methode_paiement ?? null,
           sale_id: p.sale_id,
           client_name: client?.name ?? '—',
-          doc_number: docMap[p.sale_id] ?? null,
+          sale_reference: sale?.reference ?? null,
         } as ClientPaymentRow
       })
     },
