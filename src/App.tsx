@@ -14,6 +14,8 @@ import { Dashboard } from '@/pages/Dashboard'
 
 // Products
 import { ProductsPage } from '@/pages/products/ProductsPage'
+import { ProductNewPage } from '@/pages/products/ProductNewPage'
+import { ProductEditPage } from '@/pages/products/ProductEditPage'
 
 // Stock
 import { StockMovementsPage } from '@/pages/stock/StockMovementsPage'
@@ -21,6 +23,8 @@ import { StockMovementsPage } from '@/pages/stock/StockMovementsPage'
 // Suppliers
 import { SuppliersPage } from '@/pages/suppliers/SuppliersPage'
 import { SupplierDetailPage } from '@/pages/suppliers/SupplierDetailPage'
+import { SupplierNewPage } from '@/pages/suppliers/SupplierNewPage'
+import { SupplierEditPage } from '@/pages/suppliers/SupplierEditPage'
 
 // Purchases
 import { PurchasesPage } from '@/pages/purchases/PurchasesPage'
@@ -30,6 +34,8 @@ import { PurchaseEditPage } from '@/pages/purchases/PurchaseEditPage'
 // Clients
 import { ClientsPage } from '@/pages/clients/ClientsPage'
 import { ClientDetailPage } from '@/pages/clients/ClientDetailPage'
+import { ClientNewPage } from '@/pages/clients/ClientNewPage'
+import { ClientEditPage } from '@/pages/clients/ClientEditPage'
 
 // Sales
 import { SalesPage } from '@/pages/sales/SalesPage'
@@ -54,7 +60,7 @@ import { SettingsPage } from '@/pages/settings/SettingsPage'
 export const App = () => {
   return (
     <>
-    <Toaster richColors position="top-right" />
+    <Toaster richColors position="bottom-right" />
     <BrowserRouter>
       <Routes>
         {/* Routes publiques */}
@@ -74,12 +80,16 @@ export const App = () => {
 
           {/* Produits */}
           <Route path="/products" element={<ProductsPage />} />
+          <Route path="/products/new" element={<ProductNewPage />} />
+          <Route path="/products/:id/edit" element={<ProductEditPage />} />
 
           {/* Stock */}
           <Route path="/stock/movements" element={<StockMovementsPage />} />
 
           {/* Fournisseurs */}
           <Route path="/suppliers" element={<SuppliersPage />} />
+          <Route path="/suppliers/new" element={<SupplierNewPage />} />
+          <Route path="/suppliers/:id/edit" element={<SupplierEditPage />} />
           <Route path="/suppliers/:id" element={<SupplierDetailPage />} />
 
           {/* Achats */}
@@ -89,6 +99,8 @@ export const App = () => {
 
           {/* Clients */}
           <Route path="/clients" element={<ClientsPage />} />
+          <Route path="/clients/new" element={<ClientNewPage />} />
+          <Route path="/clients/:id/edit" element={<ClientEditPage />} />
           <Route path="/clients/:id" element={<ClientDetailPage />} />
 
           {/* Ventes */}

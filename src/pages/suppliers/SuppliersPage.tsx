@@ -9,10 +9,7 @@ import { Button } from '@/components/ui/button'
 import { Badge } from '@/components/ui/badge'
 import { useSuppliers, useDeleteSupplier, type SupplierWithStats } from '@/hooks/useSuppliers'
 import { formatCurrency, formatPhone } from '@/lib/utils'
-import { SupplierModal } from '@/features/suppliers/SupplierModal'
-import type { Supplier } from '@/types'
 
-// Badge statut fournisseur
 const StatusBadge = ({ status }: { status: 'ok' | 'partial' | 'unpaid' }) => {
   if (status === 'ok') return <Badge className="bg-green-100 text-green-800 hover:bg-green-100">🟢 OK</Badge>
   if (status === 'partial') return <Badge className="bg-orange-100 text-orange-800 hover:bg-orange-100">🟡 Partiel</Badge>
@@ -23,24 +20,8 @@ export const SuppliersPage = () => {
   const navigate = useNavigate()
   const { data: suppliers = [], isLoading } = useSuppliers()
   const deleteSupplier = useDeleteSupplier()
-  
+
   const [deleteTarget, setDeleteTarget] = useState<SupplierWithStats | null>(null)
-  const [isModalOpen, setIsModalOpen] = useState(false)
-  const [editingSupplier, setEditingSupplier] = useState<Supplier | null>(null)
-
-  const handleCloseDelete = () => setDeleteTarget(null)
-
-  const handleOpenModal = (supplier?: Supplier) => {
-    setEditingSupplier(supplier || null)
-    setIsModalOpen(true)
-  }
-
-  const handleCloseModal = (open: boolean) => {
-    if (!open) {
-      setIsModalOpen(false)
-      setTimeout(() => setEditingSupplier(null), 200)
-    }
-  }
 
   const columns = useMemo<ColumnDef<SupplierWithStats>[]>(
     () => [
@@ -92,7 +73,7 @@ export const SuppliersPage = () => {
               size="icon"
               className="h-8 w-8"
               title="Modifier"
-              onClick={() => handleOpenModal(row.original)}
+              onClick={() => navigate(`/suppliers/${row.original.id}/edit`)}
             >
               <Pencil className="h-4 w-4" />
             </Button>
@@ -117,7 +98,7 @@ export const SuppliersPage = () => {
       <PageHeader
         title="Fournisseurs"
         actions={
-          <Button onClick={() => handleOpenModal()}>
+          <Button onClick={() => navigate('/suppliers/new')}>
             <Plus className="mr-2 h-4 w-4" />
             Nouveau fournisseur
           </Button>
@@ -142,21 +123,15 @@ export const SuppliersPage = () => {
 
       <ConfirmDialog
         open={Boolean(deleteTarget)}
-        onOpenChange={open => { if (!open) handleCloseDelete() }}
+        onOpenChange={open => { if (!open) setDeleteTarget(null) }}
         title="Supprimer le fournisseur"
         description={`Êtes-vous sûr de vouloir supprimer "${deleteTarget?.name}" ?`}
         onConfirm={() => {
           if (deleteTarget) {
-            deleteSupplier.mutate(deleteTarget.id, { onSettled: handleCloseDelete })
+            deleteSupplier.mutate(deleteTarget.id, { onSettled: () => setDeleteTarget(null) })
           }
         }}
         loading={deleteSupplier.isPending}
-      />
-
-      <SupplierModal
-        supplier={editingSupplier}
-        open={isModalOpen}
-        onOpenChange={handleCloseModal}
       />
     </div>
   )
