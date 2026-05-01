@@ -115,8 +115,6 @@ export const SaleForm = ({ existing, onSubmit, isLoading = false }: SaleFormProp
     }
   }, [existing, nextRef, setValue, watch])
 
-  // Ne pas pré-remplir : généré atomiquement à la sauvegarde
-
   const [newItemIdx, setNewItemIdx] = useState<number | null>(null)
   const selectRefs = useRef<Map<number, HTMLSelectElement>>(new Map())
 
@@ -149,7 +147,6 @@ export const SaleForm = ({ existing, onSubmit, isLoading = false }: SaleFormProp
     [setValue]
   )
 
-  // Création rapide produit
   const handleQuickProductSuccess = useCallback((product: any) => {
     if (showNewProductIdx !== null) {
       setValue(`items.${showNewProductIdx}.product_id`, product.id)
@@ -183,15 +180,13 @@ export const SaleForm = ({ existing, onSubmit, isLoading = false }: SaleFormProp
 
       <form onSubmit={handleSubmit(onSubmit)} noValidate className="space-y-8">
         {/* ── Entête ── */}
-        <div className="rounded-lg border bg-card p-6 space-y-4">
+        <div className="rounded-lg border bg-card p-4 sm:p-6 space-y-4">
           <h2 className="text-sm font-semibold uppercase tracking-wide text-muted-foreground">Informations</h2>
 
           <div className="grid gap-4 sm:grid-cols-2">
             {/* Client */}
             <div className="space-y-1.5 sm:col-span-2">
-              <Label>
-                Client <span className="text-destructive">*</span>
-              </Label>
+              <Label>Client <span className="text-destructive">*</span></Label>
               <div className="flex gap-2">
                 <Controller
                   name="client_id"
@@ -227,9 +222,7 @@ export const SaleForm = ({ existing, onSubmit, isLoading = false }: SaleFormProp
 
             {/* Date */}
             <div className="space-y-1.5">
-              <Label>
-                Date <span className="text-destructive">*</span>
-              </Label>
+              <Label>Date <span className="text-destructive">*</span></Label>
               <Controller
                 name="date"
                 control={control}
@@ -247,11 +240,7 @@ export const SaleForm = ({ existing, onSubmit, isLoading = false }: SaleFormProp
                 name="reference"
                 control={control}
                 render={({ field }) => (
-                  <Input 
-                    placeholder="Auto-généré" 
-                    {...field} 
-                    className="font-mono"
-                  />
+                  <Input placeholder="Auto-généré" {...field} className="font-mono" />
                 )}
               />
             </div>
@@ -271,7 +260,7 @@ export const SaleForm = ({ existing, onSubmit, isLoading = false }: SaleFormProp
         </div>
 
         {/* ── Produits ── */}
-        <div className="rounded-lg border bg-card p-6 space-y-4">
+        <div className="rounded-lg border bg-card p-4 sm:p-6 space-y-3">
           <div className="flex items-center justify-between">
             <h2 className="text-sm font-semibold uppercase tracking-wide text-muted-foreground">Produits</h2>
             {!hasExistingPayments && (
@@ -301,186 +290,164 @@ export const SaleForm = ({ existing, onSubmit, isLoading = false }: SaleFormProp
             </p>
           )}
 
-          <div className="overflow-x-auto">
-            <table className="w-full text-sm">
-              <thead>
-                <tr className="text-xs font-medium text-muted-foreground border-b uppercase tracking-wider">
-                  <th className="pb-2 font-medium text-left pr-3">Produit</th>
-                  <th className="pb-2 font-medium text-right pr-3 w-20">Pièces</th>
-                  <th className="pb-2 font-medium text-right pr-3 w-24">Quantité</th>
-                  <th className="pb-2 font-medium text-right pr-3 w-32">P.U (MAD)</th>
-                  <th className="pb-2 font-medium text-right pr-3">S. Total</th>
-                  <th className="pb-2 w-8" />
-                </tr>
-              </thead>
-              <tbody className="divide-y">
-                {itemFields.map((field, idx) => {
-                  const qty = Number(watchedItems[idx]?.quantity) || 0
-                  const pieces = Number(watchedItems[idx]?.pieces_count) || 1
-                  const price = Number(watchedItems[idx]?.unit_price) || 0
-                  const subtotal = qty * pieces * price
-                  void subtotal
-                  const selectedProductId = watchedItems[idx]?.product_id
-                  const productData = products.find(p => p.id === selectedProductId)
-                  const availableStock = productData?.stock?.quantity ?? 0
-                  const stockWarning = Boolean(selectedProductId) && qty > availableStock
+          {/* Cartes produits — pas de scroll horizontal */}
+          <div className="space-y-2">
+            {itemFields.map((field, idx) => {
+              const qty = Number(watchedItems[idx]?.quantity) || 0
+              const pieces = Number(watchedItems[idx]?.pieces_count) || 1
+              const price = Number(watchedItems[idx]?.unit_price) || 0
+              const selectedProductId = watchedItems[idx]?.product_id
+              const productData = products.find(p => p.id === selectedProductId)
+              const availableStock = productData?.stock?.quantity ?? 0
+              const stockWarning = Boolean(selectedProductId) && qty > availableStock
 
-                  return (
-                    <tr key={field.id}>
-                      {/* Produit */}
-                      <td className="py-2 pr-3 min-w-[200px]">
-                        {field.original_id ? (
-                          <span className="text-sm font-medium">
-                            {products.find(p => p.id === field.product_id)?.name || 'Produit inconnu'}
-                          </span>
-                        ) : (
-                          <div className="flex gap-2">
-                            <div className="flex-1">
-                              <Controller
-                                name={`items.${idx}.product_id`}
-                                control={control}
-                                render={({ field: f }) => (
-                                  <select
-                                    className="flex h-8 w-full rounded-md border border-input bg-background px-2 text-sm focus-visible:outline-none focus-visible:ring-1 focus-visible:ring-ring"
-                                    value={f.value}
-                                    ref={el => {
-                                      f.ref(el)
-                                      if (el) selectRefs.current.set(idx, el)
-                                      else selectRefs.current.delete(idx)
-                                    }}
-                                    autoFocus={newItemIdx === idx}
-                                    onChange={e => {
-                                      f.onChange(e.target.value)
-                                      handleProductChange(idx, e.target.value)
-                                    }}
-                                  >
-                                    <option value="">— Produit —</option>
-                                    {products.map(p => (
-                                      <option key={p.id} value={p.id}>{p.name}</option>
-                                    ))}
-                                  </select>
-                                )}
-                              />
-                              {stockWarning && (
-                                <p className="text-xs text-amber-600 mt-0.5 flex items-center gap-1">
-                                  <AlertTriangle className="h-3 w-3" />
-                                  Stock disponible : {availableStock}
-                                </p>
-                              )}
-                            </div>
-                            <Button
-                              type="button"
-                              variant="ghost"
-                              size="icon"
-                              className="h-8 w-8 shrink-0"
-                              title="Nouveau produit"
-                              onClick={() => setShowNewProductIdx(idx)}
-                            >
-                              <Plus className="h-3.5 w-3.5" />
-                            </Button>
-                          </div>
-                        )}
-                        {errors.items?.[idx]?.product_id && (
-                          <p className="text-xs text-destructive mt-0.5">
-                            {errors.items[idx]?.product_id?.message}
-                          </p>
-                        )}
-                      </td>
-
-                      {/* Pièces (Read-only) */}
-                      <td className="py-2 pr-3 text-right text-muted-foreground tabular-nums text-sm">
-                        {watchedItems[idx]?.pieces_count || 1}
-                      </td>
-
-
-                      {/* Quantité */}
-                      <td className="py-2 pr-3">
-                        {field.original_id ? (
-                          <span className="block text-right text-sm">{field.quantity}</span>
-                        ) : (
+              return (
+                <div key={field.id} className="rounded-md border bg-background p-3 space-y-2">
+                  {/* Ligne 1 : sélecteur produit + boutons */}
+                  <div className="flex gap-2 items-start">
+                    <div className="flex-1 min-w-0">
+                      {field.original_id ? (
+                        <span className="text-sm font-medium">
+                          {products.find(p => p.id === field.product_id)?.name || 'Produit inconnu'}
+                        </span>
+                      ) : (
+                        <>
                           <Controller
-                            name={`items.${idx}.quantity`}
+                            name={`items.${idx}.product_id`}
                             control={control}
                             render={({ field: f }) => (
-                              <Input
-                                type="number"
-                                min={1}
-                                className="w-full text-right h-8 text-sm"
+                              <select
+                                className="flex h-8 w-full rounded-md border border-input bg-background px-2 text-sm focus-visible:outline-none focus-visible:ring-1 focus-visible:ring-ring"
                                 value={f.value}
-                                onChange={e => f.onChange(e.target.value === '' ? undefined : Number(e.target.value))}
-                                onFocus={e => e.target.select()}
-                                ref={f.ref}
-                              />
+                                ref={el => {
+                                  f.ref(el)
+                                  if (el) selectRefs.current.set(idx, el)
+                                  else selectRefs.current.delete(idx)
+                                }}
+                                autoFocus={newItemIdx === idx}
+                                onChange={e => {
+                                  f.onChange(e.target.value)
+                                  handleProductChange(idx, e.target.value)
+                                }}
+                              >
+                                <option value="">— Produit —</option>
+                                {products.map(p => (
+                                  <option key={p.id} value={p.id}>{p.name}</option>
+                                ))}
+                              </select>
                             )}
                           />
-                        )}
-                      </td>
+                          {stockWarning && (
+                            <p className="text-xs text-amber-600 mt-0.5 flex items-center gap-1">
+                              <AlertTriangle className="h-3 w-3" />
+                              Stock disponible : {availableStock}
+                            </p>
+                          )}
+                        </>
+                      )}
+                      {errors.items?.[idx]?.product_id && (
+                        <p className="text-xs text-destructive mt-0.5">{errors.items[idx]?.product_id?.message}</p>
+                      )}
+                    </div>
+                    {!field.original_id && (
+                      <Button
+                        type="button"
+                        variant="ghost"
+                        size="icon"
+                        className="h-8 w-8 shrink-0"
+                        title="Nouveau produit"
+                        onClick={() => setShowNewProductIdx(idx)}
+                      >
+                        <Plus className="h-3.5 w-3.5" />
+                      </Button>
+                    )}
+                    {!field.original_id && itemFields.length > 1 && (
+                      <Button
+                        type="button"
+                        variant="ghost"
+                        size="icon"
+                        className="h-8 w-8 shrink-0 text-destructive hover:text-destructive"
+                        onClick={() => removeItem(idx)}
+                      >
+                        <Trash2 className="h-3.5 w-3.5" />
+                      </Button>
+                    )}
+                  </div>
 
-                      {/* Prix unitaire */}
-                      <td className="py-2 pr-3">
+                  {/* Ligne 2 : Pièces | Quantité | P.U. | Sous-total */}
+                  <div className="grid grid-cols-4 gap-2">
+                    <div className="space-y-1">
+                      <span className="text-xs text-muted-foreground block">Pièces</span>
+                      <div className="text-sm text-center tabular-nums h-8 flex items-center justify-center">
+                        {pieces}
+                      </div>
+                    </div>
+                    <div className="space-y-1">
+                      <span className="text-xs text-muted-foreground block">Quantité</span>
+                      {field.original_id ? (
+                        <div className="text-sm text-center h-8 flex items-center justify-center">{field.quantity}</div>
+                      ) : (
                         <Controller
-                          name={`items.${idx}.unit_price`}
+                          name={`items.${idx}.quantity`}
                           control={control}
                           render={({ field: f }) => (
                             <Input
                               type="number"
-                              min={0}
-                              step="0.01"
-                              className="w-full text-right h-8 text-sm"
+                              min={1}
+                              className="h-8 text-center text-sm px-1"
+                              value={f.value}
+                              onChange={e => f.onChange(e.target.value === '' ? undefined : Number(e.target.value))}
                               onFocus={e => e.target.select()}
-                              value={f.value ?? ''}
-                              onChange={e =>
-                                f.onChange(
-                                  e.target.value === ''
-                                    ? undefined
-                                    : Number(e.target.value)
-                                )
-                              }
                               ref={f.ref}
                             />
                           )}
                         />
-                      </td>
-
-                      {/* Sous-total */}
-                      <td className="py-2 pr-3 text-right font-medium whitespace-nowrap text-sm">
-                        {formatCurrency(qty * (watchedItems[idx]?.pieces_count || 1) * price)}
-                      </td>
-
-                      {/* Supprimer */}
-                      <td className="py-2">
-                        {!field.original_id && itemFields.length > 1 && (
-                          <Button
-                            type="button"
-                            variant="ghost"
-                            size="icon"
-                            className="h-8 w-8 text-destructive hover:text-destructive"
-                            onClick={() => removeItem(idx)}
-                          >
-                            <Trash2 className="h-3.5 w-3.5" />
-                          </Button>
+                      )}
+                    </div>
+                    <div className="space-y-1">
+                      <span className="text-xs text-muted-foreground block">P.U (MAD)</span>
+                      <Controller
+                        name={`items.${idx}.unit_price`}
+                        control={control}
+                        render={({ field: f }) => (
+                          <Input
+                            type="number"
+                            min={0}
+                            step="0.01"
+                            className="h-8 text-right text-sm px-1"
+                            onFocus={e => e.target.select()}
+                            value={f.value ?? ''}
+                            onChange={e => f.onChange(e.target.value === '' ? undefined : Number(e.target.value))}
+                            ref={f.ref}
+                          />
                         )}
-                      </td>
-                    </tr>
-                  )
-                })}
-              </tbody>
-              <tfoot>
-                <tr className="border-t">
-                  <td colSpan={4} className="pt-3 text-right font-semibold pr-3">Total :</td>
-                  <td className="pt-3 text-right font-bold pr-3">{formatCurrency(total)}</td>
-                  <td />
-                </tr>
-              </tfoot>
-            </table>
+                      />
+                    </div>
+                    <div className="space-y-1">
+                      <span className="text-xs text-muted-foreground block">S. Total</span>
+                      <div className="text-sm font-medium text-right tabular-nums h-8 flex items-center justify-end">
+                        {formatCurrency(qty * pieces * price)}
+                      </div>
+                    </div>
+                  </div>
+                </div>
+              )
+            })}
+
+            {/* Total produits */}
+            <div className="flex justify-end pt-1 gap-2 text-sm">
+              <span className="font-semibold text-muted-foreground">Total :</span>
+              <span className="font-bold">{formatCurrency(total)}</span>
+            </div>
           </div>
+
           {typeof errors.items?.message === 'string' && (
             <p className="text-xs text-destructive">{errors.items.message}</p>
           )}
         </div>
 
         {/* ── Paiements ── */}
-        <div className="rounded-lg border bg-card p-6 space-y-4">
+        <div className="rounded-lg border bg-card p-4 sm:p-6 space-y-3">
           <div className="flex items-center justify-between">
             <h2 className="text-sm font-semibold uppercase tracking-wide text-muted-foreground">Paiements</h2>
             <Button
@@ -494,106 +461,97 @@ export const SaleForm = ({ existing, onSubmit, isLoading = false }: SaleFormProp
             </Button>
           </div>
 
+          {/* Cartes paiements — pas de scroll horizontal */}
           {paymentFields.length > 0 && (
-            <div className="overflow-x-auto">
-              <table className="w-full text-sm">
-                <thead>
-                  <tr className="border-b text-left text-muted-foreground">
-                    <th className="pb-2 font-medium">Date</th>
-                    <th className="pb-2 font-medium">Montant</th>
-                    <th className="pb-2 font-medium">Méthode</th>
-                    <th className="pb-2 font-medium">Note</th>
-                    <th className="pb-2 w-8" />
-                  </tr>
-                </thead>
-                <tbody className="divide-y">
-                  {paymentFields.map((field, idx) => (
-                    <tr key={field.id}>
-                      <td className="py-2 pr-3">
-                        <Controller
-                          name={`payments.${idx}.date`}
-                          control={control}
-                          render={({ field: f }) => (
-                            <Input
-                              type="date"
-                              className="h-8 w-36"
-                              value={f.value}
-                              onChange={f.onChange}
-                              ref={f.ref}
-                            />
-                          )}
-                        />
-                      </td>
-                      <td className="py-2 pr-3">
-                        <Controller
-                          name={`payments.${idx}.amount`}
-                          control={control}
-                          render={({ field: f }) => (
-                            <Input
-                              type="number"
-                              min={0}
-                              step="0.01"
-                              className="h-8 w-32 text-right"
-                              value={f.value}
-                              onChange={e => f.onChange(e.target.value === '' ? 0 : Number(e.target.value))}
-                              onFocus={e => e.target.select()}
-                              ref={f.ref}
-                            />
-                          )}
-                        />
-                      </td>
-                      <td className="py-2 pr-3">
-                        <Controller
-                          name={`payments.${idx}.methode_paiement`}
-                          control={control}
-                          render={({ field: f }) => (
-                            <select
-                              className="flex h-8 rounded-md border border-input bg-background px-2 text-sm focus-visible:outline-none focus-visible:ring-1 focus-visible:ring-ring"
-                              value={f.value ?? ''}
-                              onChange={f.onChange}
-                              ref={f.ref}
-                            >
-                              <option value="">—</option>
-                              <option value="Espèces">Espèces</option>
-                              <option value="Virement bancaire">Virement bancaire</option>
-                              <option value="Chèque">Chèque</option>
-                              <option value="Effet">Effet</option>
-                              <option value="Traite">Traite</option>
-                              <option value="Carte bancaire">Carte bancaire</option>
-                            </select>
-                          )}
-                        />
-                      </td>
-                      <td className="py-2 pr-3">
-                        <Controller
-                          name={`payments.${idx}.note`}
-                          control={control}
-                          render={({ field: f }) => (
-                            <Input
-                              className="h-8"
-                              placeholder="Note..."
-                              value={f.value ?? ''}
-                              onChange={f.onChange}
-                              ref={f.ref}
-                            />
-                          )}
-                        />
-                      </td>
-                      <td className="py-2">
-                        <Button
-                          type="button"
-                          variant="ghost"
-                          size="icon"
-                          className="h-8 w-8 text-destructive hover:text-destructive"
-                          onClick={() => removePayment(idx)}
-                        >
-                          <Trash2 className="h-3.5 w-3.5" />
-                        </Button>
-                      </td>
-                    </tr>
-                  ))}
-                </tbody>
-              </table>
+            <div className="space-y-2">
+              {paymentFields.map((field, idx) => (
+                <div key={field.id} className="rounded-md border bg-background p-3 space-y-2">
+                  {/* Ligne 1 : Date + Montant + Supprimer */}
+                  <div className="flex gap-2 items-end">
+                    <div className="space-y-1 flex-1">
+                      <span className="text-xs text-muted-foreground block">Date</span>
+                      <Controller
+                        name={`payments.${idx}.date`}
+                        control={control}
+                        render={({ field: f }) => (
+                          <Input type="date" className="h-8" value={f.value} onChange={f.onChange} ref={f.ref} />
+                        )}
+                      />
+                    </div>
+                    <div className="space-y-1 flex-1">
+                      <span className="text-xs text-muted-foreground block">Montant (MAD)</span>
+                      <Controller
+                        name={`payments.${idx}.amount`}
+                        control={control}
+                        render={({ field: f }) => (
+                          <Input
+                            type="number"
+                            min={0}
+                            step="0.01"
+                            className="h-8 text-right"
+                            value={f.value}
+                            onChange={e => f.onChange(e.target.value === '' ? 0 : Number(e.target.value))}
+                            onFocus={e => e.target.select()}
+                            ref={f.ref}
+                          />
+                        )}
+                      />
+                    </div>
+                    <Button
+                      type="button"
+                      variant="ghost"
+                      size="icon"
+                      className="h-8 w-8 shrink-0 text-destructive hover:text-destructive"
+                      onClick={() => removePayment(idx)}
+                    >
+                      <Trash2 className="h-3.5 w-3.5" />
+                    </Button>
+                  </div>
+
+                  {/* Ligne 2 : Méthode + Note */}
+                  <div className="grid grid-cols-2 gap-2">
+                    <div className="space-y-1">
+                      <span className="text-xs text-muted-foreground block">Méthode</span>
+                      <Controller
+                        name={`payments.${idx}.methode_paiement`}
+                        control={control}
+                        render={({ field: f }) => (
+                          <select
+                            className="flex h-8 w-full rounded-md border border-input bg-background px-2 text-sm focus-visible:outline-none focus-visible:ring-1 focus-visible:ring-ring"
+                            value={f.value ?? ''}
+                            onChange={f.onChange}
+                            ref={f.ref}
+                          >
+                            <option value="">—</option>
+                            <option value="Espèces">Espèces</option>
+                            <option value="Virement bancaire">Virement</option>
+                            <option value="Chèque">Chèque</option>
+                            <option value="Effet">Effet</option>
+                            <option value="Traite">Traite</option>
+                            <option value="Carte bancaire">Carte</option>
+                          </select>
+                        )}
+                      />
+                    </div>
+                    <div className="space-y-1">
+                      <span className="text-xs text-muted-foreground block">Note</span>
+                      <Controller
+                        name={`payments.${idx}.note`}
+                        control={control}
+                        render={({ field: f }) => (
+                          <Input
+                            className="h-8"
+                            placeholder="Note..."
+                            value={f.value ?? ''}
+                            onChange={f.onChange}
+                            ref={f.ref}
+                          />
+                        )}
+                      />
+                    </div>
+                  </div>
+                </div>
+              ))}
             </div>
           )}
 
