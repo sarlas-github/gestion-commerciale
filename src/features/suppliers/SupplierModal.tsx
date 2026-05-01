@@ -18,11 +18,17 @@ export const SupplierModal = ({ supplier, open, onOpenChange, onSuccess }: Suppl
   const isPending = createSupplier.isPending || updateSupplier.isPending
 
   const handleSubmit = async (data: SupplierFormValues) => {
+    const normalized = {
+      ...data,
+      phone: data.phone || null,
+      address: data.address || null,
+      ice: data.ice || null,
+    }
     let result;
     if (isEditing && supplier) {
-      result = await updateSupplier.mutateAsync({ id: supplier.id, ...data })
+      result = await updateSupplier.mutateAsync({ id: supplier.id, ...normalized })
     } else {
-      result = await createSupplier.mutateAsync(data)
+      result = await createSupplier.mutateAsync(normalized)
     }
     onSuccess?.(result)
     onOpenChange(false)

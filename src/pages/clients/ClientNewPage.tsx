@@ -10,7 +10,12 @@ export const ClientNewPage = () => {
   const createClient = useCreateClient()
 
   const handleSubmit = async (values: ClientFormValues) => {
-    await createClient.mutateAsync(values)
+    await createClient.mutateAsync({
+      ...values,
+      phone: values.phone || null,
+      address: values.address || null,
+      ice: values.ice || null,
+    })
     navigate('/clients')
   }
 

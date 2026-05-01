@@ -18,11 +18,17 @@ export const ClientModal = ({ client, open, onOpenChange, onSuccess }: ClientMod
   const isPending = createClient.isPending || updateClient.isPending
 
   const handleSubmit = async (data: ClientFormValues) => {
+    const normalized = {
+      ...data,
+      phone: data.phone || null,
+      address: data.address || null,
+      ice: data.ice || null,
+    }
     let result;
     if (isEditing && client) {
-      result = await updateClient.mutateAsync({ id: client.id, ...data })
+      result = await updateClient.mutateAsync({ id: client.id, ...normalized })
     } else {
-      result = await createClient.mutateAsync(data)
+      result = await createClient.mutateAsync(normalized)
     }
     onSuccess?.(result)
     onOpenChange(false)

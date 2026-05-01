@@ -10,7 +10,12 @@ export const SupplierNewPage = () => {
   const createSupplier = useCreateSupplier()
 
   const handleSubmit = async (values: SupplierFormValues) => {
-    await createSupplier.mutateAsync(values)
+    await createSupplier.mutateAsync({
+      ...values,
+      phone: values.phone || null,
+      address: values.address || null,
+      ice: values.ice || null,
+    })
     navigate('/suppliers')
   }
 

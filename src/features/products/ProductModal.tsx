@@ -1,13 +1,13 @@
 import { ProductForm, type ProductFormData } from '@/features/products/ProductForm'
 import { useCreateProduct, useUpdateProduct } from '@/hooks/useProducts'
 import { ResponsiveModal } from '@/components/shared/ResponsiveModal'
-import type { ProductWithStock } from '@/types'
+import type { Product, ProductWithStock } from '@/types'
 
 interface ProductModalProps {
   product?: ProductWithStock | null
   open: boolean
   onOpenChange: (open: boolean) => void
-  onSuccess?: (product: ProductWithStock) => void
+  onSuccess?: (product: Product) => void
 }
 
 export const ProductModal = ({ product, open, onOpenChange, onSuccess }: ProductModalProps) => {
