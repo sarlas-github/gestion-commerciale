@@ -5,6 +5,7 @@ import { Link2 } from 'lucide-react'
 import { DataTable } from '@/components/shared/DataTable'
 import { PageHeader } from '@/components/shared/PageHeader'
 import { useAllClientPayments, type ClientPaymentRow } from '@/hooks/useClientPayments'
+import { SaleQuickViewModal } from '@/features/sales/SaleQuickViewModal'
 import { formatCurrency, formatDate } from '@/lib/utils'
 
 const MONTHS_FR = [
@@ -15,6 +16,13 @@ const MONTHS_FR = [
 export const ClientPaymentsPage = () => {
   const navigate = useNavigate()
   const { data: payments = [], isLoading } = useAllClientPayments()
+  const [selectedSaleId, setSelectedSaleId] = useState<string | null>(null)
+  const [isModalOpen, setIsModalOpen] = useState(false)
+
+  const handleQuickView = (id: string) => {
+    setSelectedSaleId(id)
+    setIsModalOpen(true)
+  }
 
   const now = new Date()
   const [filterMonth, setFilterMonth] = useState<string>(String(now.getMonth() + 1))
@@ -61,8 +69,8 @@ export const ClientPaymentsPage = () => {
       header: 'Vente réf.',
       cell: ({ row }) => (
         <button
-          className="flex items-center gap-1 text-primary hover:underline text-sm"
-          onClick={() => navigate(`/sales/${row.original.sale_id}/edit`)}
+          className="flex items-center gap-1 text-primary hover:underline text-sm font-medium"
+          onClick={() => handleQuickView(row.original.sale_id)}
         >
           <Link2 className="h-3.5 w-3.5" />
           {row.original.sale_reference ?? 'Voir vente'}
@@ -136,6 +144,12 @@ export const ClientPaymentsPage = () => {
           </p>
         </div>
       )}
+
+      <SaleQuickViewModal
+        saleId={selectedSaleId}
+        open={isModalOpen}
+        onOpenChange={setIsModalOpen}
+      />
     </div>
   )
 }

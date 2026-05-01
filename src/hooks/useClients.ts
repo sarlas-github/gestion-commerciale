@@ -83,7 +83,7 @@ export const useClientPayments = (clientId: string) =>
 
       const { data, error } = await supabase
         .from('client_payments')
-        .select('*')
+        .select('*, sales(reference)')
         .in('sale_id', saleIds)
         .order('date', { ascending: false })
 

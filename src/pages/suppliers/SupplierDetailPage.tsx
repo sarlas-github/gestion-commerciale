@@ -12,7 +12,9 @@ import {
   CreditCard,
   Info,
   BarChart3,
+  Link2,
 } from 'lucide-react'
+import { PurchaseQuickViewModal } from '@/features/purchases/PurchaseQuickViewModal'
 import { Button } from '@/components/ui/button'
 import { Badge } from '@/components/ui/badge'
 import { PageHeader } from '@/components/shared/PageHeader'
@@ -100,9 +102,28 @@ const TabInfos = ({ supplier }: { supplier: ReturnType<typeof useSupplier>['data
 const TabAchats = ({ supplierId }: { supplierId: string }) => {
   const navigate = useNavigate()
   const { data: purchases = [], isLoading } = useSupplierPurchases(supplierId)
+  const [selectedPurchaseId, setSelectedPurchaseId] = useState<string | null>(null)
+  const [isModalOpen, setIsModalOpen] = useState(false)
+
+  const handleQuickView = (id: string) => {
+    setSelectedPurchaseId(id)
+    setIsModalOpen(true)
+  }
 
   const columns = useMemo<ColumnDef<Purchase>[]>(() => [
-    { accessorKey: 'reference', header: 'Référence', cell: ({ row }) => row.original.reference || '—' },
+    {
+      accessorKey: 'reference',
+      header: 'Référence',
+      cell: ({ row }) => (
+        <button
+          className="flex items-center gap-1 text-primary hover:underline text-sm font-medium"
+          onClick={() => handleQuickView(row.original.id)}
+        >
+          <Link2 className="h-3.5 w-3.5" />
+          {row.original.reference || '—'}
+        </button>
+      ),
+    },
     { accessorKey: 'date', header: 'Date', cell: ({ row }) => formatDate(row.original.date) },
     { accessorKey: 'total', header: 'Total', cell: ({ row }) => formatCurrency(row.original.total) },
     { accessorKey: 'paid', header: 'Payé', cell: ({ row }) => formatCurrency(row.original.paid) },
@@ -137,21 +158,29 @@ const TabAchats = ({ supplierId }: { supplierId: string }) => {
   ], [navigate])
 
   return (
-    <DataTable
-      columns={columns}
-      data={purchases as Purchase[]}
-      isLoading={isLoading}
-      searchPlaceholder="Rechercher un achat..."
-      exportFileName={`achats-fournisseur-${supplierId}`}
-      exportMapper={p => ({
-        Référence: (p as Purchase).reference ?? '',
-        Date: formatDate((p as Purchase).date),
-        Total: (p as Purchase).total,
-        Payé: (p as Purchase).paid,
-        Reste: (p as Purchase).remaining,
-        Statut: (p as Purchase).status,
-      })}
-    />
+    <>
+      <DataTable
+        columns={columns}
+        data={purchases as Purchase[]}
+        isLoading={isLoading}
+        searchPlaceholder="Rechercher un achat..."
+        exportFileName={`achats-fournisseur-${supplierId}`}
+        exportMapper={p => ({
+          Référence: (p as Purchase).reference ?? '',
+          Date: formatDate((p as Purchase).date),
+          Total: (p as Purchase).total,
+          Payé: (p as Purchase).paid,
+          Reste: (p as Purchase).remaining,
+          Statut: (p as Purchase).status,
+        })}
+      />
+
+      <PurchaseQuickViewModal
+        purchaseId={selectedPurchaseId}
+        open={isModalOpen}
+        onOpenChange={setIsModalOpen}
+      />
+    </>
   )
 }
 
@@ -159,6 +188,13 @@ const TabAchats = ({ supplierId }: { supplierId: string }) => {
 
 const TabPaiements = ({ supplierId }: { supplierId: string }) => {
   const { data: payments = [], isLoading } = useSupplierPayments(supplierId)
+  const [selectedPurchaseId, setSelectedPurchaseId] = useState<string | null>(null)
+  const [isModalOpen, setIsModalOpen] = useState(false)
+
+  const handleQuickView = (id: string) => {
+    setSelectedPurchaseId(id)
+    setIsModalOpen(true)
+  }
 
   const columns = useMemo<ColumnDef<SupplierPayment>[]>(() => [
     { accessorKey: 'date', header: 'Date', cell: ({ row }) => formatDate(row.original.date) },
@@ -167,7 +203,15 @@ const TabPaiements = ({ supplierId }: { supplierId: string }) => {
       header: 'Achat réf.',
       cell: ({ row }) => {
         const ref = (row.original as unknown as { purchases?: { reference?: string } }).purchases?.reference
-        return ref || row.original.purchase_id.substring(0, 8)
+        return (
+          <button
+            className="flex items-center gap-1 text-primary hover:underline text-sm font-medium"
+            onClick={() => handleQuickView(row.original.purchase_id)}
+          >
+            <Link2 className="h-3.5 w-3.5" />
+            {ref || row.original.purchase_id.substring(0, 8)}
+          </button>
+        )
       },
     },
     { accessorKey: 'amount', header: 'Montant', cell: ({ row }) => formatCurrency(row.original.amount) },
@@ -199,6 +243,12 @@ const TabPaiements = ({ supplierId }: { supplierId: string }) => {
           </p>
         </div>
       )}
+
+      <PurchaseQuickViewModal
+        purchaseId={selectedPurchaseId}
+        open={isModalOpen}
+        onOpenChange={setIsModalOpen}
+      />
     </div>
   )
 }

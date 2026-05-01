@@ -11,7 +11,9 @@ import {
   CreditCard,
   Info,
   BarChart3,
+  Link2,
 } from 'lucide-react'
+import { SaleQuickViewModal } from '@/features/sales/SaleQuickViewModal'
 import { Button } from '@/components/ui/button'
 import { Badge } from '@/components/ui/badge'
 import { PageHeader } from '@/components/shared/PageHeader'
@@ -93,8 +95,28 @@ const TabInfos = ({ client }: { client: ReturnType<typeof useClient>['data'] }) 
 const TabVentes = ({ clientId }: { clientId: string }) => {
   const navigate = useNavigate()
   const { data: sales = [], isLoading } = useClientSales(clientId)
+  const [selectedSaleId, setSelectedSaleId] = useState<string | null>(null)
+  const [isModalOpen, setIsModalOpen] = useState(false)
+
+  const handleQuickView = (id: string) => {
+    setSelectedSaleId(id)
+    setIsModalOpen(true)
+  }
 
   const columns = useMemo<ColumnDef<Sale>[]>(() => [
+    {
+      accessorKey: 'reference',
+      header: 'Référence',
+      cell: ({ row }) => (
+        <button
+          className="flex items-center gap-1 text-primary hover:underline text-sm font-medium"
+          onClick={() => handleQuickView(row.original.id)}
+        >
+          <Link2 className="h-3.5 w-3.5" />
+          {row.original.reference || '—'}
+        </button>
+      ),
+    },
     { accessorKey: 'date', header: 'Date', cell: ({ row }) => formatDate(row.original.date) },
     { accessorKey: 'total', header: 'Total', cell: ({ row }) => formatCurrency(row.original.total) },
     { accessorKey: 'paid', header: 'Payé', cell: ({ row }) => formatCurrency(row.original.paid) },
@@ -129,20 +151,29 @@ const TabVentes = ({ clientId }: { clientId: string }) => {
   ], [navigate])
 
   return (
-    <DataTable
-      columns={columns}
-      data={sales}
-      isLoading={isLoading}
-      searchPlaceholder="Rechercher une vente..."
-      exportFileName={`ventes-client-${clientId}`}
-      exportMapper={s => ({
-        Date: formatDate(s.date),
-        Total: s.total,
-        Payé: s.paid,
-        Reste: s.remaining,
-        Statut: s.status === 'paid' ? 'Payé' : s.status === 'partial' ? 'Partiel' : 'Impayé',
-      })}
-    />
+    <>
+      <DataTable
+        columns={columns}
+        data={sales}
+        isLoading={isLoading}
+        searchPlaceholder="Rechercher une vente..."
+        exportFileName={`ventes-client-${clientId}`}
+        exportMapper={s => ({
+          Référence: s.reference ?? '',
+          Date: formatDate(s.date),
+          Total: s.total,
+          Payé: s.paid,
+          Reste: s.remaining,
+          Statut: s.status === 'paid' ? 'Payé' : s.status === 'partial' ? 'Partiel' : 'Impayé',
+        })}
+      />
+
+      <SaleQuickViewModal
+        saleId={selectedSaleId}
+        open={isModalOpen}
+        onOpenChange={setIsModalOpen}
+      />
+    </>
   )
 }
 
@@ -150,9 +181,32 @@ const TabVentes = ({ clientId }: { clientId: string }) => {
 
 const TabPaiements = ({ clientId }: { clientId: string }) => {
   const { data: payments = [], isLoading } = useClientPayments(clientId)
+  const [selectedSaleId, setSelectedSaleId] = useState<string | null>(null)
+  const [isModalOpen, setIsModalOpen] = useState(false)
+
+  const handleQuickView = (id: string) => {
+    setSelectedSaleId(id)
+    setIsModalOpen(true)
+  }
 
   const columns = useMemo<ColumnDef<ClientPayment>[]>(() => [
     { accessorKey: 'date', header: 'Date', cell: ({ row }) => formatDate(row.original.date) },
+    {
+      accessorKey: 'sale_id',
+      header: 'Vente réf.',
+      cell: ({ row }) => {
+        const ref = (row.original as any).sales?.reference
+        return (
+          <button
+            className="flex items-center gap-1 text-primary hover:underline text-sm font-medium"
+            onClick={() => handleQuickView(row.original.sale_id)}
+          >
+            <Link2 className="h-3.5 w-3.5" />
+            {ref || row.original.sale_id.substring(0, 8)}
+          </button>
+        )
+      },
+    },
     { accessorKey: 'amount', header: 'Montant', cell: ({ row }) => formatCurrency(row.original.amount) },
     { accessorKey: 'methode_paiement', header: 'Méthode', cell: ({ row }) => row.original.methode_paiement || '—' },
     { accessorKey: 'note', header: 'Note', cell: ({ row }) => row.original.note || '—' },
@@ -182,6 +236,12 @@ const TabPaiements = ({ clientId }: { clientId: string }) => {
           </p>
         </div>
       )}
+
+      <SaleQuickViewModal
+        saleId={selectedSaleId}
+        open={isModalOpen}
+        onOpenChange={setIsModalOpen}
+      />
     </div>
   )
 }

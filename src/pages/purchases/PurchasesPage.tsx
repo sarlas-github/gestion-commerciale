@@ -8,6 +8,7 @@ import { ConfirmDialog } from '@/components/shared/ConfirmDialog'
 import { Button } from '@/components/ui/button'
 import { Badge } from '@/components/ui/badge'
 import { usePurchases, useDeletePurchase } from '@/hooks/usePurchases'
+import { PurchaseQuickViewModal } from '@/features/purchases/PurchaseQuickViewModal'
 import { formatCurrency, formatDate } from '@/lib/utils'
 import type { Purchase } from '@/types'
 
@@ -27,6 +28,13 @@ export const PurchasesPage = () => {
   const { data: purchases = [], isLoading } = usePurchases()
   const deletePurchase = useDeletePurchase()
   const [deleteTarget, setDeleteTarget] = useState<Purchase | null>(null)
+  const [selectedPurchaseId, setSelectedPurchaseId] = useState<string | null>(null)
+  const [isModalOpen, setIsModalOpen] = useState(false)
+
+  const handleQuickView = (id: string) => {
+    setSelectedPurchaseId(id)
+    setIsModalOpen(true)
+  }
 
   const now = new Date()
   const [filterMonth, setFilterMonth] = useState<string>(String(now.getMonth() + 1))
@@ -56,8 +64,8 @@ export const PurchasesPage = () => {
         header: 'Référence',
         cell: ({ row }) => row.original.reference ? (
           <button
-            className="flex items-center gap-1 text-primary hover:underline text-sm"
-            onClick={() => navigate(`/purchases/${row.original.id}/edit`)}
+            className="flex items-center gap-1 text-primary hover:underline text-sm font-medium"
+            onClick={() => handleQuickView(row.original.id)}
           >
             <Link2 className="h-3.5 w-3.5" />
             {row.original.reference}
@@ -219,6 +227,12 @@ export const PurchasesPage = () => {
           }
         }}
         loading={deletePurchase.isPending}
+      />
+
+      <PurchaseQuickViewModal
+        purchaseId={selectedPurchaseId}
+        open={isModalOpen}
+        onOpenChange={setIsModalOpen}
       />
     </div>
   )

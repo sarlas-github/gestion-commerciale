@@ -5,6 +5,7 @@ import { Link2 } from 'lucide-react'
 import { DataTable } from '@/components/shared/DataTable'
 import { PageHeader } from '@/components/shared/PageHeader'
 import { useAllSupplierPayments, type SupplierPaymentRow } from '@/hooks/useSupplierPayments'
+import { PurchaseQuickViewModal } from '@/features/purchases/PurchaseQuickViewModal'
 import { formatCurrency, formatDate } from '@/lib/utils'
 
 const MONTHS_FR = [
@@ -15,6 +16,13 @@ const MONTHS_FR = [
 export const SupplierPaymentsPage = () => {
   const navigate = useNavigate()
   const { data: payments = [], isLoading } = useAllSupplierPayments()
+  const [selectedPurchaseId, setSelectedPurchaseId] = useState<string | null>(null)
+  const [isModalOpen, setIsModalOpen] = useState(false)
+
+  const handleQuickView = (id: string) => {
+    setSelectedPurchaseId(id)
+    setIsModalOpen(true)
+  }
 
   const now = new Date()
   const [filterMonth, setFilterMonth] = useState<string>(String(now.getMonth() + 1))
@@ -61,8 +69,8 @@ export const SupplierPaymentsPage = () => {
       header: 'Achat réf.',
       cell: ({ row }) => (
         <button
-          className="flex items-center gap-1 text-primary hover:underline text-sm"
-          onClick={() => navigate(`/purchases/${row.original.purchase_id}/edit`)}
+          className="flex items-center gap-1 text-primary hover:underline text-sm font-medium"
+          onClick={() => handleQuickView(row.original.purchase_id)}
         >
           <Link2 className="h-3.5 w-3.5" />
           {row.original.purchase_reference ?? 'Voir achat'}
@@ -136,6 +144,12 @@ export const SupplierPaymentsPage = () => {
           </p>
         </div>
       )}
+
+      <PurchaseQuickViewModal
+        purchaseId={selectedPurchaseId}
+        open={isModalOpen}
+        onOpenChange={setIsModalOpen}
+      />
     </div>
   )
 }
