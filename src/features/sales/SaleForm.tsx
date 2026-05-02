@@ -10,6 +10,7 @@ import { Label } from '@/components/ui/label'
 import { Badge } from '@/components/ui/badge'
 import { useClients } from '@/hooks/useClients'
 import { useProducts } from '@/hooks/useProducts'
+import { useCompany } from '@/hooks/useCompany'
 import { ClientModal } from '@/features/clients/ClientModal'
 import { ProductModal } from '@/features/products/ProductModal'
 import { formatCurrency, getPaymentStatus, toISODate } from '@/lib/utils'
@@ -38,6 +39,7 @@ export const saleSchema = z.object({
   date: z.string().min(1, 'Date obligatoire'),
   reference: z.string().optional().or(z.literal('')),
   note: z.string().optional().or(z.literal('')),
+  tva_rate: z.number().default(0),
   items: z.array(itemSchema).min(1, 'Ajouter au moins un produit'),
   payments: z.array(paymentSchema),
 })
@@ -75,6 +77,7 @@ export const SaleForm = ({ existing, onSubmit, isLoading = false }: SaleFormProp
   const { data: clients = [] } = useClients()
   const { data: products = [] } = useProducts()
   const { data: nextRef } = useNextSaleNumber()
+  const { data: company } = useCompany()
 
   const defaultItems = existing?.sale_items?.map(i => ({
     original_id: i.id,
@@ -104,6 +107,7 @@ export const SaleForm = ({ existing, onSubmit, isLoading = false }: SaleFormProp
       date: existing?.date ?? today,
       reference: existing?.reference ?? '',
       note: existing?.note ?? '',
+      tva_rate: existing?.tva_rate ?? 0,
       items: defaultItems,
       payments: defaultPayments,
     },
@@ -114,6 +118,12 @@ export const SaleForm = ({ existing, onSubmit, isLoading = false }: SaleFormProp
       setValue('reference', nextRef)
     }
   }, [existing, nextRef, setValue, watch])
+
+  useEffect(() => {
+    if (!existing && company != null) {
+      setValue('tva_rate', company.taux_tva_defaut ?? 0)
+    }
+  }, [existing, company, setValue])
 
   const [newItemIdx, setNewItemIdx] = useState<number | null>(null)
   const selectRefs = useRef<Map<number, HTMLSelectElement>>(new Map())
@@ -130,14 +140,17 @@ export const SaleForm = ({ existing, onSubmit, isLoading = false }: SaleFormProp
 
   const watchedItems = watch('items')
   const watchedPayments = watch('payments')
+  const watchedTvaRate = watch('tva_rate')
 
-  const total = watchedItems?.reduce(
+  const totalHT = watchedItems?.reduce(
     (s, i) => s + (Number(i.quantity) || 0) * (Number(i.pieces_count) || 1) * (Number(i.unit_price) || 0),
     0
   ) || 0
+  const tvaAmount = totalHT * (Number(watchedTvaRate) || 0) / 100
+  const totalTTC = totalHT + tvaAmount
   const paid = watchedPayments?.reduce((s, p) => s + (Number(p.amount) || 0), 0) || 0
-  const remaining = total - paid
-  const status = getPaymentStatus(paid, total)
+  const remaining = totalTTC - paid
+  const status = getPaymentStatus(paid, totalTTC)
 
   const handleQuickClientSuccess = useCallback(
     (client: any) => {
@@ -290,8 +303,18 @@ export const SaleForm = ({ existing, onSubmit, isLoading = false }: SaleFormProp
             </p>
           )}
 
-          {/* Cartes produits — pas de scroll horizontal */}
-          <div className="space-y-2">
+          {/* Produits — cartes mobile / lignes desktop */}
+          <div className="space-y-2 sm:space-y-0">
+            {/* En-tête colonnes — desktop uniquement */}
+            <div className="hidden sm:grid sm:grid-cols-[1fr_60px_90px_140px_120px_40px] gap-2 px-1 pb-2 border-b text-xs font-medium text-muted-foreground">
+              <span>Produit</span>
+              <span className="text-center">Pièces</span>
+              <span className="text-center">Quantité</span>
+              <span className="text-right">Prix Unitaire HT</span>
+              <span className="text-right">Sous-Total</span>
+              <span></span>
+            </div>
+
             {itemFields.map((field, idx) => {
               const qty = Number(watchedItems[idx]?.quantity) || 0
               const pieces = Number(watchedItems[idx]?.pieces_count) || 1
@@ -302,9 +325,12 @@ export const SaleForm = ({ existing, onSubmit, isLoading = false }: SaleFormProp
               const stockWarning = Boolean(selectedProductId) && qty > availableStock
 
               return (
-                <div key={field.id} className="rounded-md border bg-background p-3 space-y-2">
-                  {/* Ligne 1 : sélecteur produit + boutons */}
-                  <div className="flex gap-2 items-start">
+                <div
+                  key={field.id}
+                  className="rounded-md border bg-background p-3 space-y-2 sm:rounded-none sm:border-x-0 sm:border-t-0 sm:border-b sm:last:border-b-0 sm:bg-transparent sm:p-0 sm:py-2 sm:space-y-0 sm:grid sm:grid-cols-[1fr_60px_90px_140px_120px_40px] sm:gap-2 sm:items-start"
+                >
+                  {/* Col 1 / Ligne 1 mobile : produit + boutons mobile */}
+                  <div className="flex gap-2 items-start sm:items-center">
                     <div className="flex-1 min-w-0">
                       {field.original_id ? (
                         <span className="text-sm font-medium">
@@ -312,31 +338,43 @@ export const SaleForm = ({ existing, onSubmit, isLoading = false }: SaleFormProp
                         </span>
                       ) : (
                         <>
-                          <Controller
-                            name={`items.${idx}.product_id`}
-                            control={control}
-                            render={({ field: f }) => (
-                              <select
-                                className="flex h-8 w-full rounded-md border border-input bg-background px-2 text-sm focus-visible:outline-none focus-visible:ring-1 focus-visible:ring-ring"
-                                value={f.value}
-                                ref={el => {
-                                  f.ref(el)
-                                  if (el) selectRefs.current.set(idx, el)
-                                  else selectRefs.current.delete(idx)
-                                }}
-                                autoFocus={newItemIdx === idx}
-                                onChange={e => {
-                                  f.onChange(e.target.value)
-                                  handleProductChange(idx, e.target.value)
-                                }}
-                              >
-                                <option value="">— Produit —</option>
-                                {products.map(p => (
-                                  <option key={p.id} value={p.id}>{p.name}</option>
-                                ))}
-                              </select>
-                            )}
-                          />
+                          <div className="flex gap-1.5 items-center">
+                            <Controller
+                              name={`items.${idx}.product_id`}
+                              control={control}
+                              render={({ field: f }) => (
+                                <select
+                                  className="flex h-8 w-full rounded-md border border-input bg-background px-2 text-sm focus-visible:outline-none focus-visible:ring-1 focus-visible:ring-ring"
+                                  value={f.value}
+                                  ref={el => {
+                                    f.ref(el)
+                                    if (el) selectRefs.current.set(idx, el)
+                                    else selectRefs.current.delete(idx)
+                                  }}
+                                  autoFocus={newItemIdx === idx}
+                                  onChange={e => {
+                                    f.onChange(e.target.value)
+                                    handleProductChange(idx, e.target.value)
+                                  }}
+                                >
+                                  <option value="">— Produit —</option>
+                                  {products.map(p => (
+                                    <option key={p.id} value={p.id}>{p.name}</option>
+                                  ))}
+                                </select>
+                              )}
+                            />
+                            <Button
+                              type="button"
+                              variant="outline"
+                              size="icon"
+                              className="h-8 w-8 shrink-0 hidden sm:flex"
+                              title="Nouveau produit"
+                              onClick={() => setShowNewProductIdx(idx)}
+                            >
+                              <Plus className="h-3.5 w-3.5" />
+                            </Button>
+                          </div>
                           {stockWarning && (
                             <p className="text-xs text-amber-600 mt-0.5 flex items-center gap-1">
                               <AlertTriangle className="h-3 w-3" />
@@ -349,41 +387,31 @@ export const SaleForm = ({ existing, onSubmit, isLoading = false }: SaleFormProp
                         <p className="text-xs text-destructive mt-0.5">{errors.items[idx]?.product_id?.message}</p>
                       )}
                     </div>
-                    {!field.original_id && (
-                      <Button
-                        type="button"
-                        variant="ghost"
-                        size="icon"
-                        className="h-8 w-8 shrink-0"
-                        title="Nouveau produit"
-                        onClick={() => setShowNewProductIdx(idx)}
-                      >
-                        <Plus className="h-3.5 w-3.5" />
-                      </Button>
-                    )}
-                    {!field.original_id && itemFields.length > 1 && (
-                      <Button
-                        type="button"
-                        variant="ghost"
-                        size="icon"
-                        className="h-8 w-8 shrink-0 text-destructive hover:text-destructive"
-                        onClick={() => removeItem(idx)}
-                      >
-                        <Trash2 className="h-3.5 w-3.5" />
-                      </Button>
-                    )}
+                    {/* Boutons — mobile uniquement */}
+                    <div className="flex gap-1 sm:hidden">
+                      {!field.original_id && (
+                        <Button type="button" variant="ghost" size="icon" className="h-8 w-8 shrink-0" title="Nouveau produit" onClick={() => setShowNewProductIdx(idx)}>
+                          <Plus className="h-3.5 w-3.5" />
+                        </Button>
+                      )}
+                      {!field.original_id && itemFields.length > 1 && (
+                        <Button type="button" variant="ghost" size="icon" className="h-8 w-8 shrink-0 text-destructive hover:text-destructive" onClick={() => removeItem(idx)}>
+                          <Trash2 className="h-3.5 w-3.5" />
+                        </Button>
+                      )}
+                    </div>
                   </div>
 
-                  {/* Ligne 2 : Pièces | Quantité | P.U. | Sous-total */}
-                  <div className="grid grid-cols-4 gap-2">
-                    <div className="space-y-1">
-                      <span className="text-xs text-muted-foreground block">Pièces</span>
+                  {/* Cols 2-5 (desktop) / Ligne 2 (mobile) : Pièces, Qté, P.U., Sous-total */}
+                  <div className="grid grid-cols-[44px_1fr_1fr_1.4fr] gap-2 mt-2 sm:mt-0 sm:contents">
+                    <div className="space-y-1 sm:space-y-0">
+                      <span className="text-xs text-muted-foreground block sm:hidden">Pièces</span>
                       <div className="text-sm text-center tabular-nums h-8 flex items-center justify-center">
                         {pieces}
                       </div>
                     </div>
-                    <div className="space-y-1">
-                      <span className="text-xs text-muted-foreground block">Quantité</span>
+                    <div className="space-y-1 sm:space-y-0">
+                      <span className="text-xs text-muted-foreground block sm:hidden">Quantité</span>
                       {field.original_id ? (
                         <div className="text-sm text-center h-8 flex items-center justify-center">{field.quantity}</div>
                       ) : (
@@ -404,8 +432,8 @@ export const SaleForm = ({ existing, onSubmit, isLoading = false }: SaleFormProp
                         />
                       )}
                     </div>
-                    <div className="space-y-1">
-                      <span className="text-xs text-muted-foreground block">P.U (MAD)</span>
+                    <div className="space-y-1 sm:space-y-0">
+                      <span className="text-xs text-muted-foreground block sm:hidden">P.U. HT</span>
                       <Controller
                         name={`items.${idx}.unit_price`}
                         control={control}
@@ -423,27 +451,75 @@ export const SaleForm = ({ existing, onSubmit, isLoading = false }: SaleFormProp
                         )}
                       />
                     </div>
-                    <div className="space-y-1">
-                      <span className="text-xs text-muted-foreground block">S. Total</span>
-                      <div className="text-sm font-medium text-right tabular-nums h-8 flex items-center justify-end">
-                        {formatCurrency(qty * pieces * price)}
+                    <div className="space-y-1 sm:space-y-0 sm:h-8 sm:flex sm:items-center sm:justify-end">
+                      <span className="text-xs text-muted-foreground block sm:hidden">S. Total</span>
+                      <div className="text-sm font-medium tabular-nums h-8 flex items-center justify-end">
+                        {formatCurrency(qty * pieces * price).replace(' MAD', '')}
                       </div>
                     </div>
+                  </div>
+
+                  {/* Col 6 (desktop) : boutons d'action */}
+                  <div className="hidden sm:flex items-center justify-end">
+                    {!field.original_id && itemFields.length > 1 && (
+                      <Button type="button" variant="ghost" size="icon" className="h-8 w-8 text-destructive hover:text-destructive" onClick={() => removeItem(idx)}>
+                        <Trash2 className="h-3.5 w-3.5" />
+                      </Button>
+                    )}
                   </div>
                 </div>
               )
             })}
 
             {/* Total produits */}
-            <div className="flex justify-end pt-1 gap-2 text-sm">
-              <span className="font-semibold text-muted-foreground">Total :</span>
-              <span className="font-bold">{formatCurrency(total)}</span>
+            <div className="flex justify-end pt-2 gap-2 text-sm sm:border-t sm:pt-3">
+              <span className="font-semibold text-muted-foreground">Total HT :</span>
+              <span className="font-bold">{formatCurrency(totalHT)}</span>
             </div>
           </div>
 
           {typeof errors.items?.message === 'string' && (
             <p className="text-xs text-destructive">{errors.items.message}</p>
           )}
+        </div>
+
+        {/* ── TVA ── */}
+        <div className="rounded-lg border bg-card p-4 sm:p-6 space-y-3">
+          <h2 className="text-sm font-semibold uppercase tracking-wide text-muted-foreground">TVA</h2>
+          <div className="flex flex-col items-end gap-2 text-sm">
+            <div className="flex items-center gap-4">
+              <span className="text-muted-foreground">Taux TVA :</span>
+              <Controller
+                name="tva_rate"
+                control={control}
+                render={({ field }) => (
+                  <select
+                    className="h-9 rounded-md border border-input bg-background px-3 text-sm focus-visible:outline-none focus-visible:ring-1 focus-visible:ring-ring"
+                    value={field.value}
+                    onChange={e => field.onChange(parseFloat(e.target.value))}
+                  >
+                    <option value={0}>0% (Hors TVA)</option>
+                    <option value={7}>7%</option>
+                    <option value={10}>10%</option>
+                    <option value={14}>14%</option>
+                    <option value={20}>20%</option>
+                  </select>
+                )}
+              />
+            </div>
+            <div className="flex gap-8">
+              <span className="text-muted-foreground">Total HT :</span>
+              <span className="font-semibold w-32 text-right">{formatCurrency(totalHT)}</span>
+            </div>
+            <div className="flex gap-8">
+              <span className="text-muted-foreground">TVA ({Number(watchedTvaRate) || 0}%) :</span>
+              <span className="font-semibold w-32 text-right">{formatCurrency(tvaAmount)}</span>
+            </div>
+            <div className="flex gap-8 border-t pt-2">
+              <span className="font-semibold">Total TTC :</span>
+              <span className="font-bold w-32 text-right">{formatCurrency(totalTTC)}</span>
+            </div>
+          </div>
         </div>
 
         {/* ── Paiements ── */}
@@ -558,8 +634,8 @@ export const SaleForm = ({ existing, onSubmit, isLoading = false }: SaleFormProp
           {/* Récapitulatif financier */}
           <div className="flex flex-col items-end gap-1 border-t pt-4 text-sm">
             <div className="flex gap-8">
-              <span className="text-muted-foreground">Total :</span>
-              <span className="font-semibold w-32 text-right">{formatCurrency(total)}</span>
+              <span className="text-muted-foreground">Total TTC :</span>
+              <span className="font-semibold w-32 text-right">{formatCurrency(totalTTC)}</span>
             </div>
             <div className="flex gap-8">
               <span className="text-muted-foreground">Payé :</span>

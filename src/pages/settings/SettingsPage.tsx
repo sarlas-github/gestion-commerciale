@@ -299,16 +299,18 @@ export const SettingsPage = () => {
                 control={control}
                 name="taux_tva_defaut"
                 render={({ field }) => (
-                  <Input
+                  <select
                     id="taux_tva_defaut"
-                    type="number"
-                    min={0}
-                    max={100}
-                    step={0.01}
+                    className="h-9 w-full rounded-md border border-input bg-background px-3 text-sm focus-visible:outline-none focus-visible:ring-1 focus-visible:ring-ring"
                     value={field.value}
-                    onChange={e => field.onChange(parseFloat(e.target.value) || 0)}
-                    placeholder="20"
-                  />
+                    onChange={e => field.onChange(parseFloat(e.target.value))}
+                  >
+                    <option value={0}>0% (Hors TVA)</option>
+                    <option value={7}>7%</option>
+                    <option value={10}>10%</option>
+                    <option value={14}>14%</option>
+                    <option value={20}>20%</option>
+                  </select>
                 )}
               />
               {errors.taux_tva_defaut && (

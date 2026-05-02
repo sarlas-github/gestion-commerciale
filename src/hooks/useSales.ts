@@ -26,6 +26,7 @@ export interface CreateSalePayload {
   date: string
   reference?: string
   note?: string
+  tva_rate?: number
   items: SaleItemInput[]
   payments: SalePaymentInput[]
 }
@@ -209,7 +210,10 @@ export const useCreateSale = () => {
       const saleDate = payload.date || today
 
       // 1. Calculs financiers
-      const total = payload.items.reduce((s, i) => s + i.quantity * (i.pieces_count || 1) * i.unit_price, 0)
+      const tvaRate = payload.tva_rate ?? 0
+      const totalHT = payload.items.reduce((s, i) => s + i.quantity * (i.pieces_count || 1) * i.unit_price, 0)
+      const tvaAmount = totalHT * tvaRate / 100
+      const total = totalHT + tvaAmount
       const paid = payload.payments.reduce((s, p) => s + p.amount, 0)
       const status = getPaymentStatus(paid, total)
 
@@ -224,6 +228,8 @@ export const useCreateSale = () => {
           date: saleDate,
           reference: reference,
           total,
+          tva_rate: tvaRate,
+          tva_amount: tvaAmount,
           paid,
           status,
           note: payload.note || null,
@@ -395,7 +401,7 @@ export const useUpdateSale = () => {
   const qc = useQueryClient()
   return useMutation({
     mutationFn: async (payload: UpdateSalePayload) => {
-      const { id, client_id, date, reference, note, items, payments } = payload
+      const { id, client_id, date, reference, note, items, payments, tva_rate } = payload
       const user = await getCurrentUser()
 
       // 1. Récupère la vente actuelle (avec items)
@@ -407,7 +413,10 @@ export const useUpdateSale = () => {
       if (sErr) throw sErr
 
       // 2. Calculs financiers
-      const total = items.reduce((s, i) => s + i.quantity * (i.pieces_count || 1) * i.unit_price, 0)
+      const tvaRate = tva_rate ?? 0
+      const totalHT = items.reduce((s, i) => s + i.quantity * (i.pieces_count || 1) * i.unit_price, 0)
+      const tvaAmount = totalHT * tvaRate / 100
+      const total = totalHT + tvaAmount
       const paid = payments.reduce((s, p) => s + p.amount, 0)
       const status = getPaymentStatus(paid, total)
 
@@ -420,6 +429,8 @@ export const useUpdateSale = () => {
           reference: reference || oldSale.reference,
           note: note || null,
           total,
+          tva_rate: tvaRate,
+          tva_amount: tvaAmount,
           paid,
           status,
         })

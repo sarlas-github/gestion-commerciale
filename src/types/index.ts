@@ -120,6 +120,8 @@ export interface Purchase {
   reference: string | null
   date: string
   total: number
+  tva_rate?: number
+  tva_amount?: number
   paid: number
   remaining: number
   status: PaymentStatus
@@ -176,6 +178,8 @@ export interface Sale {
   reference: string | null
   date: string
   total: number
+  tva_rate?: number
+  tva_amount?: number
   paid: number
   remaining: number
   status: PaymentStatus

@@ -19,7 +19,7 @@ export const useAllClientPayments = () =>
     queryFn: async () => {
       const { data, error } = await supabase
         .from('client_payments')
-        .select('*, sales(id, reference, clients(id, name))')
+        .select('*, sales!sale_id(id, reference, clients!client_id(id, name))')
         .order('date', { ascending: false })
 
       if (error) throw error

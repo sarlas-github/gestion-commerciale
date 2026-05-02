@@ -15,6 +15,7 @@ export const PurchaseNewPage = () => {
       date: values.date,
       reference: values.reference ?? '',
       note: values.note ?? '',
+      tva_rate: values.tva_rate ?? 0,
       items: values.items,
       payments: values.payments.map(p => ({
         date: p.date,

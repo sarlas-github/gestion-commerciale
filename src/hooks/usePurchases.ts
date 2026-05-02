@@ -26,6 +26,7 @@ export interface CreatePurchasePayload {
   date: string
   reference?: string
   note?: string
+  tva_rate?: number
   items: PurchaseItemInput[]
   payments: SupplierPaymentInput[]
 }
@@ -174,7 +175,10 @@ export const useCreatePurchase = () => {
       const today = new Date().toISOString().split('T')[0]
 
       // 1. Calculs
-      const total = payload.items.reduce((s, i) => s + i.quantity * (i.pieces_count || 1) * i.unit_price, 0)
+      const tvaRate = payload.tva_rate ?? 0
+      const totalHT = payload.items.reduce((s, i) => s + i.quantity * (i.pieces_count || 1) * i.unit_price, 0)
+      const tvaAmount = totalHT * tvaRate / 100
+      const total = totalHT + tvaAmount
       const paid = payload.payments.reduce((s, p) => s + p.amount, 0)
       const status = getPaymentStatus(paid, total)
 
@@ -190,6 +194,8 @@ export const useCreatePurchase = () => {
           reference: reference,
           date: payload.date,
           total,
+          tva_rate: tvaRate,
+          tva_amount: tvaAmount,
           paid,
           status,
           note: payload.note || null,
@@ -306,7 +312,7 @@ export const useUpdatePurchase = () => {
   const qc = useQueryClient()
   return useMutation({
     mutationFn: async (payload: UpdatePurchasePayload) => {
-      const { id, supplier_id, date, reference, note, items, payments } = payload
+      const { id, supplier_id, date, reference, note, items, payments, tva_rate } = payload
       const user = await getCurrentUser()
 
       // 1. Récupère l'achat actuel (pour le rollback ou calculs)
@@ -319,7 +325,10 @@ export const useUpdatePurchase = () => {
       if (pErr) throw pErr
 
       // 2. Calculs
-      const total = items.reduce((s, i) => s + i.quantity * (i.pieces_count || 1) * i.unit_price, 0)
+      const tvaRate = tva_rate ?? 0
+      const totalHT = items.reduce((s, i) => s + i.quantity * (i.pieces_count || 1) * i.unit_price, 0)
+      const tvaAmount = totalHT * tvaRate / 100
+      const total = totalHT + tvaAmount
       const paid = payments.reduce((s, p) => s + p.amount, 0)
       const status = getPaymentStatus(paid, total)
 
@@ -332,6 +341,8 @@ export const useUpdatePurchase = () => {
           reference: reference || oldPurchase.reference,
           note: note || null,
           total,
+          tva_rate: tvaRate,
+          tva_amount: tvaAmount,
           paid,
           status,
         })
