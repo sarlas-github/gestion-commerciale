@@ -191,6 +191,7 @@ export interface Sale {
   clients?: Pick<Client, 'id' | 'name'>
   sale_items?: SaleItem[]
   client_payments?: ClientPayment[]
+  documents?: Pick<Document, 'id' | 'type'>[]
 }
 
 export type CreateSaleInput = Omit<Sale, 'id' | 'user_id' | 'remaining' | 'status' | 'created_at' | 'updated_at' | 'clients' | 'sale_items' | 'client_payments'>

@@ -134,7 +134,7 @@ export const SalesPage = () => {
               variant="ghost"
               size="icon"
               className="h-8 w-8"
-              title="Voir facture"
+              title={row.original.documents?.some(d => d.type === 'invoice') ? 'Voir facture' : 'Aperçu facture'}
               onClick={() => navigate(`/sales/${row.original.id}/invoice`)}
             >
               <FileText className="h-4 w-4" />
@@ -152,7 +152,8 @@ export const SalesPage = () => {
               variant="ghost"
               size="icon"
               className="h-8 w-8 text-destructive hover:text-destructive"
-              title="Supprimer"
+              title={row.original.documents?.some(d => d.type === 'invoice') ? 'Facture générée — suppression impossible' : 'Supprimer'}
+              disabled={row.original.documents?.some(d => d.type === 'invoice')}
               onClick={() => setDeleteTarget(row.original)}
             >
               <Trash2 className="h-4 w-4" />

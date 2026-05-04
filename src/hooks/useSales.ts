@@ -139,7 +139,7 @@ export const useSales = () =>
     queryFn: async () => {
       const { data, error } = await supabase
         .from('sales')
-        .select('*, clients(id, name)')
+        .select('*, clients(id, name), documents!sale_id(id, type)')
         .order('date', { ascending: false })
         .order('created_at', { ascending: false })
 
