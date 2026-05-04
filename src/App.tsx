@@ -41,6 +41,7 @@ import { ClientEditPage } from '@/pages/clients/ClientEditPage'
 import { SalesPage } from '@/pages/sales/SalesPage'
 import { SaleNewPage } from '@/pages/sales/SaleNewPage'
 import { SaleEditPage } from '@/pages/sales/SaleEditPage'
+import { InvoicePreviewPage } from '@/pages/sales/InvoicePreviewPage'
 
 // Documents
 import { DocumentsPage } from '@/pages/documents/DocumentsPage'
@@ -107,6 +108,7 @@ export const App = () => {
           <Route path="/sales" element={<SalesPage />} />
           <Route path="/sales/new" element={<SaleNewPage />} />
           <Route path="/sales/:id/edit" element={<SaleEditPage />} />
+          <Route path="/sales/:id/invoice" element={<InvoicePreviewPage />} />
 
           {/* Documents */}
           <Route path="/documents" element={<DocumentsPage />} />

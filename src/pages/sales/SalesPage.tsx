@@ -1,7 +1,7 @@
 import { useMemo, useState } from 'react'
 import { useNavigate } from 'react-router-dom'
 import { type ColumnDef } from '@tanstack/react-table'
-import { Pencil, Trash2, Plus, Link2 } from 'lucide-react'
+import { Pencil, Trash2, Plus, Link2, FileText } from 'lucide-react'
 import { DataTable } from '@/components/shared/DataTable'
 import { PageHeader } from '@/components/shared/PageHeader'
 import { ConfirmDialog } from '@/components/shared/ConfirmDialog'
@@ -9,6 +9,7 @@ import { Button } from '@/components/ui/button'
 import { Badge } from '@/components/ui/badge'
 import { useSales, useDeleteSale } from '@/hooks/useSales'
 import { SaleQuickViewModal } from '@/features/sales/SaleQuickViewModal'
+
 import { formatCurrency, formatDate } from '@/lib/utils'
 import type { Sale } from '@/types'
 
@@ -30,6 +31,7 @@ export const SalesPage = () => {
   const [deleteTarget, setDeleteTarget] = useState<Sale | null>(null)
   const [selectedSaleId, setSelectedSaleId] = useState<string | null>(null)
   const [isModalOpen, setIsModalOpen] = useState(false)
+
 
   const handleQuickView = (id: string) => {
     setSelectedSaleId(id)
@@ -128,6 +130,15 @@ export const SalesPage = () => {
         enableSorting: false,
         cell: ({ row }) => (
           <div className="flex items-center gap-1">
+            <Button
+              variant="ghost"
+              size="icon"
+              className="h-8 w-8"
+              title="Aperçu facture"
+              onClick={() => navigate(`/sales/${row.original.id}/invoice`)}
+            >
+              <FileText className="h-4 w-4" />
+            </Button>
             <Button
               variant="ghost"
               size="icon"
@@ -233,6 +244,8 @@ export const SalesPage = () => {
         open={isModalOpen}
         onOpenChange={setIsModalOpen}
       />
+
+
     </div>
   )
 }

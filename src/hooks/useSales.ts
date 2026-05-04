@@ -43,39 +43,6 @@ async function getCurrentUser() {
   return user
 }
 
-async function getNextDocumentNumber(
-  userId: string,
-  type: 'invoice' | 'receipt',
-  year: number
-): Promise<string> {
-  const prefix = type === 'invoice' ? 'FAC' : 'REC'
-
-  const { data: existing } = await supabase
-    .from('document_sequences')
-    .select('id, last_number')
-    .eq('user_id', userId)
-    .eq('type', type)
-    .eq('year', year)
-    .maybeSingle()
-
-  let nextNumber: number
-
-  if (existing) {
-    nextNumber = existing.last_number + 1
-    await supabase
-      .from('document_sequences')
-      .update({ last_number: nextNumber })
-      .eq('id', existing.id)
-  } else {
-    nextNumber = 1
-    await supabase
-      .from('document_sequences')
-      .insert({ user_id: userId, type, year, last_number: 1 })
-  }
-
-  return `${prefix}-${year}-${String(nextNumber).padStart(3, '0')}`
-}
-
 export async function getNextSaleNumber(
   userId: string,
   year: number,
@@ -314,70 +281,6 @@ export const useCreateSale = () => {
         if (payErr) throw payErr
       }
 
-      // 6. Numérotation document + snapshots
-      const docNumber = await getNextDocumentNumber(uid, 'invoice', year)
-
-      const [{ data: company }, { data: client }] = await Promise.all([
-        supabase.from('companies').select('*').eq('user_id', uid).maybeSingle(),
-        supabase.from('clients').select('name, address, ice').eq('id', payload.client_id).single(),
-      ])
-
-      const { data: document, error: docErr } = await supabase
-        .from('documents')
-        .insert({
-          user_id: uid,
-          client_id: payload.client_id,
-          sale_id: sale.id,
-          payment_id: null,
-          parent_id: null,
-          type: 'invoice',
-          number: docNumber,
-          date: saleDate,
-          status: 'confirmed',
-          payment_status: status,
-          total,
-          paid,
-          note: payload.note || null,
-          client_name: client?.name ?? null,
-          client_address: client?.address ?? null,
-          client_ice: client?.ice ?? null,
-          company_name: company?.name ?? null,
-          company_address: company?.address ?? null,
-          company_phone: company?.phone ?? null,
-          company_email: company?.email ?? null,
-          company_ice: company?.ice ?? null,
-          company_if: company?.if_number ?? null,
-          company_rc: company?.rc ?? null,
-          company_tp: company?.tp_number ?? null,
-          company_logo_url: company?.logo_url ?? null,
-        })
-        .select()
-        .single()
-      if (docErr) throw docErr
-
-      // 7. INSERT document_items (product_name snapshot)
-      if (payload.items.length > 0) {
-        const { data: products } = await supabase
-          .from('products')
-          .select('id, name')
-          .in('id', payload.items.map(i => i.product_id))
-
-        const productMap = Object.fromEntries((products ?? []).map(p => [p.id, p]))
-
-        const { error: diErr } = await supabase
-          .from('document_items')
-          .insert(
-            payload.items.map(i => ({
-              document_id: document.id,
-              product_id: i.product_id,
-              product_name: productMap[i.product_id]?.name ?? 'Produit inconnu',
-              quantity: i.quantity,
-              unit_price: i.unit_price,
-            }))
-          )
-        if (diErr) throw diErr
-      }
-
       return sale
     },
     onSuccess: () => {
@@ -494,22 +397,6 @@ export const useUpdateSale = () => {
           if (insMovErr) throw insMovErr
         }
 
-        // c. Mettre à jour les items du document si une facture existe
-        const { data: document } = await supabase.from('documents').select('id').eq('sale_id', id).eq('type', 'invoice').maybeSingle()
-        if (document) {
-           const { data: products } = await supabase.from('products').select('id, name').in('id', newItems.map(ni => ni.product_id))
-           const prodMap = Object.fromEntries((products || []).map(p => [p.id, p]))
-
-           await supabase.from('document_items').insert(
-             newItems.map(i => ({
-               document_id: document.id,
-               product_id: i.product_id,
-               product_name: prodMap[i.product_id]?.name ?? 'Produit inconnu',
-               quantity: i.quantity,
-               unit_price: i.unit_price,
-             }))
-           )
-        }
       }
 
       // 5. UPDATE Payments (Header et paiements uniquement)
@@ -529,57 +416,6 @@ export const useUpdateSale = () => {
         if (insPayErr) throw insPayErr
       }
 
-      // 6. UPDATE Document (facture)
-      const { data: client, error: clErr } = await supabase.from('clients').select('name, address, ice').eq('id', client_id).single()
-      if (clErr) throw clErr
-      
-      const { data: document, error: docFetchErr } = await supabase
-        .from('documents')
-        .select('id')
-        .eq('sale_id', id)
-        .eq('type', 'invoice')
-        .maybeSingle()
-      if (docFetchErr) throw docFetchErr
-
-      if (document) {
-        const { error: upDocErr } = await supabase
-          .from('documents')
-          .update({
-            client_id,
-            date,
-            payment_status: status,
-            total,
-            paid,
-            note: note || null,
-            client_name: client?.name ?? null,
-            client_address: client?.address ?? null,
-            client_ice: client?.ice ?? null,
-          })
-          .eq('id', document.id)
-        if (upDocErr) throw upDocErr
-
-        const { error: delDiErr } = await supabase.from('document_items').delete().eq('document_id', document.id)
-        if (delDiErr) throw delDiErr
-
-        const { data: products, error: prodErr } = await supabase
-          .from('products')
-          .select('id, name')
-          .in('id', items.map(i => i.product_id))
-        if (prodErr) throw prodErr
-        const productMap = Object.fromEntries((products ?? []).map(p => [p.id, p]))
-
-        const { error: insDiErr } = await supabase.from('document_items').insert(
-          items.map(i => ({
-            document_id: document.id,
-            product_id: i.product_id,
-            product_name: productMap[i.product_id]?.name ?? 'Produit inconnu',
-            quantity: i.quantity,
-            pieces_count: i.pieces_count,
-            unit_price: i.unit_price,
-          }))
-        )
-        if (insDiErr) throw insDiErr
-      }
     },
     onSuccess: (_, { id }) => {
       qc.invalidateQueries({ queryKey: ['sales'] })

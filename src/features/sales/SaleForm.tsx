@@ -60,11 +60,12 @@ interface SaleFormProps {
   existing?: Sale
   onSubmit: (values: SaleFormValues) => Promise<void>
   isLoading?: boolean
+  hasInvoice?: boolean
 }
 
 // ── Composant principal ───────────────────────────────────────────────────────
 
-export const SaleForm = ({ existing, onSubmit, isLoading = false }: SaleFormProps) => {
+export const SaleForm = ({ existing, onSubmit, isLoading = false, hasInvoice = false }: SaleFormProps) => {
   const navigate = useNavigate()
   const today = toISODate(new Date())
 
@@ -192,6 +193,12 @@ export const SaleForm = ({ existing, onSubmit, isLoading = false }: SaleFormProp
       />
 
       <form onSubmit={handleSubmit(onSubmit)} noValidate className="space-y-8">
+        {hasInvoice && (
+          <div className="rounded-lg border border-amber-200 bg-amber-50 px-4 py-3 text-sm text-amber-700">
+            <span className="font-semibold">Facture générée</span> — Seule la section Paiements reste modifiable.
+          </div>
+        )}
+
         {/* ── Entête ── */}
         <div className="rounded-lg border bg-card p-4 sm:p-6 space-y-4">
           <h2 className="text-sm font-semibold uppercase tracking-wide text-muted-foreground">Informations</h2>
@@ -206,10 +213,11 @@ export const SaleForm = ({ existing, onSubmit, isLoading = false }: SaleFormProp
                   control={control}
                   render={({ field }) => (
                     <select
-                      className="flex h-9 w-full rounded-md border border-input bg-background px-3 py-1 text-sm shadow-sm transition-colors focus-visible:outline-none focus-visible:ring-1 focus-visible:ring-ring"
+                      className="flex h-9 w-full rounded-md border border-input bg-background px-3 py-1 text-sm shadow-sm transition-colors focus-visible:outline-none focus-visible:ring-1 focus-visible:ring-ring disabled:opacity-60 disabled:cursor-not-allowed"
                       value={field.value}
                       onChange={field.onChange}
                       ref={field.ref}
+                      disabled={hasInvoice}
                     >
                       <option value="">— Choisir un client —</option>
                       {clients.map(c => (
@@ -218,15 +226,17 @@ export const SaleForm = ({ existing, onSubmit, isLoading = false }: SaleFormProp
                     </select>
                   )}
                 />
-                <Button
-                  type="button"
-                  variant="outline"
-                  size="sm"
-                  className="shrink-0"
-                  onClick={() => setShowNewClient(true)}
-                >
-                  <Plus className="h-4 w-4" />
-                </Button>
+                {!hasInvoice && (
+                  <Button
+                    type="button"
+                    variant="outline"
+                    size="sm"
+                    className="shrink-0"
+                    onClick={() => setShowNewClient(true)}
+                  >
+                    <Plus className="h-4 w-4" />
+                  </Button>
+                )}
               </div>
               {errors.client_id && (
                 <p className="text-xs text-destructive">{errors.client_id.message}</p>
@@ -240,7 +250,7 @@ export const SaleForm = ({ existing, onSubmit, isLoading = false }: SaleFormProp
                 name="date"
                 control={control}
                 render={({ field }) => (
-                  <Input type="date" value={field.value} onChange={field.onChange} ref={field.ref} />
+                  <Input type="date" value={field.value} onChange={field.onChange} ref={field.ref} disabled={hasInvoice} />
                 )}
               />
               {errors.date && <p className="text-xs text-destructive">{errors.date.message}</p>}
@@ -253,7 +263,7 @@ export const SaleForm = ({ existing, onSubmit, isLoading = false }: SaleFormProp
                 name="reference"
                 control={control}
                 render={({ field }) => (
-                  <Input placeholder="Auto-généré" {...field} className="font-mono" />
+                  <Input placeholder="Auto-généré" {...field} className="font-mono" disabled={hasInvoice} />
                 )}
               />
             </div>
@@ -265,7 +275,7 @@ export const SaleForm = ({ existing, onSubmit, isLoading = false }: SaleFormProp
                 name="note"
                 control={control}
                 render={({ field }) => (
-                  <Input placeholder="Note interne (optionnel)" value={field.value ?? ''} onChange={field.onChange} ref={field.ref} />
+                  <Input placeholder="Note interne (optionnel)" value={field.value ?? ''} onChange={field.onChange} ref={field.ref} disabled={hasInvoice} />
                 )}
               />
             </div>
@@ -276,7 +286,7 @@ export const SaleForm = ({ existing, onSubmit, isLoading = false }: SaleFormProp
         <div className="rounded-lg border bg-card p-4 sm:p-6 space-y-3">
           <div className="flex items-center justify-between">
             <h2 className="text-sm font-semibold uppercase tracking-wide text-muted-foreground">Produits</h2>
-            {!hasExistingPayments && (
+            {!hasExistingPayments && !hasInvoice && (
               <Button
                 type="button"
                 variant="outline"
@@ -447,6 +457,7 @@ export const SaleForm = ({ existing, onSubmit, isLoading = false }: SaleFormProp
                             value={f.value ?? ''}
                             onChange={e => f.onChange(e.target.value === '' ? undefined : Number(e.target.value))}
                             ref={f.ref}
+                            disabled={hasInvoice}
                           />
                         )}
                       />
@@ -461,7 +472,7 @@ export const SaleForm = ({ existing, onSubmit, isLoading = false }: SaleFormProp
 
                   {/* Col 6 (desktop) : boutons d'action */}
                   <div className="hidden sm:flex items-center justify-end">
-                    {!field.original_id && itemFields.length > 1 && (
+                    {!field.original_id && itemFields.length > 1 && !hasInvoice && (
                       <Button type="button" variant="ghost" size="icon" className="h-8 w-8 text-destructive hover:text-destructive" onClick={() => removeItem(idx)}>
                         <Trash2 className="h-3.5 w-3.5" />
                       </Button>
@@ -494,9 +505,10 @@ export const SaleForm = ({ existing, onSubmit, isLoading = false }: SaleFormProp
                 control={control}
                 render={({ field }) => (
                   <select
-                    className="h-9 rounded-md border border-input bg-background px-3 text-sm focus-visible:outline-none focus-visible:ring-1 focus-visible:ring-ring"
+                    className="h-9 rounded-md border border-input bg-background px-3 text-sm focus-visible:outline-none focus-visible:ring-1 focus-visible:ring-ring disabled:opacity-60 disabled:cursor-not-allowed"
                     value={field.value}
                     onChange={e => field.onChange(parseFloat(e.target.value))}
+                    disabled={hasInvoice}
                   >
                     <option value={0}>0% (Hors TVA)</option>
                     <option value={7}>7%</option>

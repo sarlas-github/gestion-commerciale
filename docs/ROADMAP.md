@@ -240,6 +240,25 @@ fixe cela :
 - l affichage dnas l appliation doit etre par défaut par mois, 
 ---
 pending:
+ajustements à faire : 
+
+-dans paramétrage y a champ TVA il doit etre liste déroulante avec valeur 0, 7, 10, 14, 20 :
+valeurs qui s affichenet :
+0% (Hors TVA)
+7%
+10%
+14%
+20%
+
+-dans achat et vente partie produit on va intégrer le calcul avec TVA :
+je t'ai joigné la capture pour inspiration de ux
+donc apres les produits et avant section de total: 
+integre le champ taux tva il doit récupérer par défaut la veleur de paramétrage, mais reste modifiable avec meme facon de paramétrage
+puis le calcul  de montant de tva 
+puis vient le total ttc dans notre section
+tu m as bien compris ?
+
+
 - pourquoi caude code prend bcp de temps a repondre ? montauntas edes etats finaux contexte
 -  faire les onglets dans forms achat/vente
 -dans paramétrage valeur TVA : a la tte prmeiere ouverture l'application doit avoir valeur par defaut: 0 et bien sur l utilisateur peut la cahnager et sa sauvegarde. et dans calcul de total cout de produit 
