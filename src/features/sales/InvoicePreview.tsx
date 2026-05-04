@@ -9,16 +9,19 @@ export interface InvoicePreviewData {
     address: string | null
     phone: string | null
     email: string | null
+    site_web: string | null
     ice: string | null
     if_number: string | null
     rc: string | null
     tp_number: string | null
+    rib: string | null
     logo_url: string | null
     couleur_marque: string
   }
   client: {
     name: string | null
     address: string | null
+    phone: string | null
     ice: string | null
   }
   items: Array<{
@@ -42,8 +45,10 @@ interface InvoicePreviewProps {
  * Pure invoice template — uses ONLY inline styles and hardcoded hex colors.
  * Zero Tailwind classes → zero oklch() references → html2canvas works perfectly.
  *
- * Layout: flexbox column with minHeight=1123px (A4 at 96dpi).
- * A flex-grow spacer pushes the footer to the bottom without using position:absolute.
+ * IMPORTANT: All brand-colored elements (green bars) use SIMPLE div+padding,
+ * NOT display:flex. html2canvas has known bugs rendering backgrounds on flex
+ * containers. By keeping colored elements as plain block divs, the PDF/print
+ * output matches the browser preview pixel-for-pixel.
  */
 export const InvoicePreview = forwardRef<HTMLDivElement, InvoicePreviewProps>(
   ({ data }, ref) => {
@@ -72,6 +77,12 @@ export const InvoicePreview = forwardRef<HTMLDivElement, InvoicePreviewProps>(
       gray100: '#f3f4f6',
       gray50: '#f9fafb',
     }
+
+    // Column widths for the table (fixed px values — no flex!)
+    const colQty = 70
+    const colPU = 130
+    const colTotal = 140
+    const colPad = 12
 
     return (
       <div
@@ -154,6 +165,7 @@ export const InvoicePreview = forwardRef<HTMLDivElement, InvoicePreviewProps>(
             )}
             {company.phone && <div style={{ fontSize: '13px', color: C.gray500 }}>{company.phone}</div>}
             {company.email && <div style={{ fontSize: '13px', color: C.gray500 }}>{company.email}</div>}
+            {company.site_web && <div style={{ fontSize: '13px', color: C.gray500 }}>{company.site_web}</div>}
           </div>
 
           {/* Titre facture */}
@@ -182,15 +194,17 @@ export const InvoicePreview = forwardRef<HTMLDivElement, InvoicePreviewProps>(
         <div style={{ height: '1px', backgroundColor: C.gray200, marginBottom: '28px' }} />
 
         {/* ── Client (right-aligned card with brand header) ──────────────── */}
-        <div style={{ display: 'flex', justifyContent: 'flex-end', marginBottom: '28px' }}>
+        <div style={{ textAlign: 'right', marginBottom: '28px' }}>
           <div
             style={{
+              display: 'inline-block',
               width: '280px',
+              textAlign: 'left',
               overflow: 'hidden',
               border: `1px solid ${C.gray200}`,
             }}
           >
-            {/* Header */}
+            {/* Header — simple block div, NO flex */}
             <div
               style={{
                 backgroundColor: brandColor,
@@ -212,74 +226,91 @@ export const InvoicePreview = forwardRef<HTMLDivElement, InvoicePreviewProps>(
               {client.address && (
                 <div style={{ fontSize: '13px', color: C.gray500, whiteSpace: 'pre-line' }}>{client.address}</div>
               )}
+              {client.phone && <div style={{ fontSize: '13px', color: C.gray500 }}>{client.phone}</div>}
               {client.ice && <div style={{ fontSize: '13px', color: C.gray500 }}>ICE : {client.ice}</div>}
             </div>
           </div>
         </div>
 
-        {/* ── Tableau des articles (div-based for html2canvas compatibility) ── */}
-        <div style={{ marginBottom: '28px', fontSize: '14px' }}>
-          {/* Header row */}
-          <div
-            style={{
-              display: 'flex',
-              backgroundColor: brandColor,
-              color: C.white,
-              fontWeight: 600,
-              padding: '10px 0',
-            }}
-          >
-            <div style={{ flex: 1, paddingLeft: '12px', paddingRight: '12px' }}>Produit</div>
-            <div style={{ width: '70px', textAlign: 'center', paddingLeft: '12px', paddingRight: '12px' }}>Qté</div>
-            <div style={{ width: '130px', textAlign: 'right', paddingLeft: '12px', paddingRight: '12px' }}>P.U. HT</div>
-            <div style={{ width: '140px', textAlign: 'right', paddingLeft: '12px', paddingRight: '12px' }}>Montant HT</div>
-          </div>
-          {/* Data rows */}
-          {items.map((item, i) => (
-            <div
-              key={i}
-              style={{
-                display: 'flex',
-                padding: '8px 0',
-                backgroundColor: i % 2 === 0 ? C.white : C.gray50,
-                borderBottom: `1px solid ${C.gray100}`,
-              }}
-            >
-              <div style={{ flex: 1, paddingLeft: '12px', paddingRight: '12px', color: C.gray800 }}>{item.productName}</div>
-              <div style={{ width: '70px', textAlign: 'center', paddingLeft: '12px', paddingRight: '12px', color: C.gray700, fontVariantNumeric: 'tabular-nums' }}>{item.quantity}</div>
-              <div style={{ width: '130px', textAlign: 'right', paddingLeft: '12px', paddingRight: '12px', color: C.gray700, fontVariantNumeric: 'tabular-nums' }}>{formatCurrency(item.unitPrice)}</div>
-              <div style={{ width: '140px', textAlign: 'right', paddingLeft: '12px', paddingRight: '12px', fontWeight: 500, color: C.gray800, fontVariantNumeric: 'tabular-nums' }}>{formatCurrency(item.subtotal)}</div>
-            </div>
-          ))}
-        </div>
+        {/* ── Tableau des articles ─────────────────────────────────────────
+             NO flex on colored elements. Using a real <table> with background
+             on <thead> (single element) instead of per-cell backgrounds.
+             html2canvas handles <thead> background correctly.
+        ──────────────────────────────────────────────────────────────────── */}
+        <table
+          style={{
+            width: '100%',
+            marginBottom: '28px',
+            fontSize: '14px',
+            borderCollapse: 'separate',
+            borderSpacing: 0,
+            tableLayout: 'fixed',
+          }}
+        >
+          <colgroup>
+            <col />
+            <col style={{ width: `${colQty}px` }} />
+            <col style={{ width: `${colPU}px` }} />
+            <col style={{ width: `${colTotal}px` }} />
+          </colgroup>
+          <thead>
+            <tr>
+              <th style={{ textAlign: 'left', padding: `10px ${colPad}px`, fontWeight: 600, backgroundColor: brandColor, color: C.white }}>Produit</th>
+              <th style={{ textAlign: 'center', padding: `10px ${colPad}px`, fontWeight: 600, backgroundColor: brandColor, color: C.white }}>Qté</th>
+              <th style={{ textAlign: 'right', padding: `10px ${colPad}px`, fontWeight: 600, backgroundColor: brandColor, color: C.white }}>P.U. HT</th>
+              <th style={{ textAlign: 'right', padding: `10px ${colPad}px`, fontWeight: 600, backgroundColor: brandColor, color: C.white }}>Montant HT</th>
+            </tr>
+          </thead>
+          <tbody>
+            {items.map((item, i) => (
+              <tr key={i}>
+                <td style={{ padding: `8px ${colPad}px`, color: C.gray800, backgroundColor: i % 2 === 0 ? C.white : C.gray50, borderBottom: `1px solid ${C.gray100}` }}>{item.productName}</td>
+                <td style={{ padding: `8px ${colPad}px`, textAlign: 'center', color: C.gray700, fontVariantNumeric: 'tabular-nums', backgroundColor: i % 2 === 0 ? C.white : C.gray50, borderBottom: `1px solid ${C.gray100}` }}>
+                  {item.quantity}
+                </td>
+                <td style={{ padding: `8px ${colPad}px`, textAlign: 'right', color: C.gray700, fontVariantNumeric: 'tabular-nums', backgroundColor: i % 2 === 0 ? C.white : C.gray50, borderBottom: `1px solid ${C.gray100}` }}>
+                  {formatCurrency(item.unitPrice)}
+                </td>
+                <td style={{ padding: `8px ${colPad}px`, textAlign: 'right', fontWeight: 500, color: C.gray800, fontVariantNumeric: 'tabular-nums', backgroundColor: i % 2 === 0 ? C.white : C.gray50, borderBottom: `1px solid ${C.gray100}` }}>
+                  {formatCurrency(item.subtotal)}
+                </td>
+              </tr>
+            ))}
+          </tbody>
+        </table>
 
-        {/* ── Totaux ──────────────────────────────────────────────────────── */}
-        <div style={{ display: 'flex', justifyContent: 'flex-end', marginBottom: '24px' }}>
-          <div style={{ width: '260px' }}>
-            <div style={{ display: 'flex', justifyContent: 'space-between', fontSize: '14px', padding: '4px 0', color: C.gray600 }}>
-              <span>Total HT</span>
-              <span style={{ fontVariantNumeric: 'tabular-nums' }}>{formatCurrency(totalHT)}</span>
+        {/* ── Totaux ──────────────────────────────────────────────────────
+             NO flex on the Total TTC bar. Using a simple table layout
+             for the totals section to ensure html2canvas alignment.
+        ──────────────────────────────────────────────────────────────────── */}
+        <div style={{ textAlign: 'right', marginBottom: '24px' }}>
+          <div style={{ display: 'inline-block', width: '260px', textAlign: 'left' }}>
+            {/* Total HT */}
+            <div style={{ overflow: 'hidden', fontSize: '14px', padding: '4px 0', color: C.gray600 }}>
+              <span style={{ float: 'left' }}>Total HT</span>
+              <span style={{ float: 'right', fontVariantNumeric: 'tabular-nums' }}>{formatCurrency(totalHT)}</span>
             </div>
+            {/* TVA */}
             {tvaRate > 0 && (
-              <div style={{ display: 'flex', justifyContent: 'space-between', fontSize: '14px', padding: '4px 0', color: C.gray600 }}>
-                <span>TVA ({tvaRate}%)</span>
-                <span style={{ fontVariantNumeric: 'tabular-nums' }}>{formatCurrency(tvaAmount)}</span>
+              <div style={{ overflow: 'hidden', fontSize: '14px', padding: '4px 0', color: C.gray600 }}>
+                <span style={{ float: 'left' }}>TVA ({tvaRate}%)</span>
+                <span style={{ float: 'right', fontVariantNumeric: 'tabular-nums' }}>{formatCurrency(tvaAmount)}</span>
               </div>
             )}
+            {/* Total TTC — simple block div with background, NO flex */}
             <div
               style={{
-                display: 'flex',
-                justifyContent: 'space-between',
+                overflow: 'hidden',
                 fontSize: '16px',
                 fontWeight: 700,
                 padding: '8px 12px',
-                marginTop: '4px',
+                marginTop: '8px',
                 color: C.white,
                 backgroundColor: brandColor,
               }}
             >
-              <span>Total TTC</span>
-              <span style={{ fontVariantNumeric: 'tabular-nums' }}>{formatCurrency(totalTTC)}</span>
+              <span style={{ float: 'left' }}>Total TTC</span>
+              <span style={{ float: 'right', fontVariantNumeric: 'tabular-nums' }}>{formatCurrency(totalTTC)}</span>
             </div>
           </div>
         </div>
@@ -288,12 +319,24 @@ export const InvoicePreview = forwardRef<HTMLDivElement, InvoicePreviewProps>(
         <div style={{ flexGrow: 1 }} />
 
         {/* ── Pied de page ────────────────────────────────────────────────── */}
-        {legalInfoParts.length > 0 && (
+        {(company.name || legalInfoParts.length > 0 || company.rib) && (
           <div>
-            <div style={{ height: '1px', backgroundColor: C.gray200, marginBottom: '12px' }} />
-            <div style={{ fontSize: '12px', color: C.gray400, textAlign: 'center' }}>
-              {legalInfoParts.join('  ·  ')}
-            </div>
+            {company.name && (
+              <div style={{ fontSize: '12px', fontWeight: 600, color: C.gray600, textAlign: 'center', marginBottom: '8px', letterSpacing: '0.04em' }}>
+                {company.name}
+              </div>
+            )}
+            <div style={{ height: '1px', backgroundColor: C.gray200, marginBottom: '10px' }} />
+            {legalInfoParts.length > 0 && (
+              <div style={{ fontSize: '11px', color: C.gray400, textAlign: 'center', marginBottom: company.rib ? '4px' : 0 }}>
+                {legalInfoParts.join('  ·  ')}
+              </div>
+            )}
+            {company.rib && (
+              <div style={{ fontSize: '11px', color: C.gray400, textAlign: 'center' }}>
+                RIB : {company.rib}
+              </div>
+            )}
           </div>
         )}
       </div>

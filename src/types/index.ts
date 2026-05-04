@@ -24,6 +24,7 @@ export interface Company {
   rc: string | null
   tp_number: string | null
   tva_number: string | null
+  rib: string | null
   taux_tva_defaut: number
   logo_url: string | null
   couleur_marque: string
@@ -242,6 +243,8 @@ export interface Document {
   status: DocumentStatus
   payment_status: PaymentStatus
   total: number
+  tva_rate: number
+  tva_amount: number
   paid: number
   remaining: number
   note: string | null
@@ -249,6 +252,7 @@ export interface Document {
   client_name: string | null
   client_address: string | null
   client_ice: string | null
+  client_phone: string | null
   // Snapshots entreprise
   company_name: string | null
   company_address: string | null
@@ -258,6 +262,9 @@ export interface Document {
   company_if: string | null
   company_rc: string | null
   company_tp: string | null
+  company_rib: string | null
+  company_site_web: string | null
+  company_couleur_marque: string | null
   company_logo_url: string | null
   created_at: string
   updated_at: string

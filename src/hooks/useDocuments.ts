@@ -66,7 +66,7 @@ export const useCreateInvoice = () => {
       // Snapshots captured at generation time
       const [{ data: company }, { data: client, error: clErr }] = await Promise.all([
         supabase.from('companies').select('*').eq('user_id', user.id).maybeSingle(),
-        supabase.from('clients').select('name, address, ice').eq('id', payload.client_id).single(),
+        supabase.from('clients').select('name, address, ice, phone').eq('id', payload.client_id).single(),
       ])
       if (clErr) throw clErr
 
@@ -82,11 +82,14 @@ export const useCreateInvoice = () => {
           status: 'confirmed',
           payment_status: paymentStatus,
           total: payload.total,
+          tva_rate: payload.tva_rate,
+          tva_amount: payload.tva_amount,
           paid: payload.paid,
           note: payload.note,
           client_name: client?.name ?? null,
           client_address: client?.address ?? null,
           client_ice: client?.ice ?? null,
+          client_phone: client?.phone ?? null,
           company_name: company?.name ?? null,
           company_address: company?.address ?? null,
           company_phone: company?.phone ?? null,
@@ -95,6 +98,9 @@ export const useCreateInvoice = () => {
           company_if: company?.if_number ?? null,
           company_rc: company?.rc ?? null,
           company_tp: company?.tp_number ?? null,
+          company_rib: company?.rib ?? null,
+          company_site_web: company?.site_web ?? null,
+          company_couleur_marque: company?.couleur_marque ?? null,
           company_logo_url: company?.logo_url ?? null,
         })
         .select()

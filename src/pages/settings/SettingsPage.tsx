@@ -2,7 +2,7 @@ import { useRef, useState } from 'react'
 import { Controller, useForm } from 'react-hook-form'
 import { zodResolver } from '@hookform/resolvers/zod'
 import { z } from 'zod'
-import { Loader2, Upload, Building2 } from 'lucide-react'
+import { Loader2, Upload, Building2, Palette } from 'lucide-react'
 import { Button } from '@/components/ui/button'
 import { Input } from '@/components/ui/input'
 import { Label } from '@/components/ui/label'
@@ -23,6 +23,7 @@ const schema = z.object({
   if_number: z.string().optional().or(z.literal('')),
   rc: z.string().optional().or(z.literal('')),
   tp_number: z.string().optional().or(z.literal('')),
+  rib: z.string().optional().or(z.literal('')),
   taux_tva_defaut: z.number({ invalid_type_error: 'Entrer un taux' }).min(0).max(100).default(0),
   couleur_marque: z.string().min(1).default('#000000'),
 })
@@ -70,6 +71,7 @@ export const SettingsPage = () => {
       if_number: company?.if_number ?? '',
       rc: company?.rc ?? '',
       tp_number: company?.tp_number ?? '',
+      rib: company?.rib ?? '',
       taux_tva_defaut: company?.taux_tva_defaut ?? 0,
       couleur_marque: company?.couleur_marque ?? '#000000',
     },
@@ -105,6 +107,7 @@ export const SettingsPage = () => {
       if_number: values.if_number ?? '',
       rc: values.rc ?? '',
       tp_number: values.tp_number ?? '',
+      rib: values.rib ?? '',
       logo_url: company?.logo_url ?? null,
       logoFile: logoFile ?? undefined,
     })
@@ -285,6 +288,16 @@ export const SettingsPage = () => {
                 )}
               />
             </div>
+            <div className="col-span-2 space-y-1.5">
+              <Label htmlFor="rib">RIB</Label>
+              <Controller
+                control={control}
+                name="rib"
+                render={({ field }) => (
+                  <Input id="rib" {...field} placeholder="MA64 0110 0000 0000 1234 5678 9" />
+                )}
+              />
+            </div>
           </div>
         </section>
 
@@ -339,14 +352,19 @@ export const SettingsPage = () => {
                   style={{ backgroundColor: c.value }}
                 />
               ))}
-              <div className="relative h-8 w-8">
-                <div
-                  className="h-8 w-8 rounded-full border-2 cursor-pointer overflow-hidden"
-                  style={{
-                    backgroundColor: couleur,
-                    borderColor: !PRESET_COLORS.find(c => c.value === couleur) ? 'hsl(var(--foreground))' : 'transparent',
-                  }}
-                />
+
+              {/* Picker libre — le bouton déclenche l'input color natif */}
+              <div className="relative overflow-hidden rounded-md border border-input">
+                <Button
+                  type="button"
+                  variant="ghost"
+                  size="sm"
+                  className="pointer-events-none h-8 px-3 gap-1.5 font-normal"
+                  style={{ color: !PRESET_COLORS.find(c => c.value === couleur) ? couleur : undefined }}
+                >
+                  <Palette className="h-4 w-4" />
+                  Couleur libre
+                </Button>
                 <Controller
                   control={control}
                   name="couleur_marque"
@@ -356,7 +374,7 @@ export const SettingsPage = () => {
                       value={field.value}
                       onChange={e => field.onChange(e.target.value)}
                       className="absolute inset-0 opacity-0 cursor-pointer h-full w-full"
-                      title="Couleur personnalisée"
+                      title="Choisir n'importe quelle couleur"
                     />
                   )}
                 />

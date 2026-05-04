@@ -1,8 +1,6 @@
 import { useRef, useState, useLayoutEffect, useCallback } from 'react'
 import { useParams, useNavigate } from 'react-router-dom'
-import html2canvas from 'html2canvas'
-import jsPDF from 'jspdf'
-import { Loader2, FileText, Printer, Download, ArrowLeft } from 'lucide-react'
+import { Loader2, FileText, Printer, ArrowLeft } from 'lucide-react'
 import { toast } from 'sonner'
 import { Button } from '@/components/ui/button'
 import { useSale } from '@/hooks/useSales'
@@ -19,7 +17,6 @@ export const InvoicePreviewPage = () => {
   const containerRef = useRef<HTMLDivElement>(null)
   const [scale, setScale] = useState(1)
   const [previewHeight, setPreviewHeight] = useState(1200)
-  const [isGeneratingPdf, setIsGeneratingPdf] = useState(false)
   const [isPrinting, setIsPrinting] = useState(false)
 
   const { data: sale, isLoading: loadingSale } = useSale(saleId ?? '')
@@ -59,7 +56,6 @@ export const InvoicePreviewPage = () => {
     if (!sale) return null
 
     if (existingInvoice) {
-      const tvaAmount = sale.tva_amount ?? 0
       return {
         invoiceNumber: existingInvoice.number,
         date: existingInvoice.date,
@@ -72,12 +68,15 @@ export const InvoicePreviewPage = () => {
           if_number: existingInvoice.company_if,
           rc: existingInvoice.company_rc,
           tp_number: existingInvoice.company_tp,
+          rib: existingInvoice.company_rib,
+          site_web: existingInvoice.company_site_web,
           logo_url: existingInvoice.company_logo_url,
-          couleur_marque: company?.couleur_marque ?? '#1e40af',
+          couleur_marque: existingInvoice.company_couleur_marque ?? '#1e40af',
         },
         client: {
           name: existingInvoice.client_name,
           address: existingInvoice.client_address,
+          phone: existingInvoice.client_phone,
           ice: existingInvoice.client_ice,
         },
         items: (existingInvoice.document_items ?? []).map(item => ({
@@ -86,9 +85,9 @@ export const InvoicePreviewPage = () => {
           unitPrice: item.unit_price,
           subtotal: item.subtotal,
         })),
-        totalHT: existingInvoice.total - tvaAmount,
-        tvaRate: sale.tva_rate ?? 0,
-        tvaAmount,
+        totalHT: existingInvoice.total - existingInvoice.tva_amount,
+        tvaRate: existingInvoice.tva_rate,
+        tvaAmount: existingInvoice.tva_amount,
         totalTTC: existingInvoice.total,
         note: existingInvoice.note,
       }
@@ -118,10 +117,12 @@ export const InvoicePreviewPage = () => {
         if_number: company?.if_number ?? null,
         rc: company?.rc ?? null,
         tp_number: company?.tp_number ?? null,
+        rib: company?.rib ?? null,
+        site_web: company?.site_web ?? null,
         logo_url: company?.logo_url ?? null,
         couleur_marque: company?.couleur_marque ?? '#1e40af',
       },
-      client: { name: sale.clients?.name ?? null, address: null, ice: null },
+      client: { name: sale.clients?.name ?? null, address: null, phone: null, ice: null },
       items,
       totalHT: sale.total - tvaAmount,
       tvaRate,
@@ -154,73 +155,52 @@ export const InvoicePreviewPage = () => {
     })
   }
 
-  const doCapture = async (): Promise<HTMLCanvasElement> => {
-    const el = scaleWrapRef.current
-    if (!el) throw new Error('Aperçu introuvable')
+  /**
+   * Opens native print dialog using the invoice HTML.
+   * The browser's own rendering engine handles the output,
+   * guaranteeing pixel-perfect rendering identical to the preview.
+   * User can choose to Print or "Save as PDF" from the dialog.
+   */
+  const openPrintDialog = async () => {
+    const invoiceEl = document.getElementById('invoice-preview-content')
+    if (!invoiceEl) throw new Error('Aperçu introuvable')
 
-    return await html2canvas(el, {
-      scale: 2,
-      useCORS: true,
-      backgroundColor: '#ffffff',
-      logging: false,
-      width: 794,
-      windowWidth: 794,
-      onclone: (clonedDoc, clonedEl) => {
-        // Remove all stylesheets to avoid oklch() parsing errors
-        clonedDoc.querySelectorAll('link[rel="stylesheet"], style').forEach(s => s.remove())
-        // Re-inject the critical box-sizing reset (lost when stylesheets were removed).
-        // Without this, elements with width+padding compute wider → layout shifts.
-        const reset = clonedDoc.createElement('style')
-        reset.textContent = '*,*::before,*::after{box-sizing:border-box;margin:0;padding:0}'
-        clonedDoc.head.appendChild(reset)
-        // Reset the scale transform so we capture at 1:1
-        clonedEl.style.transform = 'none'
-        clonedEl.style.width = '794px'
-      },
-    })
+    const iframe = document.createElement('iframe')
+    iframe.style.cssText = 'position:fixed;right:0;bottom:0;width:0;height:0;border:0'
+    document.body.appendChild(iframe)
+    const doc = iframe.contentWindow?.document
+    if (!doc) { document.body.removeChild(iframe); return }
+    doc.open()
+    doc.write(
+      `<!DOCTYPE html><html><head><title>${previewData?.invoiceNumber ?? 'Facture'}</title>` +
+      `<style>` +
+      `*,*::before,*::after{box-sizing:border-box}` +
+      `@page{size:A4;margin:0}` +
+      `html,body{margin:0;padding:0;width:210mm}` +
+      `#invoice-preview-content{width:210mm!important;min-height:297mm!important}` +
+      `*{-webkit-print-color-adjust:exact!important;print-color-adjust:exact!important}` +
+      `</style></head>` +
+      `<body>${invoiceEl.outerHTML}</body></html>`
+    )
+    doc.close()
+    // Chrome uses the parent window's document.title as the PDF filename suggestion,
+    // not the iframe's <title>. Swap it temporarily then restore.
+    const fileName = previewData?.invoiceNumber ?? 'Facture'
+    const prevTitle = document.title
+    document.title = fileName
+    setTimeout(() => {
+      iframe.contentWindow?.print()
+      setTimeout(() => {
+        document.title = prevTitle
+        if (document.body.contains(iframe)) document.body.removeChild(iframe)
+      }, 2000)
+    }, 300)
   }
 
-  const handleDownloadPdf = async () => {
-    setIsGeneratingPdf(true)
-    try {
-      const canvas = await doCapture()
-      const imgData = canvas.toDataURL('image/png')
-      const pdf = new jsPDF({ orientation: 'portrait', unit: 'mm', format: 'a4' })
-      const pageW = pdf.internal.pageSize.getWidth()
-      const pageH = pdf.internal.pageSize.getHeight()
-      // Always fit on exactly one A4 page — content is already A4-proportioned
-      pdf.addImage(imgData, 'PNG', 0, 0, pageW, pageH)
-      pdf.save(`${previewData?.invoiceNumber ?? 'facture'}.pdf`)
-    } catch (err) {
-      console.error('PDF error:', err)
-      toast.error('Erreur lors de la génération du PDF')
-    } finally {
-      setIsGeneratingPdf(false)
-    }
-  }
-
-  // Print via hidden iframe
   const handlePrint = async () => {
     setIsPrinting(true)
     try {
-      const canvas = await doCapture()
-      const dataUrl = canvas.toDataURL('image/png')
-      const iframe = document.createElement('iframe')
-      iframe.style.cssText = 'position:fixed;right:0;bottom:0;width:0;height:0;border:0'
-      document.body.appendChild(iframe)
-      const doc = iframe.contentWindow?.document
-      if (!doc) { document.body.removeChild(iframe); return }
-      doc.open()
-      doc.write(
-        `<!DOCTYPE html><html><head><title>${previewData?.invoiceNumber ?? 'Facture'}</title>` +
-        `<style>@page{size:A4;margin:0}html,body{margin:0;padding:0;width:210mm;height:297mm}img{width:210mm;height:297mm;display:block;object-fit:fill}</style></head>` +
-        `<body><img src="${dataUrl}"/></body></html>`
-      )
-      doc.close()
-      setTimeout(() => {
-        iframe.contentWindow?.print()
-        setTimeout(() => { if (document.body.contains(iframe)) document.body.removeChild(iframe) }, 2000)
-      }, 300)
+      await openPrintDialog()
     } catch (err) {
       console.error('Print error:', err)
       toast.error("Erreur lors de l'impression")
@@ -238,7 +218,21 @@ export const InvoicePreviewPage = () => {
   }
 
   const canExport = Boolean(existingInvoice)
-  const isWorking = createInvoice.isPending || isGeneratingPdf || isPrinting
+  const isWorking = createInvoice.isPending || isPrinting
+
+  const waPhone = (() => {
+    const raw = previewData?.client?.phone ?? null
+    if (!raw) return null
+    const d = raw.replace(/\D/g, '')
+    if (d.startsWith('0') && d.length === 10) return '212' + d.slice(1)
+    if (d.length === 9) return '212' + d
+    if (d.startsWith('212') && d.length === 12) return d
+    return null
+  })()
+  const waMessage = previewData
+    ? `Bonjour Mme/M. ${previewData.client.name ?? ''},\n\nVeuillez trouver ci-joint votre facture.\nN'hésitez pas à nous contacter pour toute question.\n\nMerci pour votre confiance.`
+    : ''
+  const waUrl = waPhone ? `https://wa.me/${waPhone}?text=${encodeURIComponent(waMessage)}` : null
 
   return (
     <div className="flex flex-col h-full -m-4 lg:-m-6">
@@ -264,12 +258,20 @@ export const InvoicePreviewPage = () => {
           )}
           <Button size="sm" variant="outline" disabled={!canExport || isWorking} onClick={handlePrint}>
             {isPrinting ? <Loader2 className="mr-1.5 h-3.5 w-3.5 animate-spin" /> : <Printer className="mr-1.5 h-3.5 w-3.5" />}
-            <span className="hidden sm:inline">Imprimer</span>
+            <span className="hidden sm:inline">Imprimer / PDF</span>
             <span className="sm:hidden">Imp.</span>
           </Button>
-          <Button size="sm" variant="outline" disabled={!canExport || isWorking} onClick={handleDownloadPdf}>
-            {isGeneratingPdf ? <Loader2 className="mr-1.5 h-3.5 w-3.5 animate-spin" /> : <Download className="mr-1.5 h-3.5 w-3.5" />}
-            PDF
+          <Button
+            size="sm"
+            variant="outline"
+            disabled={!canExport || !waUrl}
+            onClick={() => waUrl && window.open(waUrl, '_blank', 'noopener,noreferrer')}
+            className="border-[#25D366] text-[#25D366] hover:bg-[#25D366]/10 hover:text-[#25D366] disabled:border-input disabled:text-muted-foreground"
+          >
+            <svg className="mr-1.5 h-3.5 w-3.5 shrink-0" viewBox="0 0 24 24" fill="currentColor" aria-hidden="true">
+              <path d="M17.472 14.382c-.297-.149-1.758-.867-2.03-.967-.273-.099-.471-.148-.67.15-.197.297-.767.966-.94 1.164-.173.199-.347.223-.644.075-.297-.15-1.255-.463-2.39-1.475-.883-.788-1.48-1.761-1.653-2.059-.173-.297-.018-.458.13-.606.134-.133.298-.347.446-.52.149-.174.198-.298.298-.497.099-.198.05-.371-.025-.52-.075-.149-.669-1.612-.916-2.207-.242-.579-.487-.5-.669-.51-.173-.008-.371-.01-.57-.01-.198 0-.52.074-.792.372-.272.297-1.04 1.016-1.04 2.479 0 1.462 1.065 2.875 1.213 3.074.149.198 2.096 3.2 5.077 4.487.709.306 1.262.489 1.694.625.712.227 1.36.195 1.871.118.571-.085 1.758-.719 2.006-1.413.248-.694.248-1.289.173-1.413-.074-.124-.272-.198-.57-.347m-5.421 7.403h-.004a9.87 9.87 0 01-5.031-1.378l-.361-.214-3.741.982.998-3.648-.235-.374a9.86 9.86 0 01-1.51-5.26c.001-5.45 4.436-9.884 9.888-9.884 2.64 0 5.122 1.03 6.988 2.898a9.825 9.825 0 012.893 6.994c-.003 5.45-4.437 9.884-9.885 9.884m8.413-18.297A11.815 11.815 0 0012.05 0C5.495 0 .16 5.335.157 11.892c0 2.096.547 4.142 1.588 5.945L.057 24l6.305-1.654a11.882 11.882 0 005.683 1.448h.005c6.554 0 11.89-5.335 11.893-11.893a11.821 11.821 0 00-3.48-8.413z"/>
+            </svg>
+            <span className="hidden sm:inline">WhatsApp</span>
           </Button>
         </div>
       </div>

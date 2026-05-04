@@ -35,6 +35,7 @@ export interface UpsertCompanyInput {
   if_number: string
   rc: string
   tp_number: string
+  rib: string
   taux_tva_defaut: number
   couleur_marque: string
   logo_url?: string | null
@@ -78,6 +79,7 @@ export const useUpsertCompany = () => {
         if_number: input.if_number || null,
         rc: input.rc || null,
         tp_number: input.tp_number || null,
+        rib: input.rib || null,
         taux_tva_defaut: input.taux_tva_defaut ?? 0,
         couleur_marque: input.couleur_marque || '#000000',
         logo_url,

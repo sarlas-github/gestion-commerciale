@@ -41,7 +41,7 @@ export const SaleEditPage = () => {
           <div className="flex items-center gap-2">
             <Button variant="outline" size="sm" onClick={() => navigate(`/sales/${id}/invoice`)}>
               <FileText className="mr-2 h-4 w-4" />
-              Aperçu facture
+              {existingInvoice ? 'Voir facture' : 'Aperçu facture'}
             </Button>
             <Button variant="ghost" size="sm" onClick={() => navigate(-1)}>
               <ArrowLeft className="mr-2 h-4 w-4" />

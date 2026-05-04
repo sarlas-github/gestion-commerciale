@@ -145,6 +145,64 @@ Toute l'interface en **français** — labels, boutons, messages d'erreur, titre
 
 ---
 
+## 🗄️ Scripts SQL — Règle absolue
+
+Tout script SQL (migration, fonction, index, colonne, etc.) DOIT être créé dans :
+
+```
+supabase/scripts/YYYYMMDD_NN_description.sql
+```
+
+- `YYYYMMDD` = date du jour
+- `NN` = numéro d'ordre sur 2 chiffres si plusieurs scripts le même jour (`01`, `02`…)
+- `description` = nom court en minuscules avec underscores
+
+Exemples :
+```
+supabase/scripts/20260504_01_company_rib.sql
+supabase/scripts/20260504_02_products_index.sql
+```
+
+Ne jamais écrire de SQL directement dans le chat sans créer le fichier correspondant.
+
+---
+
+## 📄 Documents légaux — Règle snapshot absolue
+
+Les documents générés (factures, reçus, bons) sont **immuables** : ils doivent afficher exactement les données du moment de leur génération, même si l'entreprise ou le client modifie ses informations ultérieurement.
+
+### Règle
+
+Lors de la génération d'un document (`useDocuments.ts`), **tous** les champs entreprise et client doivent être snapshotés dans la table `documents` :
+
+```
+company_name, company_address, company_phone, company_email
+company_ice, company_if, company_rc, company_tp, company_rib
+company_couleur_marque, company_logo_url
+client_name, client_address, client_ice
+```
+
+### Affichage d'un document existant
+
+Toujours lire depuis `existingDocument.*` — **jamais** depuis `company.*` ou `client.*` (données live).
+
+```tsx
+// ✅ CORRECT — snapshot figé au moment de la génération
+couleur_marque: existingInvoice.company_couleur_marque ?? '#1e40af'
+
+// ❌ INTERDIT — donnée live, change si l'entreprise modifie ses paramètres
+couleur_marque: company?.couleur_marque ?? '#1e40af'
+```
+
+### Ajout d'un nouveau champ
+
+Si un nouveau champ entreprise/client est ajouté, il faut systématiquement :
+1. Créer le script SQL (`ALTER TABLE documents ADD COLUMN company_xxx`)
+2. L'ajouter au snapshot dans `useDocuments.ts`
+3. Le lire depuis `existingDocument.company_xxx` dans les composants d'affichage
+
+---
+
 ## ⚠️ Transactions atomiques — Règle absolue
 
 Toute opération touchant plusieurs tables DOIT être 

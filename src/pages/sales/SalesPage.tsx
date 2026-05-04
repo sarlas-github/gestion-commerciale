@@ -134,7 +134,7 @@ export const SalesPage = () => {
               variant="ghost"
               size="icon"
               className="h-8 w-8"
-              title="Aperçu facture"
+              title="Voir facture"
               onClick={() => navigate(`/sales/${row.original.id}/invoice`)}
             >
               <FileText className="h-4 w-4" />
