@@ -154,7 +154,7 @@ export const useSale = (id: string) =>
     queryFn: async () => {
       const { data, error } = await supabase
         .from('sales')
-        .select('*, clients(id, name), sale_items(*, products(id, name, pieces_count)), client_payments(*)')
+        .select('*, clients(id, name, address, phone, ice), sale_items(*, products(id, name, pieces_count)), client_payments(*)')
         .eq('id', id)
         .single()
 

@@ -131,7 +131,12 @@ export const InvoicePreviewPage = () => {
         logo_url: company?.logo_url ?? null,
         couleur_marque: company?.couleur_marque ?? '#1e40af',
       },
-      client: { name: sale.clients?.name ?? null, address: null, phone: null, ice: null },
+      client: {
+        name: sale.clients?.name ?? null,
+        address: sale.clients?.address ?? null,
+        phone: sale.clients?.phone ?? null,
+        ice: sale.clients?.ice ?? null,
+      },
       items,
       totalHT: sale.total - tvaAmount,
       tvaRate,

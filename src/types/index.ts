@@ -188,7 +188,7 @@ export interface Sale {
   created_at: string
   updated_at: string
   // Joins
-  clients?: Pick<Client, 'id' | 'name'>
+  clients?: Pick<Client, 'id' | 'name' | 'address' | 'phone' | 'ice'>
   sale_items?: SaleItem[]
   client_payments?: ClientPayment[]
   documents?: Pick<Document, 'id' | 'type'>[]
