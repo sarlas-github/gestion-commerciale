@@ -42,7 +42,7 @@ export const getStockStatus = (
   quantity: number,
   stockAlert: number
 ): 'ok' | 'faible' | 'rupture' => {
-  if (quantity === 0) return 'rupture'
+  if (quantity <= 0) return 'rupture'
   if (quantity <= stockAlert) return 'faible'
   return 'ok'
 }

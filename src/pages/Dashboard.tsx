@@ -187,7 +187,7 @@ export const Dashboard = () => {
                     </span>
                     <span className="text-muted-foreground">
                       {a.status === 'rupture'
-                        ? 'Rupture (stock : 0)'
+                        ? `Rupture (stock : ${a.quantity} / seuil : ${a.stock_alert})`
                         : `Faible (stock : ${a.quantity} / seuil : ${a.stock_alert})`}
                     </span>
                   </div>

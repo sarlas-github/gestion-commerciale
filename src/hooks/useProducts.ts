@@ -18,7 +18,8 @@ export interface AdjustStockInput {
   productId: string
   currentStockId: string
   currentQuantity: number
-  quantity: number // Nouvelle quantité absolue
+  type: 'in' | 'out'
+  quantity: number // delta positif
   note: string
 }
 
@@ -190,8 +191,8 @@ export const useAdjustStock = () => {
     mutationFn: async (input: AdjustStockInput) => {
       const user = await getCurrentUser()
 
-      const newQty = input.quantity
-      const delta = newQty - input.currentQuantity
+      const signedDelta = input.type === 'in' ? input.quantity : -input.quantity
+      const newQty = input.currentQuantity + signedDelta
 
       const { error: stockErr } = await supabase
         .from('stock')
@@ -200,12 +201,12 @@ export const useAdjustStock = () => {
 
       if (stockErr) throw stockErr
 
-      // Note : DB utilise lowercase 'adjust', 'in', 'out' dans la contrainte CHECK
+      // DB utilise lowercase 'in' / 'out' dans la contrainte CHECK
       const { error: movErr } = await supabase.from('stock_movements').insert({
         user_id: user.id,
         product_id: input.productId,
-        type: 'adjust',
-        quantity: delta,
+        type: input.type,
+        quantity: signedDelta,
         reference_type: 'manual',
         note: input.note,
         date: new Date().toISOString().split('T')[0],
