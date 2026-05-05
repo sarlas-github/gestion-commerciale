@@ -1,11 +1,11 @@
-import { useRef, useState, useLayoutEffect, useCallback } from 'react'
+import { useRef, useState, useEffect, useLayoutEffect, useCallback } from 'react'
 import { useParams, useNavigate } from 'react-router-dom'
 import { Loader2, FileText, Printer, ArrowLeft } from 'lucide-react'
 import { toast } from 'sonner'
 import { Button } from '@/components/ui/button'
 import { useSale } from '@/hooks/useSales'
 import { useCompany } from '@/hooks/useCompany'
-import { useGetSaleInvoice, useCreateInvoice } from '@/hooks/useDocuments'
+import { useGetSaleInvoice, useCreateInvoice, useUpdateInvoiceModePaiement } from '@/hooks/useDocuments'
 import { InvoicePreview } from '@/features/sales/InvoicePreview'
 import type { InvoicePreviewData } from '@/features/sales/InvoicePreview'
 
@@ -18,13 +18,21 @@ export const InvoicePreviewPage = () => {
   const [scale, setScale] = useState(1)
   const [previewHeight, setPreviewHeight] = useState(1200)
   const [isPrinting, setIsPrinting] = useState(false)
+  const [modePaiement, setModePaiement] = useState<string>('')
 
   const { data: sale, isLoading: loadingSale } = useSale(saleId ?? '')
   const { data: company, isLoading: loadingCompany } = useCompany()
   const { data: existingInvoice, isLoading: loadingInvoice } = useGetSaleInvoice(saleId)
   const createInvoice = useCreateInvoice()
+  const updateModePaiement = useUpdateInvoiceModePaiement()
 
   const isLoading = loadingSale || loadingCompany || loadingInvoice
+
+  useEffect(() => {
+    if (existingInvoice?.mode_paiement) {
+      setModePaiement(existingInvoice.mode_paiement)
+    }
+  }, [existingInvoice])
 
   // Measure the actual container width (accounts for sidebar, main padding, container padding)
   const updateScale = useCallback(() => {
@@ -89,6 +97,7 @@ export const InvoicePreviewPage = () => {
         tvaRate: existingInvoice.tva_rate,
         tvaAmount: existingInvoice.tva_amount,
         totalTTC: existingInvoice.total,
+        modePaiement: modePaiement || existingInvoice.mode_paiement,
         note: existingInvoice.note,
       }
     }
@@ -128,6 +137,7 @@ export const InvoicePreviewPage = () => {
       tvaRate,
       tvaAmount,
       totalTTC: sale.total,
+      modePaiement: modePaiement || null,
       note: sale.note,
     }
   })()
@@ -145,6 +155,7 @@ export const InvoicePreviewPage = () => {
       paid: sale.paid,
       tva_rate: sale.tva_rate ?? 0,
       tva_amount: sale.tva_amount ?? 0,
+      mode_paiement: modePaiement || null,
       items: (sale.sale_items ?? []).map(item => ({
         product_id: item.product_id,
         product_name: item.products?.name ?? 'Produit inconnu',
@@ -218,7 +229,7 @@ export const InvoicePreviewPage = () => {
   }
 
   const canExport = Boolean(existingInvoice)
-  const isWorking = createInvoice.isPending || isPrinting
+  const isWorking = createInvoice.isPending || updateModePaiement.isPending || isPrinting
 
   const waPhone = (() => {
     const raw = previewData?.client?.phone ?? null
@@ -249,12 +260,41 @@ export const InvoicePreviewPage = () => {
         </div>
 
         <div className="flex gap-2 shrink-0">
-          {!existingInvoice && !isLoading && (
-            <Button size="sm" onClick={handleGenerate} disabled={isWorking || !previewData}>
-              {createInvoice.isPending && <Loader2 className="mr-1.5 h-3.5 w-3.5 animate-spin" />}
-              <span className="hidden sm:inline">Générer</span>
-              <span className="sm:hidden">Gen.</span>
-            </Button>
+          {!isLoading && (
+            <>
+              <select
+                className="h-7 rounded-md border border-input bg-background px-2 text-sm focus-visible:outline-none focus-visible:ring-1 focus-visible:ring-ring"
+                value={modePaiement}
+                onChange={e => setModePaiement(e.target.value)}
+                disabled={isWorking}
+              >
+                <option value="">Mode de paiement</option>
+                <option value="Espèces">Espèces</option>
+                <option value="Virement bancaire">Virement bancaire</option>
+                <option value="Chèque">Chèque</option>
+                <option value="Effet">Effet</option>
+                <option value="Traite">Traite</option>
+                <option value="Carte bancaire">Carte bancaire</option>
+              </select>
+              {existingInvoice ? (
+                <Button
+                  size="sm"
+                  variant="outline"
+                  disabled={isWorking}
+                  onClick={() => updateModePaiement.mutate({ id: existingInvoice.id, mode_paiement: modePaiement || null })}
+                >
+                  {updateModePaiement.isPending && <Loader2 className="mr-1.5 h-3.5 w-3.5 animate-spin" />}
+                  <span className="hidden sm:inline">Enregistrer</span>
+                  <span className="sm:hidden">Enr.</span>
+                </Button>
+              ) : (
+                <Button size="sm" onClick={handleGenerate} disabled={isWorking || !previewData}>
+                  {createInvoice.isPending && <Loader2 className="mr-1.5 h-3.5 w-3.5 animate-spin" />}
+                  <span className="hidden sm:inline">Générer</span>
+                  <span className="sm:hidden">Gen.</span>
+                </Button>
+              )}
+            </>
           )}
           <Button size="sm" variant="outline" disabled={!canExport || isWorking} onClick={handlePrint}>
             {isPrinting ? <Loader2 className="mr-1.5 h-3.5 w-3.5 animate-spin" /> : <Printer className="mr-1.5 h-3.5 w-3.5" />}

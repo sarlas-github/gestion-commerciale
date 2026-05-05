@@ -267,6 +267,7 @@ export interface Document {
   company_site_web: string | null
   company_couleur_marque: string | null
   company_logo_url: string | null
+  mode_paiement: string | null
   created_at: string
   updated_at: string
   // Joins

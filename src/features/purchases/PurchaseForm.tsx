@@ -576,10 +576,10 @@ export const PurchaseForm = ({ existing, onSubmit, isLoading = false }: Purchase
                     </Button>
                   </div>
 
-                  {/* Ligne 2 : Méthode + Note */}
+                  {/* Ligne 2 : Mode + Note */}
                   <div className="grid grid-cols-2 gap-2">
                     <div className="space-y-1">
-                      <span className="text-xs text-muted-foreground block">Méthode</span>
+                      <span className="text-xs text-muted-foreground block">Mode</span>
                       <Controller
                         name={`payments.${idx}.methode_paiement`}
                         control={control}

@@ -1,5 +1,5 @@
 import { forwardRef } from 'react'
-import { formatCurrency, formatDate } from '@/lib/utils'
+import { formatCurrency, formatDate, numberToWords } from '@/lib/utils'
 
 export interface InvoicePreviewData {
   invoiceNumber?: string // undefined = brouillon (affiche "****")
@@ -34,6 +34,7 @@ export interface InvoicePreviewData {
   tvaRate: number
   tvaAmount: number
   totalTTC: number
+  modePaiement?: string | null
   note?: string | null
 }
 
@@ -52,7 +53,7 @@ interface InvoicePreviewProps {
  */
 export const InvoicePreview = forwardRef<HTMLDivElement, InvoicePreviewProps>(
   ({ data }, ref) => {
-    const { invoiceNumber, date, company, client, items, totalHT, tvaRate, tvaAmount, totalTTC } = data
+    const { invoiceNumber, date, company, client, items, totalHT, tvaRate, tvaAmount, totalTTC, modePaiement } = data
     const isDraft = !invoiceNumber
     const displayNumber = invoiceNumber ?? 'FAC-****'
     const brandColor = company.couleur_marque || '#1e40af'
@@ -184,26 +185,32 @@ export const InvoicePreview = forwardRef<HTMLDivElement, InvoicePreviewProps>(
             <div style={{ fontSize: '18px', fontWeight: 700, fontFamily: "'Roboto Mono', monospace", color: C.gray800 }}>
               {displayNumber}
             </div>
-            <div style={{ fontSize: '14px', color: C.gray500, marginTop: '4px' }}>
-              Date : {formatDate(date)}
-            </div>
           </div>
         </div>
 
         {/* Séparateur */}
         <div style={{ height: '1px', backgroundColor: C.gray200, marginBottom: '28px' }} />
 
-        {/* ── Client (right-aligned card with brand header) ──────────────── */}
-        <div style={{ textAlign: 'right', marginBottom: '28px' }}>
-          <div
-            style={{
-              display: 'inline-block',
-              width: '280px',
-              textAlign: 'left',
-              overflow: 'hidden',
-              border: `1px solid ${C.gray200}`,
-            }}
-          >
+        {/* ── Mode de paiement (gauche) + Client (droite) ──────────────── */}
+        <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', marginBottom: '28px' }}>
+          {/* Gauche : Date + Mode de paiement — alignement colonnes via CSS table */}
+          <div style={{ flex: 1, paddingRight: '20px', paddingTop: '4px' }}>
+            <div style={{ display: 'table', fontSize: '13px', color: C.gray700 }}>
+              <div style={{ display: 'table-row' }}>
+                <div style={{ display: 'table-cell', fontWeight: 600, paddingRight: '12px', whiteSpace: 'nowrap' }}>Date :</div>
+                <div style={{ display: 'table-cell' }}>{formatDate(date)}</div>
+              </div>
+              {modePaiement && (
+                <div style={{ display: 'table-row' }}>
+                  <div style={{ display: 'table-cell', fontWeight: 600, paddingRight: '12px', whiteSpace: 'nowrap' }}>Mode de paiement :</div>
+                  <div style={{ display: 'table-cell' }}>{modePaiement}</div>
+                </div>
+              )}
+            </div>
+          </div>
+
+          {/* Droite : Client card */}
+          <div style={{ width: '280px', flexShrink: 0, overflow: 'hidden', border: `1px solid ${C.gray200}` }}>
             {/* Header — simple block div, NO flex */}
             <div
               style={{
@@ -218,7 +225,6 @@ export const InvoicePreview = forwardRef<HTMLDivElement, InvoicePreviewProps>(
             >
               Client
             </div>
-            {/* Body */}
             <div style={{ padding: '12px 14px', backgroundColor: C.white }}>
               <div style={{ fontSize: '15px', fontWeight: 700, color: C.black, marginBottom: '2px' }}>
                 {client.name ?? '—'}
@@ -318,15 +324,31 @@ export const InvoicePreview = forwardRef<HTMLDivElement, InvoicePreviewProps>(
         {/* ── Spacer: pushes footer to bottom of A4 page ─────────────────── */}
         <div style={{ flexGrow: 1 }} />
 
+        {/* ── Total TTC en lettres ─────────────────────────────────────── */}
+        <div style={{ fontSize: '12px', fontStyle: 'italic', color: C.gray600, marginBottom: '16px' }}>
+          {(() => {
+            const cents = Math.round(totalTTC * 100) % 100
+            const amountDH = cents === 0
+              ? `${Math.round(totalTTC)} DH`
+              : `${Math.floor(totalTTC)},${String(cents).padStart(2, '0')} DH`
+            return (
+              <>
+                <div>Arrêté la présente facture à la somme de :</div>
+                <div><strong>{numberToWords(totalTTC)} ({amountDH})</strong></div>
+              </>
+            )
+          })()}
+        </div>
+
         {/* ── Pied de page ────────────────────────────────────────────────── */}
         {(company.name || legalInfoParts.length > 0 || company.rib) && (
           <div>
+            <div style={{ height: '1px', backgroundColor: C.gray200, marginBottom: '10px' }} />
             {company.name && (
-              <div style={{ fontSize: '12px', fontWeight: 600, color: C.gray600, textAlign: 'center', marginBottom: '8px', letterSpacing: '0.04em' }}>
+              <div style={{ fontSize: '12px', fontWeight: 600, color: C.gray600, textAlign: 'center', marginBottom: '6px', letterSpacing: '0.04em' }}>
                 {company.name}
               </div>
             )}
-            <div style={{ height: '1px', backgroundColor: C.gray200, marginBottom: '10px' }} />
             {legalInfoParts.length > 0 && (
               <div style={{ fontSize: '11px', color: C.gray400, textAlign: 'center', marginBottom: company.rib ? '4px' : 0 }}>
                 {legalInfoParts.join('  ·  ')}

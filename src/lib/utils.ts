@@ -65,6 +65,58 @@ export const formatDocumentNumber = (
 
 export const DEFAULT_PAGE_SIZE = 10
 
+// Convertit un montant en lettres (français, dirhams marocains)
+// Exemple : 2300.50 → "Deux mille trois cents dirhams et cinquante centimes"
+export function numberToWords(amount: number): string {
+  const ONES = ['', 'un', 'deux', 'trois', 'quatre', 'cinq', 'six', 'sept', 'huit', 'neuf',
+    'dix', 'onze', 'douze', 'treize', 'quatorze', 'quinze', 'seize', 'dix-sept', 'dix-huit', 'dix-neuf']
+  const TENS = ['', '', 'vingt', 'trente', 'quarante', 'cinquante', 'soixante', 'soixante', 'quatre-vingt', 'quatre-vingt']
+
+  function belowHundred(n: number): string {
+    if (n < 20) return ONES[n]
+    const t = Math.floor(n / 10)
+    const o = n % 10
+    if (t === 7) return o === 1 ? 'soixante et onze' : `soixante-${ONES[10 + o]}`
+    if (t === 9) return o === 0 ? 'quatre-vingt-dix' : `quatre-vingt-${ONES[10 + o]}`
+    if (o === 0) return t === 8 ? 'quatre-vingts' : TENS[t]
+    if (o === 1 && t !== 8) return `${TENS[t]} et un`
+    return `${TENS[t]}-${ONES[o]}`
+  }
+
+  function belowThousand(n: number): string {
+    if (n < 100) return belowHundred(n)
+    const h = Math.floor(n / 100)
+    const r = n % 100
+    const prefix = h === 1 ? 'cent' : `${ONES[h]} cent`
+    if (r === 0) return h === 1 ? 'cent' : `${ONES[h]} cents`
+    return `${prefix} ${belowHundred(r)}`
+  }
+
+  function convert(n: number): string {
+    if (n === 0) return 'zéro'
+    if (n < 1000) return belowThousand(n)
+    if (n < 1_000_000) {
+      const k = Math.floor(n / 1000)
+      const r = n % 1000
+      const prefix = k === 1 ? 'mille' : `${belowThousand(k)} mille`
+      return r === 0 ? prefix : `${prefix} ${belowThousand(r)}`
+    }
+    return String(n)
+  }
+
+  const rounded = Math.round(amount * 100)
+  const dirhams = Math.floor(rounded / 100)
+  const centimes = rounded % 100
+
+  const dirhamPart = `${capitalize(convert(dirhams))} dirham${dirhams > 1 ? 's' : ''}`
+  if (centimes === 0) return dirhamPart
+  return `${dirhamPart} et ${convert(centimes)} centime${centimes > 1 ? 's' : ''}`
+}
+
+function capitalize(s: string): string {
+  return s.charAt(0).toUpperCase() + s.slice(1)
+}
+
 // Format numéro de téléphone marocain : XX XX XX XX XX
 export const formatPhone = (phone: string | null | undefined): string => {
   if (!phone) return ''

@@ -19,6 +19,7 @@ export interface CreateInvoicePayload {
   paid: number
   tva_rate: number
   tva_amount: number
+  mode_paiement?: string | null
   items: Array<{
     product_id: string
     product_name: string
@@ -102,6 +103,7 @@ export const useCreateInvoice = () => {
           company_site_web: company?.site_web ?? null,
           company_couleur_marque: company?.couleur_marque ?? null,
           company_logo_url: company?.logo_url ?? null,
+          mode_paiement: payload.mode_paiement ?? null,
         })
         .select()
         .single()
@@ -131,6 +133,27 @@ export const useCreateInvoice = () => {
     },
     onError: (err: Error) => {
       toast.error(err.message || 'Erreur lors de la génération de la facture')
+    },
+  })
+}
+
+export const useUpdateInvoiceModePaiement = () => {
+  const qc = useQueryClient()
+  return useMutation({
+    mutationFn: async ({ id, mode_paiement }: { id: string; mode_paiement: string | null }) => {
+      const { error } = await supabase
+        .from('documents')
+        .update({ mode_paiement })
+        .eq('id', id)
+      if (error) throw error
+    },
+    onSuccess: () => {
+      qc.invalidateQueries({ queryKey: ['sale-invoice'] })
+      qc.invalidateQueries({ queryKey: ['documents'] })
+      toast.success('Mode de paiement mis à jour')
+    },
+    onError: (err: Error) => {
+      toast.error(err.message || 'Erreur lors de la mise à jour')
     },
   })
 }
