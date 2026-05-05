@@ -200,12 +200,6 @@ export const InvoicePreview = forwardRef<HTMLDivElement, InvoicePreviewProps>(
                 <div style={{ display: 'table-cell', fontWeight: 600, paddingRight: '12px', whiteSpace: 'nowrap' }}>Date :</div>
                 <div style={{ display: 'table-cell' }}>{formatDate(date)}</div>
               </div>
-              {modePaiement && (
-                <div style={{ display: 'table-row' }}>
-                  <div style={{ display: 'table-cell', fontWeight: 600, paddingRight: '12px', whiteSpace: 'nowrap' }}>Mode de paiement :</div>
-                  <div style={{ display: 'table-cell' }}>{modePaiement}</div>
-                </div>
-              )}
             </div>
           </div>
 
@@ -286,10 +280,21 @@ export const InvoicePreview = forwardRef<HTMLDivElement, InvoicePreviewProps>(
         </table>
 
         {/* ── Totaux ──────────────────────────────────────────────────────
-             NO flex on the Total TTC bar. Using a simple table layout
-             for the totals section to ensure html2canvas alignment.
+             Mode de paiement à gauche, bloc totaux à droite (même niveau).
+             NO flex sur les éléments colorés (bug html2canvas).
         ──────────────────────────────────────────────────────────────────── */}
-        <div style={{ textAlign: 'right', marginBottom: '24px' }}>
+        <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', marginBottom: '24px' }}>
+          {/* Gauche : Mode de paiement au même niveau que Total HT */}
+          <div style={{ paddingTop: '4px', fontSize: '14px', color: C.gray600 }}>
+            {modePaiement && (
+              <>
+                <span style={{ fontWeight: 600 }}>Mode de paiement : </span>
+                <span>{modePaiement}</span>
+              </>
+            )}
+          </div>
+
+          {/* Droite : Total HT / TVA / Total TTC */}
           <div style={{ display: 'inline-block', width: '260px', textAlign: 'left' }}>
             {/* Total HT */}
             <div style={{ overflow: 'hidden', fontSize: '14px', padding: '4px 0', color: C.gray600 }}>
@@ -321,11 +326,8 @@ export const InvoicePreview = forwardRef<HTMLDivElement, InvoicePreviewProps>(
           </div>
         </div>
 
-        {/* ── Spacer: pushes footer to bottom of A4 page ─────────────────── */}
-        <div style={{ flexGrow: 1 }} />
-
-        {/* ── Total TTC en lettres ─────────────────────────────────────── */}
-        <div style={{ fontSize: '12px', fontStyle: 'italic', color: C.gray600, marginBottom: '16px' }}>
+        {/* ── Montant TTC en lettres — juste après Total TTC ───────────── */}
+        <div style={{ fontSize: '12px', fontStyle: 'italic', color: C.gray600, marginBottom: '24px' }}>
           {(() => {
             const cents = Math.round(totalTTC * 100) % 100
             const amountDH = cents === 0
@@ -339,6 +341,9 @@ export const InvoicePreview = forwardRef<HTMLDivElement, InvoicePreviewProps>(
             )
           })()}
         </div>
+
+        {/* ── Spacer: pushes footer to bottom of A4 page ─────────────────── */}
+        <div style={{ flexGrow: 1 }} />
 
         {/* ── Pied de page ────────────────────────────────────────────────── */}
         {(company.name || legalInfoParts.length > 0 || company.rib) && (
