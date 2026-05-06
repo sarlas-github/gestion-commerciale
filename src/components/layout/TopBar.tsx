@@ -121,7 +121,11 @@ export const TopBar = ({ onMenuOpen }: TopBarProps) => {
               </div>
             </div>
 
-            <DropdownMenuItem onClick={handleSignOut} variant="destructive" className="cursor-pointer">
+            <DropdownMenuItem 
+              onClick={handleSignOut} 
+              variant="destructive" 
+              className="cursor-pointer h-11 px-3 mt-1 font-medium"
+            >
               <LogOut className="h-4 w-4 mr-2" />
               Déconnexion
             </DropdownMenuItem>

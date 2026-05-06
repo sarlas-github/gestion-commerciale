@@ -26,6 +26,7 @@ import { useStockAlertCount } from '@/hooks/useProducts'
 import { useCompany } from '@/hooks/useCompany'
 import { useQueryClient } from '@tanstack/react-query'
 import { Button } from '@/components/ui/button'
+import { APP_NAME } from '@/lib/constants'
 import { Separator } from '@/components/ui/separator'
 
 interface NavItem {
@@ -100,7 +101,7 @@ export const Sidebar = ({ onClose, collapsed = false, onToggleCollapse }: Sideba
   const navigate = useNavigate()
   const { signOut } = useAuth()
   const { data: alertCount = 0 } = useStockAlertCount()
-  const { data: company } = useCompany()
+  const { data: company, isLoading: isCompanyLoading } = useCompany()
   const queryClient = useQueryClient()
   const [expandedItems, setExpandedItems] = useState<string[]>(['Paiements', 'États'])
   const [isDark, setIsDark] = useState(() => document.documentElement.classList.contains('dark'))
@@ -180,17 +181,16 @@ export const Sidebar = ({ onClose, collapsed = false, onToggleCollapse }: Sideba
           collapsed ? 'justify-center px-2' : 'px-4'
         )}
       >
-        <div className="flex h-8 w-8 items-center justify-center rounded-lg bg-primary text-primary-foreground overflow-hidden shrink-0 shadow-sm">
-          {company?.logo_url ? (
-            <img src={company.logo_url} alt="Logo" className="h-full w-full object-contain" />
-          ) : (
-            <Building2 className="h-4 w-4" />
-          )}
+        <div className="flex h-8 w-8 items-center justify-center rounded-lg bg-primary text-primary-foreground overflow-hidden shrink-0 shadow-sm p-0.5">
+          <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 100 100" className="h-full w-full">
+            <path d="M75 35 A25 25 0 1 0 75 65" fill="none" stroke="currentColor" strokeWidth="12" strokeLinecap="round"/>
+            <path d="M50 25 L60 50 L50 75 L40 50 Z" fill="currentColor" transform="rotate(45 50 50)"/>
+          </svg>
         </div>
         {!collapsed && (
           <div className="flex-1 min-w-0">
-            <p className="text-sm font-semibold truncate">{company?.name ?? 'Mon Entreprise'}</p>
-            <p className="text-xs text-muted-foreground">Gestion Commerciale</p>
+            <p className="text-sm font-bold tracking-tight truncate">{APP_NAME}</p>
+            <p className="text-xs text-muted-foreground font-medium">Gestion Commerciale</p>
           </div>
         )}
         {onClose && (
@@ -356,39 +356,37 @@ export const Sidebar = ({ onClose, collapsed = false, onToggleCollapse }: Sideba
             {!collapsed && <span>Paramètres</span>}
           </Link>
         </div>
-
-        {/* Séparateur + Mode sombre + Déconnexion — dans le flux de scroll */}
-        <div className="pt-4 mt-2">
-          <Separator className="mb-3" />
-
-          {/* Theme toggle */}
-          <button
-            onClick={toggleTheme}
-            title={collapsed ? (isDark ? 'Mode clair' : 'Mode sombre') : undefined}
-            className={cn(
-              'flex w-full items-center gap-3 rounded-md py-2 text-sm font-medium text-muted-foreground transition-all duration-150 hover:bg-muted hover:text-foreground mb-1',
-              collapsed ? 'justify-center px-2' : 'px-3'
-            )}
-          >
-            {isDark
-              ? <Sun className="h-4 w-4 shrink-0" />
-              : <Moon className="h-4 w-4 shrink-0" />}
-            {!collapsed && <span>Mode {isDark ? 'clair' : 'sombre'}</span>}
-          </button>
-
-          <button
-            onClick={handleSignOut}
-            title={collapsed ? 'Déconnexion' : undefined}
-            className={cn(
-              'flex w-full items-center gap-3 rounded-md py-2 text-sm font-medium text-muted-foreground transition-all duration-150 hover:bg-muted hover:text-foreground',
-              collapsed ? 'justify-center px-2' : 'px-3'
-            )}
-          >
-            <LogOut className="h-4 w-4 shrink-0" />
-            {!collapsed && <span>Déconnexion</span>}
-          </button>
-        </div>
       </nav>
+
+      {/* Pied de page — Toujours en bas */}
+      <div className={cn('p-3 border-t space-y-1 bg-card', collapsed ? 'px-2' : 'px-3')}>
+        {/* Theme toggle */}
+        <button
+          onClick={toggleTheme}
+          title={collapsed ? (isDark ? 'Mode clair' : 'Mode sombre') : undefined}
+          className={cn(
+            'flex w-full items-center gap-3 rounded-md py-2 text-sm font-medium text-muted-foreground transition-all duration-150 hover:bg-muted hover:text-foreground',
+            collapsed ? 'justify-center px-2' : 'px-3'
+          )}
+        >
+          {isDark
+            ? <Sun className="h-4 w-4 shrink-0" />
+            : <Moon className="h-4 w-4 shrink-0" />}
+          {!collapsed && <span>Mode {isDark ? 'clair' : 'sombre'}</span>}
+        </button>
+
+        <button
+          onClick={handleSignOut}
+          title={collapsed ? 'Déconnexion' : undefined}
+          className={cn(
+            'flex w-full items-center gap-3 rounded-md py-2 text-sm font-medium text-muted-foreground transition-all duration-150 hover:bg-muted hover:text-foreground',
+            collapsed ? 'justify-center px-2' : 'px-3'
+          )}
+        >
+          <LogOut className="h-4 w-4 shrink-0" />
+          {!collapsed && <span>Déconnexion</span>}
+        </button>
+      </div>
     </div>
   )
 }

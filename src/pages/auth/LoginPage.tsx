@@ -5,6 +5,7 @@ import { Button } from '@/components/ui/button'
 import { Input } from '@/components/ui/input'
 import { Label } from '@/components/ui/label'
 import { Loader2, Eye, EyeOff } from 'lucide-react'
+import { APP_NAME } from '@/lib/constants'
 
 export const LoginPage = () => {
   const { signIn } = useAuth()
@@ -34,25 +35,27 @@ export const LoginPage = () => {
       {/* Left panel - Brand side */}
       <div className="hidden lg:flex flex-col w-1/3 bg-primary text-primary-foreground p-12">
         <div className="flex items-center gap-2 font-bold text-xl mb-auto">
-          <div className="flex h-8 w-8 items-center justify-center rounded-md bg-white/20">
-            <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 100 100" className="h-5 w-5 fill-current">
-              <text x="50%" y="50%" dominantBaseline="middle" textAnchor="middle" fontFamily="Arial, sans-serif" fontWeight="bold" fontSize="70">D</text>
+          <div className="flex h-10 w-10 items-center justify-center overflow-hidden">
+            <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 100 100" className="h-full w-full">
+              <path d="M75 35 A25 25 0 1 0 75 65" fill="none" stroke="white" strokeWidth="10" strokeLinecap="round"/>
+              <path d="M50 25 L60 50 L50 75 L40 50 Z" fill="white" transform="rotate(45 50 50)"/>
+              <circle cx="50" cy="50" r="4" fill="currentColor" />
             </svg>
           </div>
-          DIGISTART
+          {APP_NAME}
         </div>
-        
+
         <div className="space-y-4 max-w-sm">
           <h1 className="text-4xl font-bold leading-tight">
-            Gérez votre activité<br />commerciale comme un pro.
+            Pilotez votre activité commerciale avec précision.
           </h1>
           <p className="text-primary-foreground/80 leading-relaxed text-sm">
-            Clients, fournisseurs, stocks et facturation<br />— tout en un seul endroit.
+            De l’achat à la vente  —<br /> suivez vos flux en temps réel.
           </p>
         </div>
 
         <div className="mt-auto text-xs text-primary-foreground/50">
-          DIGISTART © {new Date().getFullYear()}
+          {APP_NAME} © {new Date().getFullYear()}
         </div>
       </div>
 
@@ -62,7 +65,7 @@ export const LoginPage = () => {
           <div className="space-y-2">
             <h2 className="text-3xl font-bold tracking-tight">Connexion</h2>
             <p className="text-sm text-muted-foreground">
-              Connectez-vous à votre espace DIGISTART
+              Connectez-vous à votre espace {APP_NAME}
             </p>
           </div>
 

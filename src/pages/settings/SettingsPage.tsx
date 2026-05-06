@@ -9,6 +9,7 @@ import { Label } from '@/components/ui/label'
 import { PageHeader } from '@/components/shared/PageHeader'
 import { useCompany, useUpsertCompany } from '@/hooks/useCompany'
 import { cn } from '@/lib/utils'
+import { DEFAULT_BRAND_COLOR } from '@/lib/constants'
 
 // ── Schéma ────────────────────────────────────────────────────────────────────
 
@@ -25,7 +26,7 @@ const schema = z.object({
   tp_number: z.string().optional().or(z.literal('')),
   rib: z.string().optional().or(z.literal('')),
   taux_tva_defaut: z.number({ invalid_type_error: 'Entrer un taux' }).min(0).max(100).default(0),
-  couleur_marque: z.string().min(1).default('#000000'),
+  couleur_marque: z.string().min(1).default(DEFAULT_BRAND_COLOR),
 })
 
 type FormValues = z.infer<typeof schema>
@@ -37,14 +38,16 @@ const formatPhone = (value: string): string => {
   return digits.match(/.{1,2}/g)?.join(' ') ?? digits
 }
 
-// ── Couleurs prédéfinies ──────────────────────────────────────────────────────
+// ── Couleurs prédéfinies (Curated Professional Palette) ──────────────────────
 
 const PRESET_COLORS = [
-  { label: 'Bleu', value: '#3B82F6' },
-  { label: 'Vert', value: '#22C55E' },
-  { label: 'Jaune', value: '#EAB308' },
-  { label: 'Rouge', value: '#EF4444' },
-  { label: 'Violet', value: '#A855F7' },
+  { label: 'Indigo', value: DEFAULT_BRAND_COLOR },
+  { label: 'Blue', value: '#2563eb' },
+  { label: 'Teal', value: '#0d9488' },
+  { label: 'Emerald', value: '#059669' },
+  { label: 'Amber', value: '#d97706' },
+  { label: 'Crimson', value: '#be123c' },
+  { label: 'Violet', value: '#7c3aed' },
 ]
 
 // ── Composant ─────────────────────────────────────────────────────────────────
@@ -74,7 +77,7 @@ export const SettingsPage = () => {
       tp_number: company?.tp_number ?? '',
       rib: company?.rib ?? '',
       taux_tva_defaut: company?.taux_tva_defaut ?? 0,
-      couleur_marque: company?.couleur_marque ?? '#000000',
+      couleur_marque: company?.couleur_marque ?? DEFAULT_BRAND_COLOR,
     },
   })
 
@@ -397,24 +400,25 @@ export const SettingsPage = () => {
                     title={c.label}
                     onClick={() => setValue('couleur_marque', c.value)}
                     className={cn(
-                      'h-8 w-8 rounded-full border-2 transition-all',
-                      couleur === c.value ? 'border-foreground scale-110' : 'border-transparent hover:scale-105'
+                      'h-10 w-10 rounded-xl border-2 transition-all shadow-sm ring-offset-background',
+                      couleur === c.value 
+                        ? 'border-foreground scale-110 shadow-md ring-2 ring-ring ring-offset-2' 
+                        : 'border-transparent hover:scale-105 hover:shadow-md'
                     )}
                     style={{ backgroundColor: c.value }}
                   />
                 ))}
 
                 {/* Picker libre — le bouton déclenche l'input color natif */}
-                <div className="relative overflow-hidden rounded-md border border-input">
+                <div className="relative overflow-hidden rounded-xl border border-dashed border-muted-foreground/30 hover:border-primary transition-colors group">
                   <Button
                     type="button"
                     variant="ghost"
-                    size="sm"
-                    className="pointer-events-none h-8 px-3 gap-1.5 font-normal"
+                    className="pointer-events-none h-10 px-3 gap-1.5 font-normal text-muted-foreground group-hover:text-primary transition-colors"
                     style={{ color: !PRESET_COLORS.find(c => c.value === couleur) ? couleur : undefined }}
                   >
                     <Palette className="h-4 w-4" />
-                    Couleur libre
+                    <span className="text-xs">Libre</span>
                   </Button>
                   <Controller
                     control={control}

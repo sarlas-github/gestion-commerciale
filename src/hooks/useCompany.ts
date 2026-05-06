@@ -1,6 +1,7 @@
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query'
 import { toast } from 'sonner'
 import { supabase } from '@/lib/supabase'
+import { DEFAULT_BRAND_COLOR } from '@/lib/constants'
 import type { Company } from '@/types'
 
 async function getCurrentUser() {
@@ -81,7 +82,7 @@ export const useUpsertCompany = () => {
         tp_number: input.tp_number || null,
         rib: input.rib || null,
         taux_tva_defaut: input.taux_tva_defaut ?? 0,
-        couleur_marque: input.couleur_marque || '#000000',
+        couleur_marque: input.couleur_marque || DEFAULT_BRAND_COLOR,
         logo_url,
       }
 
