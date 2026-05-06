@@ -1,7 +1,7 @@
 import { useState } from 'react'
 import { useNavigate } from 'react-router-dom'
 import {
-  Loader2, Banknote, ShoppingCart, TrendingUp, Package, Wallet, Activity
+  Loader2, Banknote, ShoppingCart, TrendingUp, Package, Wallet, Activity, Scale
 } from 'lucide-react'
 import {
   ResponsiveContainer,
@@ -192,8 +192,8 @@ export const Dashboard = () => {
 
             {/* Ligne 3 : Performance */}
             <KPICard label="Marge brute" value={formatCurrency(data?.marge ?? 0)} sub={`CA − Achats ${periodSub}`} color={(data?.marge ?? 0) < 0 ? 'red' : (data?.marge ?? 0) > 0 ? 'green' : undefined} icon={TrendingUp} />
+            <KPICard label="Trésorerie" value={formatCurrency((data?.encaisse ?? 0) - (data?.decaisse ?? 0))} sub={`Encaissé − Décaissé ${periodSub}`} color={((data?.encaisse ?? 0) - (data?.decaisse ?? 0)) < 0 ? 'red' : ((data?.encaisse ?? 0) - (data?.decaisse ?? 0)) > 0 ? 'green' : undefined} icon={Scale} />
             <KPICard label="Volume ventes" value={String(data?.nbVentes ?? 0)} sub={`Factures ${periodSub}`} icon={Package} />
-            <KPICard label="Panier Moyen" value={formatCurrency(data?.panierMoyen ?? 0)} sub={`Par vente ${periodSub}`} icon={Banknote} />
           </div>
 
           {/* ── Alertes stock ── */}

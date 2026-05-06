@@ -167,6 +167,20 @@ Ne jamais écrire de SQL directement dans le chat sans créer le fichier corresp
 
 ---
 
+## 🗃️ Fonctions PostgreSQL — Source de vérité
+
+`supabase/functions/` contient **la dernière version déployée** de chaque fonction RPC.
+
+Règle à respecter à chaque modification d'une fonction :
+1. Créer le script dans `supabase/scripts/YYYYMMDD_NN_description.sql`
+2. Mettre à jour le fichier correspondant dans `supabase/functions/nom_fonction.sql`
+
+Ne jamais modifier `supabase/functions/` sans créer le script de migration qui va avec.
+
+Avant de modifier une fonction existante, toujours lire son fichier dans `supabase/functions/` — c'est la version courante, pas `supabase/scripts/` (qui est un historique).
+
+---
+
 ## 📄 Documents légaux — Règle snapshot absolue
 
 Les documents générés (factures, reçus, bons) sont **immuables** : ils doivent afficher exactement les données du moment de leur génération, même si l'entreprise ou le client modifie ses informations ultérieurement.

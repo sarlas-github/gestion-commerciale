@@ -18,7 +18,6 @@ export interface DashboardData {
   aPayer: number
   nbVentes: number
   marge: number
-  panierMoyen: number
   ventesParJour: { day: string; total: number }[]
   top5Produits: { name: string; total: number }[]
   top5Clients: { name: string; total: number }[]
