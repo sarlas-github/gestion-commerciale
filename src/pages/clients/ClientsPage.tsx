@@ -9,6 +9,7 @@ import { Button } from '@/components/ui/button'
 import { Badge } from '@/components/ui/badge'
 import { useClients, useDeleteClient, type ClientWithStats } from '@/hooks/useClients'
 import { formatCurrency, formatPhone } from '@/lib/utils'
+import { usePageAction } from '@/contexts/PageContext'
 
 const StatusBadge = ({ status }: { status: 'ok' | 'partial' | 'unpaid' }) => {
   if (status === 'ok') return <Badge className="bg-green-100 text-green-800 hover:bg-green-100">🟢 OK</Badge>
@@ -22,6 +23,14 @@ export const ClientsPage = () => {
   const deleteClient = useDeleteClient()
 
   const [deleteTarget, setDeleteTarget] = useState<ClientWithStats | null>(null)
+
+  usePageAction(
+    <Button onClick={() => navigate('/clients/new')}>
+      <Plus className="mr-1.5 h-4 w-4" />
+      <span className="sm:hidden">Client</span>
+      <span className="hidden sm:inline">Nouveau client</span>
+    </Button>
+  )
 
   const columns = useMemo<ColumnDef<ClientWithStats>[]>(
     () => [
@@ -92,15 +101,7 @@ export const ClientsPage = () => {
 
   return (
     <div className="space-y-6">
-      <PageHeader
-        title="Clients"
-        actions={
-          <Button onClick={() => navigate('/clients/new')}>
-            <Plus className="mr-2 h-4 w-4" />
-            Nouveau client
-          </Button>
-        }
-      />
+      <PageHeader title="Clients" subtitle={`${clients.length} client${clients.length !== 1 ? 's' : ''}`} />
 
       <DataTable
         columns={columns}
@@ -133,3 +134,8 @@ export const ClientsPage = () => {
     </div>
   )
 }
+
+
+
+
+

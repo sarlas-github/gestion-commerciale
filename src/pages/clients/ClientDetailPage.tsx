@@ -330,7 +330,7 @@ export const ClientDetailPage = () => {
               <ArrowLeft className="mr-2 h-4 w-4" />
               Retour
             </Button>
-            <Button size="sm" onClick={() => navigate(`/clients/${id}/edit`)}>
+            <Button onClick={() => navigate(`/clients/${id}/edit`)}>
               <Pencil className="mr-2 h-4 w-4" />
               Éditer
             </Button>
@@ -366,3 +366,8 @@ export const ClientDetailPage = () => {
     </div>
   )
 }
+
+
+
+
+

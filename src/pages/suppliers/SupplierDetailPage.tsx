@@ -338,7 +338,7 @@ export const SupplierDetailPage = () => {
               <ArrowLeft className="mr-2 h-4 w-4" />
               Retour
             </Button>
-            <Button size="sm" onClick={() => navigate(`/suppliers/${id}/edit`)}>
+            <Button onClick={() => navigate(`/suppliers/${id}/edit`)}>
               <Pencil className="mr-2 h-4 w-4" />
               Éditer
             </Button>
@@ -376,3 +376,8 @@ export const SupplierDetailPage = () => {
     </div>
   )
 }
+
+
+
+
+

@@ -1,7 +1,6 @@
 import { useLocation, useNavigate } from 'react-router-dom'
 import { Menu, LogOut } from 'lucide-react'
 import { Button } from '@/components/ui/button'
-import { Separator } from '@/components/ui/separator'
 import { Avatar, AvatarFallback } from '@/components/ui/avatar'
 import {
   DropdownMenu,
@@ -11,13 +10,14 @@ import {
 } from '@/components/ui/dropdown-menu'
 import { useAuth } from '@/hooks/useAuth'
 import { useQueryClient } from '@tanstack/react-query'
+import { usePageContext } from '@/contexts/PageContext'
 
 interface TopBarProps {
   onMenuOpen: () => void
 }
 
 const pageTitles: Record<string, string> = {
-  '/dashboard': 'Dashboard',
+  '/dashboard': 'Tableau de bord',
   '/setup': 'Configuration entreprise',
   '/products': 'Produits',
   '/products/new': 'Nouveau produit',
@@ -36,10 +36,9 @@ const pageTitles: Record<string, string> = {
   '/settings': 'Paramètres',
 }
 
-const getInitials = (name: string): string => {
-  const parts = name.trim().split(/\s+/)
-  if (parts.length === 1) return parts[0].charAt(0).toUpperCase()
-  return (parts[0].charAt(0) + parts[parts.length - 1].charAt(0)).toUpperCase()
+const getEmailInitials = (email: string): string => {
+  const local = email.split('@')[0] ?? ''
+  return local.slice(0, 2).toUpperCase()
 }
 
 export const TopBar = ({ onMenuOpen }: TopBarProps) => {
@@ -47,15 +46,14 @@ export const TopBar = ({ onMenuOpen }: TopBarProps) => {
   const navigate = useNavigate()
   const { user, signOut } = useAuth()
   const queryClient = useQueryClient()
+  const { action, title: contextTitle, subtitle: contextSubtitle } = usePageContext()
 
   const getPageTitle = () => {
     const exactMatch = pageTitles[location.pathname]
     if (exactMatch) return exactMatch
-
     const prefix = Object.keys(pageTitles)
       .filter((k) => location.pathname.startsWith(k) && k !== '/')
       .sort((a, b) => b.length - a.length)[0]
-
     return prefix ? pageTitles[prefix] : 'Gestion Commerciale'
   }
 
@@ -65,67 +63,66 @@ export const TopBar = ({ onMenuOpen }: TopBarProps) => {
     navigate('/login')
   }
 
-  const displayName: string | null =
-    user?.user_metadata?.full_name ||
-    user?.user_metadata?.name ||
-    user?.email ||
-    null
-  const initials = displayName ? getInitials(displayName) : ''
+  const email: string = user?.email ?? ''
+  const initials = email ? getEmailInitials(email) : ''
+
+  const displayTitle = contextTitle || getPageTitle()
 
   return (
-    <header className="flex h-14 items-center gap-4 border-b bg-card px-4 lg:px-6">
+    <header className="flex h-16 items-center gap-2 border-b bg-card px-4 lg:px-6 shrink-0 shadow-sm z-10">
       {/* Hamburger mobile */}
       <Button
         variant="ghost"
         size="icon"
-        className="lg:hidden"
+        className="lg:hidden shrink-0"
         onClick={onMenuOpen}
       >
         <Menu className="h-5 w-5" />
         <span className="sr-only">Ouvrir le menu</span>
       </Button>
 
-      <Separator orientation="vertical" className="h-6 lg:hidden" />
+      {/* Titre & Sous-titre — flex-1 min-w-0 pour tronquer sans pousser le reste */}
+      <div className="flex flex-col justify-center min-w-0 flex-1">
+        <h1 className="text-base sm:text-xl font-bold tracking-tight text-foreground leading-tight truncate">
+          {displayTitle}
+        </h1>
+        {contextSubtitle && (
+          <p className="hidden sm:block text-[0.8rem] text-muted-foreground leading-none mt-1 truncate">
+            {contextSubtitle}
+          </p>
+        )}
+      </div>
 
-      {/* Titre de la page */}
-      <h1 className="text-base font-semibold">{getPageTitle()}</h1>
+      {/* CTA Action + Avatar — shrink-0 pour ne jamais être écrasés */}
+      <div className="flex items-center gap-2 shrink-0">
+        {/* Bouton principal de la page courante */}
+        {action}
 
-      {/* Compte utilisateur */}
-      <div className="ml-auto flex items-center">
+        {/* Avatar / compte */}
         <DropdownMenu>
-          <DropdownMenuTrigger className="flex items-center gap-2 rounded-md px-2 py-1.5 text-sm font-medium transition-colors hover:bg-muted outline-none">
-            <Avatar size="sm">
-              <AvatarFallback className="bg-primary text-primary-foreground text-xs font-semibold">
+          <DropdownMenuTrigger className="flex items-center rounded-full transition-transform hover:scale-105 outline-none cursor-pointer shadow-sm shrink-0">
+            <Avatar className="h-9 w-9">
+              <AvatarFallback className="bg-primary text-primary-foreground text-sm font-bold">
                 {initials}
               </AvatarFallback>
             </Avatar>
-            {displayName && (
-              <span className="hidden sm:block max-w-[160px] truncate text-sm">
-                {displayName}
-              </span>
-            )}
           </DropdownMenuTrigger>
           <DropdownMenuContent align="end" className="w-56">
-            {/* Entête non-interactive : nom complet + email */}
             <div className="flex items-center gap-2 px-2 py-2 border-b mb-1">
-              <Avatar size="sm">
-                <AvatarFallback className="bg-primary text-primary-foreground text-xs font-semibold">
+              <Avatar className="h-8 w-8">
+                <AvatarFallback className="bg-primary text-primary-foreground text-xs font-bold">
                   {initials}
                 </AvatarFallback>
               </Avatar>
               <div className="flex flex-col min-w-0">
-                <span className="text-sm font-semibold truncate leading-tight">
-                  {displayName ?? user?.email ?? '—'}
+                <span className="text-xs font-semibold truncate leading-tight">
+                  {email}
                 </span>
-                {user?.email && displayName !== user.email && (
-                  <span className="text-xs text-muted-foreground truncate">
-                    {user.email}
-                  </span>
-                )}
               </div>
             </div>
-            <DropdownMenuItem onClick={handleSignOut} variant="destructive">
-              <LogOut className="h-4 w-4" />
+
+            <DropdownMenuItem onClick={handleSignOut} variant="destructive" className="cursor-pointer">
+              <LogOut className="h-4 w-4 mr-2" />
               Déconnexion
             </DropdownMenuItem>
           </DropdownMenuContent>

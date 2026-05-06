@@ -41,3 +41,8 @@ export const PurchaseNewPage = () => {
     </div>
   )
 }
+
+
+
+
+

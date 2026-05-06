@@ -38,3 +38,8 @@ export const SupplierNewPage = () => {
     </div>
   )
 }
+
+
+
+
+

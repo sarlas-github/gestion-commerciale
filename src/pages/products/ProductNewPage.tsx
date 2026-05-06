@@ -33,3 +33,8 @@ export const ProductNewPage = () => {
     </div>
   )
 }
+
+
+
+
+

@@ -10,7 +10,7 @@ import {
   flexRender,
 } from '@tanstack/react-table'
 import * as XLSX from 'xlsx'
-import { ArrowUp, ArrowDown, ArrowUpDown, ChevronLeft, ChevronRight, Download } from 'lucide-react'
+import { ArrowUp, ArrowDown, ArrowUpDown, ChevronLeft, ChevronRight, Download, FileDown } from 'lucide-react'
 import { Button } from '@/components/ui/button'
 import { Input } from '@/components/ui/input'
 import { Table, TableBody, TableCell, TableFooter, TableHead, TableHeader, TableRow } from '@/components/ui/table'
@@ -26,6 +26,7 @@ interface DataTableProps<TData> {
   exportMapper?: (row: TData) => Record<string, unknown>
   defaultSorting?: SortingState
   hideExport?: boolean
+  onExportPdf?: () => void
   footer?: ReactNode
 }
 
@@ -38,6 +39,7 @@ export function DataTable<TData>({
   exportMapper,
   defaultSorting = [],
   hideExport = false,
+  onExportPdf,
   footer,
 }: DataTableProps<TData>) {
   const [sorting, setSorting] = useState<SortingState>(defaultSorting)
@@ -116,21 +118,29 @@ export function DataTable<TData>({
   )
 
   return (
-    <div className="space-y-4">
+    <div className="bg-card rounded-xl border shadow-sm p-4 space-y-4">
       {/* Recherche + Export */}
       <div className="flex items-center justify-between gap-4">
         <Input
           placeholder={searchPlaceholder}
           value={globalFilter}
           onChange={e => setGlobalFilter(e.target.value)}
-          className="max-w-sm"
+          className="max-w-sm text-sm shadow-sm"
         />
-        {!hideExport && (
-          <Button variant="outline" size="sm" onClick={handleExport}>
-            <Download className="mr-1.5 h-3.5 w-3.5" />
-            Export Excel
-          </Button>
-        )}
+        <div className="flex gap-2">
+          {!hideExport && (
+            <Button variant="outline" onClick={handleExport} className="shadow-sm">
+              <Download className="mr-1.5 h-3.5 w-3.5" />
+              Export Excel
+            </Button>
+          )}
+          {onExportPdf && (
+            <Button variant="outline" onClick={onExportPdf} className="shadow-sm">
+              <FileDown className="mr-1.5 h-3.5 w-3.5" />
+              Export PDF
+            </Button>
+          )}
+        </div>
       </div>
 
       {/* Mobile: cards */}
@@ -196,19 +206,19 @@ export function DataTable<TData>({
         <Table>
           <TableHeader>
             {table.getHeaderGroups().map(hg => (
-              <TableRow key={hg.id}>
+              <TableRow key={hg.id} className="bg-muted/40 hover:bg-muted/40">
                 {hg.headers.map(header => (
-                  <TableHead key={header.id}>
+                  <TableHead key={header.id} className="text-xs font-semibold uppercase tracking-wide text-muted-foreground">
                     {header.isPlaceholder ? null : header.column.getCanSort() ? (
                       <button
-                        className="flex items-center gap-1 font-medium hover:text-foreground transition-colors"
+                        className="flex items-center gap-1 font-semibold hover:text-foreground transition-colors"
                         onClick={header.column.getToggleSortingHandler()}
                       >
                         {flexRender(header.column.columnDef.header, header.getContext())}
                         {header.column.getIsSorted() === 'asc' ? (
-                          <ArrowUp className="h-3.5 w-3.5" />
+                          <ArrowUp className="h-3.5 w-3.5 text-primary" />
                         ) : header.column.getIsSorted() === 'desc' ? (
-                          <ArrowDown className="h-3.5 w-3.5" />
+                          <ArrowDown className="h-3.5 w-3.5 text-primary" />
                         ) : (
                           <ArrowUpDown className="h-3.5 w-3.5 opacity-40" />
                         )}
@@ -243,7 +253,7 @@ export function DataTable<TData>({
               </TableRow>
             ) : (
               table.getRowModel().rows.map(row => (
-                <TableRow key={row.id}>
+                <TableRow key={row.id} className="even:bg-muted/40 hover:bg-muted transition-colors cursor-default">
                   {row.getVisibleCells().map(cell => (
                     <TableCell key={cell.id}>
                       {flexRender(cell.column.columnDef.cell, cell.getContext())}
@@ -262,7 +272,7 @@ export function DataTable<TData>({
         <p className="text-sm text-muted-foreground">
           {filteredCount === 0
             ? 'Aucun résultat'
-            : `Affichage ${start}-${end} sur ${filteredCount}`}
+            : `Affichage ${start}–${end} sur ${filteredCount}`}
         </p>
         {pageCount > 1 && (
           <div className="flex items-center gap-1">

@@ -57,6 +57,7 @@ export const SettingsPage = () => {
   const [logoFile, setLogoFile] = useState<File | null>(null)
   const [logoPreview, setLogoPreview] = useState<string | null>(null)
   const [logoError, setLogoError] = useState<string | null>(null)
+  const [activeTab, setActiveTab] = useState<'brand' | 'general' | 'legal' | 'billing'>('brand')
 
   const { control, handleSubmit, watch, setValue, formState: { errors } } = useForm<FormValues>({
     resolver: zodResolver(schema),
@@ -125,289 +126,337 @@ export const SettingsPage = () => {
 
   return (
     <div className="space-y-6 max-w-2xl">
-      <PageHeader title="Paramètres" />
+      <PageHeader
+        title="Paramètres"
+        actions={
+          <Button type="submit" form="settings-form" disabled={upsert.isPending}>
+            {upsert.isPending && <Loader2 className="mr-2 h-4 w-4 animate-spin" />}
+            Enregistrer
+          </Button>
+        }
+      />
 
-      <form onSubmit={handleSubmit(onSubmit)} noValidate className="space-y-6">
+      <form id="settings-form" onSubmit={handleSubmit(onSubmit)} noValidate className="space-y-6">
 
-        {/* ── Logo ── */}
-        <section className="rounded-lg border bg-card p-6 space-y-4">
-          <h2 className="text-sm font-semibold uppercase tracking-wide text-muted-foreground">Logo</h2>
+        {/* ── Onglets ── */}
+        <div className="flex border-b mb-6 overflow-x-auto scrollbar-hide">
+          <button
+            type="button"
+            className={cn("py-2 px-4 border-b-2 text-sm font-medium whitespace-nowrap", activeTab === 'brand' ? "border-primary text-primary" : "border-transparent text-muted-foreground hover:text-foreground")}
+            onClick={() => setActiveTab('brand')}
+          >
+            Marque & Design
+          </button>
+          <button
+            type="button"
+            className={cn("py-2 px-4 border-b-2 text-sm font-medium whitespace-nowrap", activeTab === 'general' ? "border-primary text-primary" : "border-transparent text-muted-foreground hover:text-foreground")}
+            onClick={() => setActiveTab('general')}
+          >
+            Général
+          </button>
+          <button
+            type="button"
+            className={cn("py-2 px-4 border-b-2 text-sm font-medium whitespace-nowrap", activeTab === 'legal' ? "border-primary text-primary" : "border-transparent text-muted-foreground hover:text-foreground")}
+            onClick={() => setActiveTab('legal')}
+          >
+            Légal
+          </button>
+          <button
+            type="button"
+            className={cn("py-2 px-4 border-b-2 text-sm font-medium whitespace-nowrap", activeTab === 'billing' ? "border-primary text-primary" : "border-transparent text-muted-foreground hover:text-foreground")}
+            onClick={() => setActiveTab('billing')}
+          >
+            Facturation
+          </button>
+        </div>
 
-          <div className="flex items-center gap-4">
-            <div className="flex h-16 w-16 items-center justify-center rounded-lg border bg-muted overflow-hidden shrink-0">
-              {currentLogo ? (
-                <img src={currentLogo} alt="Logo" className="h-full w-full object-contain" />
-              ) : (
-                <Building2 className="h-8 w-8 text-muted-foreground" />
-              )}
-            </div>
-            <div className="space-y-1">
-              <Button type="button" variant="outline" size="sm" onClick={() => fileInputRef.current?.click()}>
-                <Upload className="mr-2 h-4 w-4" />
-                Choisir un fichier
-              </Button>
-              <p className="text-xs text-muted-foreground">PNG ou JPG · max 2 Mo</p>
-              {logoError && <p className="text-xs text-destructive">{logoError}</p>}
-              {logoFile && <p className="text-xs text-green-600">{logoFile.name}</p>}
-            </div>
-          </div>
-          <input
-            ref={fileInputRef}
-            type="file"
-            accept="image/png,image/jpeg"
-            className="hidden"
-            onChange={handleFileChange}
-          />
-        </section>
+        {/* ── Contenu des onglets ── */}
+        <div className={activeTab === 'brand' ? 'block space-y-6' : 'hidden'}>
+          {/* ── Logo ── */}
+          <section className="rounded-lg border bg-card p-6 space-y-4">
+            <h2 className="text-sm font-semibold uppercase tracking-wide text-muted-foreground">Logo</h2>
 
-        {/* ── Informations entreprise ── */}
-        <section className="rounded-lg border bg-card p-6 space-y-4">
-          <h2 className="text-sm font-semibold uppercase tracking-wide text-muted-foreground">Informations entreprise</h2>
-
-          <div className="grid gap-4">
-            <div className="space-y-1.5">
-              <Label htmlFor="name">Nom *</Label>
-              <Controller
-                control={control}
-                name="name"
-                render={({ field }) => (
-                  <Input id="name" {...field} placeholder="Nom de l'entreprise" />
+            <div className="flex items-center gap-4">
+              <div className="flex h-16 w-16 items-center justify-center rounded-lg border bg-muted overflow-hidden shrink-0">
+                {currentLogo ? (
+                  <img src={currentLogo} alt="Logo" className="h-full w-full object-contain" />
+                ) : (
+                  <Building2 className="h-8 w-8 text-muted-foreground" />
                 )}
-              />
-              {errors.name && <p className="text-xs text-destructive">{errors.name.message}</p>}
+              </div>
+              <div className="space-y-1">
+                <Button type="button" variant="outline" size="sm" onClick={() => fileInputRef.current?.click()}>
+                  <Upload className="mr-2 h-4 w-4" />
+                  Choisir un fichier
+                </Button>
+                <p className="text-xs text-muted-foreground">PNG ou JPG · max 2 Mo</p>
+                {logoError && <p className="text-xs text-destructive">{logoError}</p>}
+                {logoFile && <p className="text-xs text-green-600">{logoFile.name}</p>}
+              </div>
             </div>
+            <input
+              ref={fileInputRef}
+              type="file"
+              accept="image/png,image/jpeg"
+              className="hidden"
+              onChange={handleFileChange}
+            />
+          </section>
+        </div>
 
-            <div className="space-y-1.5">
-              <Label htmlFor="forme_juridique">Forme juridique</Label>
-              <Controller
-                control={control}
-                name="forme_juridique"
-                render={({ field }) => (
-                  <Input id="forme_juridique" {...field} placeholder="SARL, SA, SAS..." />
-                )}
-              />
+        <div className={activeTab === 'general' ? 'block space-y-6' : 'hidden'}>
+          {/* ── Informations entreprise ── */}
+          <section className="rounded-lg border bg-card p-6 space-y-4">
+            <h2 className="text-sm font-semibold uppercase tracking-wide text-muted-foreground">Informations entreprise</h2>
+
+            <div className="grid gap-4">
+              <div className="space-y-1.5">
+                <Label htmlFor="name">Nom *</Label>
+                <Controller
+                  control={control}
+                  name="name"
+                  render={({ field }) => (
+                    <Input id="name" {...field} placeholder="Nom de l'entreprise" />
+                  )}
+                />
+                {errors.name && <p className="text-xs text-destructive">{errors.name.message}</p>}
+              </div>
+
+              <div className="space-y-1.5">
+                <Label htmlFor="forme_juridique">Forme juridique</Label>
+                <Controller
+                  control={control}
+                  name="forme_juridique"
+                  render={({ field }) => (
+                    <Input id="forme_juridique" {...field} placeholder="SARL, SA, SAS..." />
+                  )}
+                />
+              </div>
+
+              <div className="grid grid-cols-2 gap-4">
+                <div className="space-y-1.5">
+                  <Label htmlFor="email">Email</Label>
+                  <Controller
+                    control={control}
+                    name="email"
+                    render={({ field }) => (
+                      <Input id="email" type="email" {...field} placeholder="contact@entreprise.ma" />
+                    )}
+                  />
+                  {errors.email && <p className="text-xs text-destructive">{errors.email.message}</p>}
+                </div>
+                <div className="space-y-1.5">
+                  <Label htmlFor="phone">Téléphone</Label>
+                  <Controller
+                    control={control}
+                    name="phone"
+                    render={({ field }) => (
+                      <Input
+                        id="phone"
+                        value={formatPhone(field.value ?? '')}
+                        onChange={e => field.onChange(formatPhone(e.target.value))}
+                        onBlur={field.onBlur}
+                        placeholder="06 00 00 00 00"
+                        maxLength={14}
+                      />
+                    )}
+                  />
+                </div>
+              </div>
+
+              <div className="space-y-1.5">
+                <Label htmlFor="site_web">Site web</Label>
+                <Controller
+                  control={control}
+                  name="site_web"
+                  render={({ field }) => (
+                    <Input id="site_web" {...field} placeholder="https://www.entreprise.ma" />
+                  )}
+                />
+              </div>
+
+              <div className="space-y-1.5">
+                <Label htmlFor="address">Adresse</Label>
+                <Controller
+                  control={control}
+                  name="address"
+                  render={({ field }) => (
+                    <Input id="address" {...field} placeholder="Adresse complète" />
+                  )}
+                />
+              </div>
             </div>
+          </section>
+        </div>
+
+        <div className={activeTab === 'legal' ? 'block space-y-6' : 'hidden'}>
+          {/* ── Identifiants légaux ── */}
+          <section className="rounded-lg border bg-card p-6 space-y-4">
+            <h2 className="text-sm font-semibold uppercase tracking-wide text-muted-foreground">Identifiants légaux</h2>
 
             <div className="grid grid-cols-2 gap-4">
               <div className="space-y-1.5">
-                <Label htmlFor="email">Email</Label>
+                <Label htmlFor="ice">ICE</Label>
                 <Controller
                   control={control}
-                  name="email"
+                  name="ice"
                   render={({ field }) => (
-                    <Input id="email" type="email" {...field} placeholder="contact@entreprise.ma" />
+                    <Input id="ice" {...field} placeholder="000 000 000 00000" />
                   )}
                 />
-                {errors.email && <p className="text-xs text-destructive">{errors.email.message}</p>}
+              </div>
+              <div className="space-y-1.5">
+                <Label htmlFor="if_number">IF</Label>
+                <Controller
+                  control={control}
+                  name="if_number"
+                  render={({ field }) => (
+                    <Input id="if_number" {...field} placeholder="Identifiant fiscal" />
+                  )}
+                />
+              </div>
+              <div className="space-y-1.5">
+                <Label htmlFor="rc">RC</Label>
+                <Controller
+                  control={control}
+                  name="rc"
+                  render={({ field }) => (
+                    <Input id="rc" {...field} placeholder="Registre de commerce" />
+                  )}
+                />
               </div>
               <div className="space-y-1.5">
-                <Label htmlFor="phone">Téléphone</Label>
+                <Label htmlFor="tp_number">TP</Label>
                 <Controller
                   control={control}
-                  name="phone"
+                  name="tp_number"
                   render={({ field }) => (
-                    <Input
-                      id="phone"
-                      value={formatPhone(field.value ?? '')}
-                      onChange={e => field.onChange(formatPhone(e.target.value))}
-                      onBlur={field.onBlur}
-                      placeholder="06 00 00 00 00"
-                      maxLength={14}
-                    />
+                    <Input id="tp_number" {...field} placeholder="Taxe professionnelle" />
+                  )}
+                />
+              </div>
+              <div className="col-span-2 space-y-1.5">
+                <Label htmlFor="rib">RIB</Label>
+                <Controller
+                  control={control}
+                  name="rib"
+                  render={({ field }) => (
+                    <Input id="rib" {...field} placeholder="MA64 0110 0000 0000 1234 5678 9" />
                   )}
                 />
               </div>
             </div>
+          </section>
+        </div>
 
-            <div className="space-y-1.5">
-              <Label htmlFor="site_web">Site web</Label>
-              <Controller
-                control={control}
-                name="site_web"
-                render={({ field }) => (
-                  <Input id="site_web" {...field} placeholder="https://www.entreprise.ma" />
-                )}
-              />
-            </div>
+        <div className={activeTab === 'billing' ? 'block space-y-6' : 'hidden'}>
+          {/* ── Préférences facturation ── */}
+          <section className="rounded-lg border bg-card p-6 space-y-4">
+            <h2 className="text-sm font-semibold uppercase tracking-wide text-muted-foreground">Préférences facturation</h2>
 
-            <div className="space-y-1.5">
-              <Label htmlFor="address">Adresse</Label>
-              <Controller
-                control={control}
-                name="address"
-                render={({ field }) => (
-                  <Input id="address" {...field} placeholder="Adresse complète" />
+            <div className="flex items-center gap-3">
+              <div className="w-48 space-y-1.5">
+                <Label htmlFor="taux_tva_defaut">Taux TVA par défaut (%)</Label>
+                <Controller
+                  control={control}
+                  name="taux_tva_defaut"
+                  render={({ field }) => (
+                    <select
+                      id="taux_tva_defaut"
+                      className="h-9 w-full rounded-md border border-input bg-white px-3 text-sm focus-visible:outline-none focus-visible:ring-1 focus-visible:ring-ring cursor-pointer"
+                      value={field.value}
+                      onChange={e => field.onChange(parseFloat(e.target.value))}
+                    >
+                      <option value={0}>0% (Hors TVA)</option>
+                      <option value={7}>7%</option>
+                      <option value={10}>10%</option>
+                      <option value={14}>14%</option>
+                      <option value={20}>20%</option>
+                    </select>
+                  )}
+                />
+                {errors.taux_tva_defaut && (
+                  <p className="text-xs text-destructive">{errors.taux_tva_defaut.message}</p>
                 )}
-              />
+              </div>
             </div>
-          </div>
-        </section>
-
-        {/* ── Identifiants légaux ── */}
-        <section className="rounded-lg border bg-card p-6 space-y-4">
-          <h2 className="text-sm font-semibold uppercase tracking-wide text-muted-foreground">Identifiants légaux</h2>
-
-          <div className="grid grid-cols-2 gap-4">
-            <div className="space-y-1.5">
-              <Label htmlFor="ice">ICE</Label>
-              <Controller
-                control={control}
-                name="ice"
-                render={({ field }) => (
-                  <Input id="ice" {...field} placeholder="000 000 000 00000" />
-                )}
-              />
-            </div>
-            <div className="space-y-1.5">
-              <Label htmlFor="if_number">IF</Label>
-              <Controller
-                control={control}
-                name="if_number"
-                render={({ field }) => (
-                  <Input id="if_number" {...field} placeholder="Identifiant fiscal" />
-                )}
-              />
-            </div>
-            <div className="space-y-1.5">
-              <Label htmlFor="rc">RC</Label>
-              <Controller
-                control={control}
-                name="rc"
-                render={({ field }) => (
-                  <Input id="rc" {...field} placeholder="Registre de commerce" />
-                )}
-              />
-            </div>
-            <div className="space-y-1.5">
-              <Label htmlFor="tp_number">TP</Label>
-              <Controller
-                control={control}
-                name="tp_number"
-                render={({ field }) => (
-                  <Input id="tp_number" {...field} placeholder="Taxe professionnelle" />
-                )}
-              />
-            </div>
-            <div className="col-span-2 space-y-1.5">
-              <Label htmlFor="rib">RIB</Label>
-              <Controller
-                control={control}
-                name="rib"
-                render={({ field }) => (
-                  <Input id="rib" {...field} placeholder="MA64 0110 0000 0000 1234 5678 9" />
-                )}
-              />
-            </div>
-          </div>
-        </section>
-
-        {/* ── Préférences facturation ── */}
-        <section className="rounded-lg border bg-card p-6 space-y-4">
-          <h2 className="text-sm font-semibold uppercase tracking-wide text-muted-foreground">Préférences facturation</h2>
-
-          <div className="flex items-center gap-3">
-            <div className="w-48 space-y-1.5">
-              <Label htmlFor="taux_tva_defaut">Taux TVA par défaut (%)</Label>
-              <Controller
-                control={control}
-                name="taux_tva_defaut"
-                render={({ field }) => (
-                  <select
-                    id="taux_tva_defaut"
-                    className="h-9 w-full rounded-md border border-input bg-background px-3 text-sm focus-visible:outline-none focus-visible:ring-1 focus-visible:ring-ring"
-                    value={field.value}
-                    onChange={e => field.onChange(parseFloat(e.target.value))}
-                  >
-                    <option value={0}>0% (Hors TVA)</option>
-                    <option value={7}>7%</option>
-                    <option value={10}>10%</option>
-                    <option value={14}>14%</option>
-                    <option value={20}>20%</option>
-                  </select>
-                )}
-              />
-              {errors.taux_tva_defaut && (
-                <p className="text-xs text-destructive">{errors.taux_tva_defaut.message}</p>
-              )}
-            </div>
-          </div>
-        </section>
+          </section>
+        </div>
 
         {/* ── Couleur de marque ── */}
-        <section className="rounded-lg border bg-card p-6 space-y-4">
-          <h2 className="text-sm font-semibold uppercase tracking-wide text-muted-foreground">Couleur de marque</h2>
+        <div className={activeTab === 'brand' ? 'block space-y-6' : 'hidden'}>
+          <section className="rounded-lg border bg-card p-6 space-y-4">
+            <h2 className="text-sm font-semibold uppercase tracking-wide text-muted-foreground">Couleur de marque</h2>
 
-          <div className="space-y-3">
-            <div className="flex items-center gap-2 flex-wrap">
-              {PRESET_COLORS.map(c => (
-                <button
-                  key={c.value}
-                  type="button"
-                  title={c.label}
-                  onClick={() => setValue('couleur_marque', c.value)}
-                  className={cn(
-                    'h-8 w-8 rounded-full border-2 transition-all',
-                    couleur === c.value ? 'border-foreground scale-110' : 'border-transparent hover:scale-105'
-                  )}
-                  style={{ backgroundColor: c.value }}
-                />
-              ))}
+            <div className="space-y-3">
+              <div className="flex items-center gap-2 flex-wrap">
+                {PRESET_COLORS.map(c => (
+                  <button
+                    key={c.value}
+                    type="button"
+                    title={c.label}
+                    onClick={() => setValue('couleur_marque', c.value)}
+                    className={cn(
+                      'h-8 w-8 rounded-full border-2 transition-all',
+                      couleur === c.value ? 'border-foreground scale-110' : 'border-transparent hover:scale-105'
+                    )}
+                    style={{ backgroundColor: c.value }}
+                  />
+                ))}
 
-              {/* Picker libre — le bouton déclenche l'input color natif */}
-              <div className="relative overflow-hidden rounded-md border border-input">
-                <Button
-                  type="button"
-                  variant="ghost"
-                  size="sm"
-                  className="pointer-events-none h-8 px-3 gap-1.5 font-normal"
-                  style={{ color: !PRESET_COLORS.find(c => c.value === couleur) ? couleur : undefined }}
-                >
-                  <Palette className="h-4 w-4" />
-                  Couleur libre
-                </Button>
+                {/* Picker libre — le bouton déclenche l'input color natif */}
+                <div className="relative overflow-hidden rounded-md border border-input">
+                  <Button
+                    type="button"
+                    variant="ghost"
+                    size="sm"
+                    className="pointer-events-none h-8 px-3 gap-1.5 font-normal"
+                    style={{ color: !PRESET_COLORS.find(c => c.value === couleur) ? couleur : undefined }}
+                  >
+                    <Palette className="h-4 w-4" />
+                    Couleur libre
+                  </Button>
+                  <Controller
+                    control={control}
+                    name="couleur_marque"
+                    render={({ field }) => (
+                      <input
+                        type="color"
+                        value={field.value}
+                        onChange={e => field.onChange(e.target.value)}
+                        className="absolute inset-0 opacity-0 cursor-pointer h-full w-full"
+                        title="Choisir n'importe quelle couleur"
+                      />
+                    )}
+                  />
+                </div>
+              </div>
+
+              <div className="flex items-center gap-3">
+                <div className="h-9 w-9 rounded-md border" style={{ backgroundColor: couleur }} />
                 <Controller
                   control={control}
                   name="couleur_marque"
                   render={({ field }) => (
-                    <input
-                      type="color"
-                      value={field.value}
-                      onChange={e => field.onChange(e.target.value)}
-                      className="absolute inset-0 opacity-0 cursor-pointer h-full w-full"
-                      title="Choisir n'importe quelle couleur"
+                    <Input
+                      {...field}
+                      className="w-32 font-mono text-sm"
+                      placeholder="#000000"
+                      maxLength={7}
                     />
                   )}
                 />
+                <span className="text-sm text-muted-foreground">Aperçu</span>
               </div>
             </div>
-
-            <div className="flex items-center gap-3">
-              <div className="h-9 w-9 rounded-md border" style={{ backgroundColor: couleur }} />
-              <Controller
-                control={control}
-                name="couleur_marque"
-                render={({ field }) => (
-                  <Input
-                    {...field}
-                    className="w-32 font-mono text-sm"
-                    placeholder="#000000"
-                    maxLength={7}
-                  />
-                )}
-              />
-              <span className="text-sm text-muted-foreground">Aperçu</span>
-            </div>
-          </div>
-        </section>
-
-        {/* ── Enregistrer ── */}
-        <div className="flex justify-end">
-          <Button type="submit" disabled={upsert.isPending}>
-            {upsert.isPending && <Loader2 className="mr-2 h-4 w-4 animate-spin" />}
-            Enregistrer
-          </Button>
+          </section>
         </div>
       </form>
     </div>
   )
 }
+
+
+
+
+

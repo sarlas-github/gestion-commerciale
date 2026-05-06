@@ -1,9 +1,11 @@
 import { useState } from 'react'
 import { useNavigate } from 'react-router-dom'
-import { Loader2 } from 'lucide-react'
+import {
+  Loader2, Banknote, ShoppingCart, TrendingUp, Package, Wallet, Activity
+} from 'lucide-react'
 import {
   ResponsiveContainer,
-  LineChart, Line, CartesianGrid, XAxis, YAxis,
+  AreaChart, Area, CartesianGrid, XAxis, YAxis,
   BarChart, Bar,
   PieChart, Pie, Cell, Legend,
   Tooltip,
@@ -16,6 +18,7 @@ import {
 } from '@/components/ui/select'
 import { useDashboard } from '@/hooks/useDashboard'
 import { useAvailableYears } from '@/hooks/useAvailableYears'
+import { useChartColors } from '@/hooks/useChartColors'
 import { formatCurrency, cn } from '@/lib/utils'
 
 // ── Constantes ────────────────────────────────────────────────────────────────
@@ -34,25 +37,46 @@ const KPICard = ({
   value,
   sub,
   color,
+  icon: Icon
 }: {
   label: string
   value: string
   sub: string
-  color?: 'red' | 'green'
+  color?: 'red' | 'green' | 'blue' | 'purple'
+  icon: React.ElementType
 }) => (
   <div className={cn(
-    'rounded-lg border bg-card p-3 sm:p-5 space-y-1',
-    color === 'red' && 'border-red-200 bg-red-50',
+    'relative overflow-hidden rounded-xl border bg-card p-4 sm:p-5 transition-all duration-300 hover:shadow-md group',
+    color === 'red' && 'border-red-200 dark:border-red-900/50',
+    color === 'green' && 'border-green-200 dark:border-green-900/50',
+    color === 'blue' && 'border-blue-200 dark:border-blue-900/50',
+    color === 'purple' && 'border-purple-200 dark:border-purple-900/50',
   )}>
-    <p className="text-[10px] sm:text-xs font-medium text-muted-foreground uppercase tracking-wide truncate">{label}</p>
-    <p className={cn(
-      'text-lg sm:text-2xl font-bold truncate',
-      color === 'red' && 'text-red-600',
-      color === 'green' && 'text-green-600',
-    )}>
-      {value}
-    </p>
-    <p className="text-[10px] sm:text-xs text-muted-foreground truncate">{sub}</p>
+    <div className="flex items-center justify-between">
+      <div className="space-y-2 relative z-10">
+        <p className="text-[11px] sm:text-xs font-semibold text-muted-foreground uppercase tracking-wider">{label}</p>
+        <p className={cn(
+          'text-xl sm:text-3xl font-bold tracking-tight',
+          color === 'red' && 'text-red-600 dark:text-red-500',
+          color === 'green' && 'text-green-600 dark:text-green-500',
+          color === 'blue' && 'text-blue-600 dark:text-blue-500',
+          color === 'purple' && 'text-purple-600 dark:text-purple-500',
+        )}>
+          {value}
+        </p>
+        <p className="text-[11px] sm:text-xs text-muted-foreground/80 font-medium">{sub}</p>
+      </div>
+      <div className={cn(
+        "absolute right-4 top-1/2 -translate-y-1/2 rounded-full p-3 transition-transform duration-300 group-hover:scale-110",
+        !color && 'bg-primary/10 text-primary',
+        color === 'red' && 'bg-red-50 text-red-500 dark:bg-red-950/50',
+        color === 'green' && 'bg-green-50 text-green-500 dark:bg-green-950/50',
+        color === 'blue' && 'bg-blue-50 text-blue-500 dark:bg-blue-950/50',
+        color === 'purple' && 'bg-purple-50 text-purple-500 dark:bg-purple-950/50',
+      )}>
+        <Icon className="h-6 w-6 opacity-80" strokeWidth={2} />
+      </div>
+    </div>
   </div>
 )
 
@@ -67,10 +91,10 @@ const ChartCard = ({
   empty?: boolean
   emptyText?: string
 }) => (
-  <div className="rounded-lg border bg-card p-5 space-y-3">
-    <h3 className="text-sm font-semibold text-foreground">{title}</h3>
+  <div className="rounded-xl border bg-card p-6 shadow-sm transition-all hover:shadow-md space-y-4">
+    <h3 className="text-sm font-bold tracking-wide text-foreground uppercase">{title}</h3>
     {empty ? (
-      <div className="flex h-48 items-center justify-center text-sm text-muted-foreground">
+      <div className="flex h-48 items-center justify-center text-sm font-medium text-muted-foreground bg-muted/20 rounded-lg border border-dashed">
         {emptyText}
       </div>
     ) : children}
@@ -104,6 +128,7 @@ export const Dashboard = () => {
   const now = new Date()
   const [year, setYear] = useState(now.getFullYear())
   const [month, setMonth] = useState(now.getMonth() + 1) // 0 = toute l'année
+  const chartColors = useChartColors()
 
   const { data: availableYears = [now.getFullYear()] } = useAvailableYears('sales')
   const { data, isLoading } = useDashboard(year, month)
@@ -154,27 +179,27 @@ export const Dashboard = () => {
       ) : (
         <>
           {/* ── KPIs ── */}
-          <div className="grid grid-cols-2 gap-3 sm:grid-cols-2 lg:grid-cols-3 mb-6">
+          <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4 mb-8">
             {/* Ligne 1 : Ventes */}
-            <KPICard label="💰 CA Ventes" value={formatCurrency(data?.ca ?? 0)} sub={`Total facturé ${periodSub}`} />
-            <KPICard label="✅ Encaissé" value={formatCurrency(data?.encaisse ?? 0)} sub={`Reçu des clients ${periodSub}`} color="green" />
-            <KPICard label="🔴 À recevoir" value={formatCurrency(data?.aRecevoir ?? 0)} sub="Impayés clients" color={(data?.aRecevoir ?? 0) > 0 ? 'red' : undefined} />
-            
+            <KPICard label="CA Ventes" value={formatCurrency(data?.ca ?? 0)} sub={`Total facturé ${periodSub}`} icon={Banknote} color="blue" />
+            <KPICard label="Encaissé" value={formatCurrency(data?.encaisse ?? 0)} sub={`Reçu des clients ${periodSub}`} color="green" icon={TrendingUp} />
+            <KPICard label="À recevoir" value={formatCurrency(data?.aRecevoir ?? 0)} sub="Impayés clients" color={(data?.aRecevoir ?? 0) > 0 ? 'red' : 'green'} icon={Activity} />
+
             {/* Ligne 2 : Achats */}
-            <KPICard label="🛒 Total Achats" value={formatCurrency(data?.totalAchats ?? 0)} sub={`Dépenses engagées ${periodSub}`} />
-            <KPICard label="💸 Décaissé" value={formatCurrency(data?.decaisse ?? 0)} sub={`Payé aux fournisseurs ${periodSub}`} color="green" />
-            <KPICard label="🔴 À payer" value={formatCurrency(data?.aPayer ?? 0)} sub="Dettes fournisseurs" color={(data?.aPayer ?? 0) > 0 ? 'red' : undefined} />
-            
+            <KPICard label="Total Achats" value={formatCurrency(data?.totalAchats ?? 0)} sub={`Dépenses engagées ${periodSub}`} icon={ShoppingCart} color="purple" />
+            <KPICard label="Décaissé" value={formatCurrency(data?.decaisse ?? 0)} sub={`Payé aux fournisseurs ${periodSub}`} color="green" icon={Wallet} />
+            <KPICard label="À payer" value={formatCurrency(data?.aPayer ?? 0)} sub="Dettes fournisseurs" color={(data?.aPayer ?? 0) > 0 ? 'red' : 'green'} icon={Activity} />
+
             {/* Ligne 3 : Performance */}
-            <KPICard label="📈 Marge" value={formatCurrency(data?.marge ?? 0)} sub={`CA − Achats ${periodSub}`} color={(data?.marge ?? 0) < 0 ? 'red' : (data?.marge ?? 0) > 0 ? 'green' : undefined} />
-            <KPICard label="📦 Nb. Ventes" value={String(data?.nbVentes ?? 0)} sub={`Factures ${periodSub}`} />
-            <KPICard label="📊 Panier Moyen" value={formatCurrency(data?.panierMoyen ?? 0)} sub={`Par vente ${periodSub}`} />
+            <KPICard label="Marge brute" value={formatCurrency(data?.marge ?? 0)} sub={`CA − Achats ${periodSub}`} color={(data?.marge ?? 0) < 0 ? 'red' : (data?.marge ?? 0) > 0 ? 'green' : undefined} icon={TrendingUp} />
+            <KPICard label="Volume ventes" value={String(data?.nbVentes ?? 0)} sub={`Factures ${periodSub}`} icon={Package} />
+            <KPICard label="Panier Moyen" value={formatCurrency(data?.panierMoyen ?? 0)} sub={`Par vente ${periodSub}`} icon={Banknote} />
           </div>
 
           {/* ── Alertes stock ── */}
           {(data?.stockAlerts ?? []).length > 0 && (
-            <div className="rounded-lg border border-amber-200 bg-amber-50 p-4 space-y-2">
-              <p className="text-sm font-semibold text-amber-800">⚠️ Alertes stock</p>
+            <div className="rounded-lg border border-amber-200 dark:border-amber-700/50 bg-amber-50 dark:bg-amber-950/30 p-4 space-y-2">
+              <p className="text-sm font-semibold text-amber-800 dark:text-amber-400">⚠️ Alertes stock</p>
               <div className="space-y-1">
                 {data!.stockAlerts.map(a => (
                   <div
@@ -204,22 +229,33 @@ export const Dashboard = () => {
               empty={(data?.ventesParJour ?? []).every(d => d.total === 0)}
               emptyText={`Aucune donnée ${periodSub}`}
             >
-              <ResponsiveContainer width="100%" height={200}>
-                <LineChart data={data?.ventesParJour} margin={{ top: 4, right: 8, left: 0, bottom: 0 }}>
-                  <CartesianGrid strokeDasharray="3 3" stroke="#e5e7eb" />
+              <ResponsiveContainer width="100%" height={240}>
+                <AreaChart data={data?.ventesParJour} margin={{ top: 10, right: 10, left: 0, bottom: 0 }}>
+                  <defs>
+                    <linearGradient id="colorTotal" x1="0" y1="0" x2="0" y2="1">
+                      <stop offset="5%" stopColor={chartColors.primary} stopOpacity={0.3} />
+                      <stop offset="95%" stopColor={chartColors.primary} stopOpacity={0} />
+                    </linearGradient>
+                  </defs>
+                  <CartesianGrid strokeDasharray="3 3" vertical={false} stroke={chartColors.border} />
                   <XAxis
                     dataKey="day"
-                    tick={{ fontSize: 10 }}
+                    tick={{ fontSize: 11, fill: chartColors.mutedForeground }}
+                    tickLine={false}
+                    axisLine={false}
                     interval={isYearView ? 0 : 4}
+                    dy={10}
                   />
                   <YAxis
-                    tick={{ fontSize: 10 }}
+                    tick={{ fontSize: 11, fill: chartColors.mutedForeground }}
+                    tickLine={false}
+                    axisLine={false}
                     tickFormatter={v => v === 0 ? '0' : `${(v / 1000).toFixed(0)}k`}
-                    width={36}
+                    width={40}
                   />
                   <Tooltip content={<TooltipMAD />} />
-                  <Line type="monotone" dataKey="total" stroke="#3b82f6" strokeWidth={2} dot={false} />
-                </LineChart>
+                  <Area type="monotone" dataKey="total" stroke={chartColors.primary} strokeWidth={3} fillOpacity={1} fill="url(#colorTotal)" />
+                </AreaChart>
               </ResponsiveContainer>
             </ChartCard>
 
@@ -229,21 +265,23 @@ export const Dashboard = () => {
               empty={(data?.top5Produits ?? []).length === 0}
               emptyText={`Aucune donnée ${periodSub}`}
             >
-              <ResponsiveContainer width="100%" height={200}>
+              <ResponsiveContainer width="100%" height={240}>
                 <BarChart
                   layout="vertical"
                   data={data?.top5Produits}
-                  margin={{ top: 0, right: 16, left: 0, bottom: 0 }}
+                  margin={{ top: 10, right: 20, left: 0, bottom: 0 }}
                 >
-                  <CartesianGrid strokeDasharray="3 3" horizontal={false} stroke="#e5e7eb" />
+                  <CartesianGrid strokeDasharray="3 3" horizontal={false} stroke={chartColors.border} />
                   <XAxis
                     type="number"
-                    tick={{ fontSize: 10 }}
+                    tick={{ fontSize: 11, fill: chartColors.mutedForeground }}
+                    tickLine={false}
+                    axisLine={false}
                     tickFormatter={v => v === 0 ? '0' : `${(v / 1000).toFixed(0)}k`}
                   />
-                  <YAxis type="category" dataKey="name" tick={{ fontSize: 10 }} width={90} />
-                  <Tooltip formatter={(v: number) => [formatCurrency(v), 'Total']} />
-                  <Bar dataKey="total" fill="#3b82f6" radius={[0, 4, 4, 0]} />
+                  <YAxis type="category" dataKey="name" tick={{ fontSize: 11, fill: chartColors.mutedForeground }} tickLine={false} axisLine={false} width={100} />
+                  <Tooltip formatter={(v: number) => [formatCurrency(v), 'Total']} cursor={{ fill: 'transparent' }} />
+                  <Bar dataKey="total" fill={chartColors.primary} radius={[0, 4, 4, 0]} barSize={24} />
                 </BarChart>
               </ResponsiveContainer>
             </ChartCard>
@@ -260,13 +298,15 @@ export const Dashboard = () => {
                   data={data?.top5Clients}
                   margin={{ top: 0, right: 16, left: 0, bottom: 0 }}
                 >
-                  <CartesianGrid strokeDasharray="3 3" horizontal={false} stroke="#e5e7eb" />
+                  <CartesianGrid strokeDasharray="3 3" horizontal={false} stroke={chartColors.border} />
                   <XAxis
                     type="number"
-                    tick={{ fontSize: 10 }}
+                    tick={{ fontSize: 10, fill: chartColors.mutedForeground }}
+                    tickLine={false}
+                    axisLine={false}
                     tickFormatter={v => v === 0 ? '0' : `${(v / 1000).toFixed(0)}k`}
                   />
-                  <YAxis type="category" dataKey="name" tick={{ fontSize: 10 }} width={90} />
+                  <YAxis type="category" dataKey="name" tick={{ fontSize: 10, fill: chartColors.mutedForeground }} tickLine={false} axisLine={false} width={90} />
                   <Tooltip formatter={(v: number) => [formatCurrency(v), 'Total']} />
                   <Bar dataKey="total" fill="#22c55e" radius={[0, 4, 4, 0]} />
                 </BarChart>
@@ -279,14 +319,14 @@ export const Dashboard = () => {
               empty={(data?.repartitionProduits ?? []).length === 0}
               emptyText={`Aucune donnée ${periodSub}`}
             >
-              <ResponsiveContainer width="100%" height={200}>
+              <ResponsiveContainer width="100%" height={260}>
                 <PieChart>
                   <Pie
                     data={data?.repartitionProduits}
                     dataKey="value"
                     nameKey="name"
-                    cx="50%"
-                    cy="50%"
+                    cx="40%"
+                    cy="45%"
                     outerRadius={70}
                     label={({ percent }) => `${(percent * 100).toFixed(0)}%`}
                     labelLine
@@ -296,7 +336,13 @@ export const Dashboard = () => {
                     ))}
                   </Pie>
                   <Tooltip formatter={(v: number) => [formatCurrency(v), 'Total']} />
-                  <Legend iconSize={10} wrapperStyle={{ fontSize: '11px' }} />
+                  <Legend
+                    layout="vertical"
+                    align="right"
+                    verticalAlign="middle"
+                    iconSize={10}
+                    wrapperStyle={{ fontSize: '11px', maxWidth: '45%', lineHeight: '1.6' }}
+                  />
                 </PieChart>
               </ResponsiveContainer>
             </ChartCard>
@@ -306,3 +352,8 @@ export const Dashboard = () => {
     </div>
   )
 }
+
+
+
+
+

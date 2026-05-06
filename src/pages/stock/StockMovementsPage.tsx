@@ -164,7 +164,7 @@ export const StockMovementsPage = () => {
         </Select>
 
         {/* Filtre Type */}
-        <div className="flex items-center gap-2 ml-auto">
+        <div className="sm:ml-auto flex items-center gap-2">
           <span className="text-sm text-muted-foreground">Type :</span>
           <Select value={typeFilter} onValueChange={v => setTypeFilter(v ?? 'all')}>
             <SelectTrigger size="sm" className="w-40">
@@ -215,3 +215,8 @@ export const StockMovementsPage = () => {
     </div>
   )
 }
+
+
+
+
+

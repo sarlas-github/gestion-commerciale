@@ -9,6 +9,7 @@ import { Button } from '@/components/ui/button'
 import { Badge } from '@/components/ui/badge'
 import { useSuppliers, useDeleteSupplier, type SupplierWithStats } from '@/hooks/useSuppliers'
 import { formatCurrency, formatPhone } from '@/lib/utils'
+import { usePageAction } from '@/contexts/PageContext'
 
 const StatusBadge = ({ status }: { status: 'ok' | 'partial' | 'unpaid' }) => {
   if (status === 'ok') return <Badge className="bg-green-100 text-green-800 hover:bg-green-100">🟢 OK</Badge>
@@ -22,6 +23,14 @@ export const SuppliersPage = () => {
   const deleteSupplier = useDeleteSupplier()
 
   const [deleteTarget, setDeleteTarget] = useState<SupplierWithStats | null>(null)
+
+  usePageAction(
+    <Button onClick={() => navigate('/suppliers/new')}>
+      <Plus className="mr-1.5 h-4 w-4" />
+      <span className="sm:hidden">Fournisseur</span>
+      <span className="hidden sm:inline">Nouveau fournisseur</span>
+    </Button>
+  )
 
   const columns = useMemo<ColumnDef<SupplierWithStats>[]>(
     () => [
@@ -95,15 +104,7 @@ export const SuppliersPage = () => {
 
   return (
     <div className="space-y-6">
-      <PageHeader
-        title="Fournisseurs"
-        actions={
-          <Button onClick={() => navigate('/suppliers/new')}>
-            <Plus className="mr-2 h-4 w-4" />
-            Nouveau fournisseur
-          </Button>
-        }
-      />
+      <PageHeader title="Fournisseurs" subtitle={`${suppliers.length} fournisseur${suppliers.length !== 1 ? 's' : ''}`} />
 
       <DataTable
         columns={columns}
@@ -136,3 +137,8 @@ export const SuppliersPage = () => {
     </div>
   )
 }
+
+
+
+
+

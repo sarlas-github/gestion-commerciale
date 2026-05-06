@@ -11,6 +11,7 @@ import { usePurchases, useDeletePurchase } from '@/hooks/usePurchases'
 import { PurchaseQuickViewModal } from '@/features/purchases/PurchaseQuickViewModal'
 import { formatCurrency, formatDate } from '@/lib/utils'
 import type { Purchase } from '@/types'
+import { usePageAction } from '@/contexts/PageContext'
 
 const StatusBadge = ({ status }: { status: string }) => {
   if (status === 'paid') return <Badge className="bg-green-100 text-green-800 hover:bg-green-100">🟢 Payé</Badge>
@@ -30,6 +31,14 @@ export const PurchasesPage = () => {
   const [deleteTarget, setDeleteTarget] = useState<Purchase | null>(null)
   const [selectedPurchaseId, setSelectedPurchaseId] = useState<string | null>(null)
   const [isModalOpen, setIsModalOpen] = useState(false)
+
+  usePageAction(
+    <Button onClick={() => navigate('/purchases/new')}>
+      <Plus className="mr-1.5 h-4 w-4" />
+      <span className="sm:hidden">Achat</span>
+      <span className="hidden sm:inline">Nouvel achat</span>
+    </Button>
+  )
 
   const handleQuickView = (id: string) => {
     setSelectedPurchaseId(id)
@@ -155,20 +164,12 @@ export const PurchasesPage = () => {
 
   return (
     <div className="space-y-6">
-      <PageHeader
-        title="Achats"
-        actions={
-          <Button onClick={() => navigate('/purchases/new')}>
-            <Plus className="mr-2 h-4 w-4" />
-            Nouvel achat
-          </Button>
-        }
-      />
+      <PageHeader title="Achats" subtitle={`${purchases.length} achat${purchases.length !== 1 ? 's' : ''}`} />
 
       {/* Filtres */}
       <div className="flex flex-wrap gap-3">
         <select
-          className="h-9 rounded-md border border-input bg-background px-3 text-sm focus-visible:outline-none focus-visible:ring-1 focus-visible:ring-ring"
+          className="h-9 rounded-md border border-input bg-card pl-3 pr-8 py-1.5 text-sm focus-visible:outline-none focus-visible:ring-1 focus-visible:ring-ring cursor-pointer shadow-sm appearance-none"
           value={filterYear}
           onChange={e => setFilterYear(e.target.value)}
         >
@@ -177,7 +178,7 @@ export const PurchasesPage = () => {
           ))}
         </select>
         <select
-          className="h-9 rounded-md border border-input bg-background px-3 text-sm focus-visible:outline-none focus-visible:ring-1 focus-visible:ring-ring"
+          className="h-9 rounded-md border border-input bg-card pl-3 pr-8 py-1.5 text-sm focus-visible:outline-none focus-visible:ring-1 focus-visible:ring-ring cursor-pointer shadow-sm appearance-none"
           value={filterMonth}
           onChange={e => setFilterMonth(e.target.value)}
         >
@@ -186,16 +187,19 @@ export const PurchasesPage = () => {
             <option key={i + 1} value={i + 1}>{m}</option>
           ))}
         </select>
-        <select
-          className="h-9 rounded-md border border-input bg-background px-3 text-sm focus-visible:outline-none focus-visible:ring-1 focus-visible:ring-ring"
-          value={filterStatus}
-          onChange={e => setFilterStatus(e.target.value)}
-        >
-          <option value="">Tous les statuts</option>
-          <option value="unpaid">Impayé</option>
-          <option value="partial">Partiel</option>
-          <option value="paid">Payé</option>
-        </select>
+        <div className="sm:ml-auto flex items-center gap-2">
+          <span className="text-sm text-muted-foreground">Statut :</span>
+          <select
+            className="h-9 rounded-md border border-input bg-card pl-3 pr-8 py-1.5 text-sm focus-visible:outline-none focus-visible:ring-1 focus-visible:ring-ring cursor-pointer shadow-sm appearance-none"
+            value={filterStatus}
+            onChange={e => setFilterStatus(e.target.value)}
+          >
+            <option value="">Tous les statuts</option>
+            <option value="unpaid">Impayé</option>
+            <option value="partial">Partiel</option>
+            <option value="paid">Payé</option>
+          </select>
+        </div>
       </div>
 
       <DataTable
@@ -237,3 +241,8 @@ export const PurchasesPage = () => {
     </div>
   )
 }
+
+
+
+
+

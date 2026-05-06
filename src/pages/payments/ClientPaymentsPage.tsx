@@ -101,7 +101,7 @@ export const ClientPaymentsPage = () => {
       {/* Filtres */}
       <div className="flex flex-wrap gap-3">
         <select
-          className="h-9 rounded-md border border-input bg-background px-3 text-sm focus-visible:outline-none focus-visible:ring-1 focus-visible:ring-ring"
+          className="h-9 rounded-md border border-input bg-white pl-3 pr-8 py-1.5 text-sm focus-visible:outline-none focus-visible:ring-1 focus-visible:ring-ring cursor-pointer shadow-sm appearance-none"
           value={filterYear}
           onChange={e => setFilterYear(e.target.value)}
         >
@@ -110,7 +110,7 @@ export const ClientPaymentsPage = () => {
           ))}
         </select>
         <select
-          className="h-9 rounded-md border border-input bg-background px-3 text-sm focus-visible:outline-none focus-visible:ring-1 focus-visible:ring-ring"
+          className="h-9 rounded-md border border-input bg-white pl-3 pr-8 py-1.5 text-sm focus-visible:outline-none focus-visible:ring-1 focus-visible:ring-ring cursor-pointer shadow-sm appearance-none"
           value={filterMonth}
           onChange={e => setFilterMonth(e.target.value)}
         >
@@ -153,3 +153,8 @@ export const ClientPaymentsPage = () => {
     </div>
   )
 }
+
+
+
+
+

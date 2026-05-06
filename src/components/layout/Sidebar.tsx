@@ -17,6 +17,8 @@ import {
   X,
   Building2,
   LogOut,
+  Sun,
+  Moon,
 } from 'lucide-react'
 import { cn } from '@/lib/utils'
 import { useAuth } from '@/hooks/useAuth'
@@ -44,7 +46,6 @@ interface ExpandableNavItem {
   children: NavItem[]
 }
 
-// Navigation principale
 const navGroups: NavGroup[] = [
   {
     title: 'CATALOGUE',
@@ -65,7 +66,6 @@ const navGroups: NavGroup[] = [
     items: [
       { label: 'Clients', href: '/clients', icon: Users },
       { label: 'Ventes', href: '/sales', icon: TrendingUp },
-      // { label: 'Documents', href: '/documents', icon: FileText }, // masqué
     ],
   },
 ]
@@ -103,6 +103,20 @@ export const Sidebar = ({ onClose, collapsed = false, onToggleCollapse }: Sideba
   const { data: company } = useCompany()
   const queryClient = useQueryClient()
   const [expandedItems, setExpandedItems] = useState<string[]>(['Paiements', 'États'])
+  const [isDark, setIsDark] = useState(() => document.documentElement.classList.contains('dark'))
+
+  const toggleTheme = () => {
+    const root = document.documentElement
+    const nextDark = !isDark
+    if (nextDark) {
+      root.classList.add('dark')
+      localStorage.setItem('theme', 'dark')
+    } else {
+      root.classList.remove('dark')
+      localStorage.setItem('theme', 'light')
+    }
+    setIsDark(nextDark)
+  }
 
   const isActive = (href: string) => location.pathname.startsWith(href)
 
@@ -118,33 +132,39 @@ export const Sidebar = ({ onClose, collapsed = false, onToggleCollapse }: Sideba
     navigate('/login')
   }
 
-  const NavLink = ({ item }: { item: NavItem }) => (
-    <Link
-      to={item.href}
-      onClick={onClose}
-      title={collapsed ? item.label : undefined}
-      className={cn(
-        'relative flex items-center gap-3 rounded-md py-2 text-sm font-medium transition-colors',
-        collapsed ? 'justify-center px-2' : 'px-3',
-        isActive(item.href)
-          ? 'bg-primary text-primary-foreground'
-          : 'text-muted-foreground hover:bg-muted hover:text-foreground'
-      )}
-    >
-      <item.icon className="h-4 w-4 shrink-0" />
-      {!collapsed && <span>{item.label}</span>}
-      {!collapsed && item.badge && item.badge > 0 ? (
-        <span className="ml-auto flex h-5 w-5 items-center justify-center rounded-full bg-destructive text-[10px] font-bold text-destructive-foreground">
-          {item.badge}
-        </span>
-      ) : null}
-      {collapsed && item.badge && item.badge > 0 ? (
-        <span className="absolute -top-0.5 -right-0.5 flex h-4 w-4 items-center justify-center rounded-full bg-destructive text-[10px] font-bold text-destructive-foreground">
-          {item.badge}
-        </span>
-      ) : null}
-    </Link>
-  )
+  const NavLink = ({ item }: { item: NavItem }) => {
+    const active = isActive(item.href)
+    return (
+      <Link
+        to={item.href}
+        onClick={onClose}
+        title={collapsed ? item.label : undefined}
+        className={cn(
+          'relative flex items-center gap-3 rounded-md py-2 text-sm font-medium transition-all duration-150',
+          collapsed ? 'justify-center px-2' : 'px-3',
+          active
+            ? 'bg-primary/10 text-primary'
+            : 'text-muted-foreground hover:bg-muted hover:text-foreground'
+        )}
+      >
+        {active && !collapsed && (
+          <span className="absolute left-0 top-1/2 -translate-y-1/2 w-[3px] h-5 bg-primary rounded-r-full" />
+        )}
+        <item.icon className="h-4 w-4 shrink-0" />
+        {!collapsed && <span>{item.label}</span>}
+        {!collapsed && item.badge && item.badge > 0 ? (
+          <span className="ml-auto flex h-5 w-5 items-center justify-center rounded-full bg-destructive text-[10px] font-bold text-destructive-foreground">
+            {item.badge}
+          </span>
+        ) : null}
+        {collapsed && item.badge && item.badge > 0 ? (
+          <span className="absolute -top-0.5 -right-0.5 flex h-4 w-4 items-center justify-center rounded-full bg-destructive text-[10px] font-bold text-destructive-foreground">
+            {item.badge}
+          </span>
+        ) : null}
+      </Link>
+    )
+  }
 
   return (
     <div
@@ -156,15 +176,15 @@ export const Sidebar = ({ onClose, collapsed = false, onToggleCollapse }: Sideba
       {/* En-tête */}
       <div
         className={cn(
-          'flex items-center gap-3 border-b py-4',
+          'flex h-16 items-center gap-3 border-b',
           collapsed ? 'justify-center px-2' : 'px-4'
         )}
       >
-        <div className="flex h-8 w-8 items-center justify-center rounded-md bg-primary text-primary-foreground overflow-hidden shrink-0">
+        <div className="flex h-8 w-8 items-center justify-center rounded-lg bg-primary text-primary-foreground overflow-hidden shrink-0 shadow-sm">
           {company?.logo_url ? (
             <img src={company.logo_url} alt="Logo" className="h-full w-full object-contain" />
           ) : (
-            <Building2 className="h-5 w-5" />
+            <Building2 className="h-4 w-4" />
           )}
         </div>
         {!collapsed && (
@@ -173,20 +193,14 @@ export const Sidebar = ({ onClose, collapsed = false, onToggleCollapse }: Sideba
             <p className="text-xs text-muted-foreground">Gestion Commerciale</p>
           </div>
         )}
-        {/* Bouton X sur mobile (drawer) */}
         {onClose && (
           <Button variant="ghost" size="icon" className="h-6 w-6 shrink-0" onClick={onClose}>
             <X className="h-4 w-4" />
           </Button>
         )}
-        {/* Bouton toggle collapse sur desktop */}
         {onToggleCollapse && (
           <Button variant="ghost" size="icon" className="h-6 w-6 shrink-0" onClick={onToggleCollapse}>
-            {collapsed ? (
-              <ChevronRight className="h-4 w-4" />
-            ) : (
-              <ChevronLeft className="h-4 w-4" />
-            )}
+            {collapsed ? <ChevronRight className="h-4 w-4" /> : <ChevronLeft className="h-4 w-4" />}
           </Button>
         )}
       </div>
@@ -199,22 +213,25 @@ export const Sidebar = ({ onClose, collapsed = false, onToggleCollapse }: Sideba
           onClick={onClose}
           title={collapsed ? 'Dashboard' : undefined}
           className={cn(
-            'flex items-center gap-3 rounded-md py-2 text-sm font-medium transition-colors',
+            'relative flex items-center gap-3 rounded-md py-2 text-sm font-medium transition-all duration-150',
             collapsed ? 'justify-center px-2' : 'px-3',
             isActive('/dashboard')
-              ? 'bg-primary text-primary-foreground'
+              ? 'bg-primary/10 text-primary'
               : 'text-muted-foreground hover:bg-muted hover:text-foreground'
           )}
         >
+          {isActive('/dashboard') && !collapsed && (
+            <span className="absolute left-0 top-1/2 -translate-y-1/2 w-[3px] h-5 bg-primary rounded-r-full" />
+          )}
           <LayoutDashboard className="h-4 w-4 shrink-0" />
           {!collapsed && <span>Dashboard</span>}
         </Link>
 
-        {/* Groupes de navigation */}
+        {/* Groupes */}
         {navGroups.map((group) => (
           <div key={group.title} className="pt-3">
             {!collapsed ? (
-              <p className="mb-1 px-3 text-[10px] font-semibold uppercase tracking-wider text-muted-foreground/60">
+              <p className="mb-1 px-3 text-[10px] font-semibold uppercase tracking-widest text-muted-foreground/50">
                 {group.title}
               </p>
             ) : (
@@ -238,7 +255,7 @@ export const Sidebar = ({ onClose, collapsed = false, onToggleCollapse }: Sideba
         {/* FINANCES */}
         <div className="pt-3">
           {!collapsed ? (
-            <p className="mb-1 px-3 text-[10px] font-semibold uppercase tracking-wider text-muted-foreground/60">
+            <p className="mb-1 px-3 text-[10px] font-semibold uppercase tracking-widest text-muted-foreground/50">
               FINANCES
             </p>
           ) : (
@@ -246,7 +263,6 @@ export const Sidebar = ({ onClose, collapsed = false, onToggleCollapse }: Sideba
           )}
           <div className="space-y-0.5">
             {collapsed ? (
-              // Mode réduit : icône directement vers le premier enfant
               financesExpandable.map((section) => (
                 <Link
                   key={section.label}
@@ -254,9 +270,9 @@ export const Sidebar = ({ onClose, collapsed = false, onToggleCollapse }: Sideba
                   onClick={onClose}
                   title={section.label}
                   className={cn(
-                    'flex items-center justify-center rounded-md px-2 py-2 text-sm font-medium transition-colors',
+                    'flex items-center justify-center rounded-md px-2 py-2 text-sm font-medium transition-all duration-150',
                     section.children.some((c) => isActive(c.href))
-                      ? 'bg-primary text-primary-foreground'
+                      ? 'bg-primary/10 text-primary'
                       : 'text-muted-foreground hover:bg-muted hover:text-foreground'
                   )}
                 >
@@ -264,7 +280,6 @@ export const Sidebar = ({ onClose, collapsed = false, onToggleCollapse }: Sideba
                 </Link>
               ))
             ) : (
-              // Mode étendu : accordion
               financesExpandable.map((section) => {
                 const isExpanded = expandedItems.includes(section.label)
                 const hasActiveChild = section.children.some((c) => isActive(c.href))
@@ -273,7 +288,7 @@ export const Sidebar = ({ onClose, collapsed = false, onToggleCollapse }: Sideba
                     <button
                       onClick={() => toggleExpand(section.label)}
                       className={cn(
-                        'flex w-full items-center gap-3 rounded-md px-3 py-2 text-sm font-medium transition-colors',
+                        'flex w-full items-center gap-3 rounded-md px-3 py-2 text-sm font-medium transition-all duration-150',
                         hasActiveChild
                           ? 'text-foreground'
                           : 'text-muted-foreground hover:bg-muted hover:text-foreground'
@@ -295,9 +310,9 @@ export const Sidebar = ({ onClose, collapsed = false, onToggleCollapse }: Sideba
                             to={child.href}
                             onClick={onClose}
                             className={cn(
-                              'flex items-center gap-2 rounded-md px-2 py-1.5 text-sm transition-colors',
+                              'flex items-center gap-2 rounded-md px-2 py-1.5 text-sm transition-all duration-150',
                               isActive(child.href)
-                                ? 'bg-primary text-primary-foreground font-medium'
+                                ? 'bg-primary/10 text-primary font-medium'
                                 : 'text-muted-foreground hover:bg-muted hover:text-foreground'
                             )}
                           >
@@ -313,11 +328,10 @@ export const Sidebar = ({ onClose, collapsed = false, onToggleCollapse }: Sideba
           </div>
         </div>
 
-        {/* ADMIN — masqué (false && pour réactiver : remplacer false par true) */}
-        {/* {false && ( */}
+        {/* ADMIN */}
         <div className="pt-3">
           {!collapsed ? (
-            <p className="mb-1 px-3 text-[10px] font-semibold uppercase tracking-wider text-muted-foreground/60">
+            <p className="mb-1 px-3 text-[10px] font-semibold uppercase tracking-widest text-muted-foreground/50">
               ADMIN
             </p>
           ) : (
@@ -328,35 +342,53 @@ export const Sidebar = ({ onClose, collapsed = false, onToggleCollapse }: Sideba
             onClick={onClose}
             title={collapsed ? 'Paramètres' : undefined}
             className={cn(
-              'flex items-center gap-3 rounded-md py-2 text-sm font-medium transition-colors',
+              'relative flex items-center gap-3 rounded-md py-2 text-sm font-medium transition-all duration-150',
               collapsed ? 'justify-center px-2' : 'px-3',
               isActive('/settings')
-                ? 'bg-primary text-primary-foreground'
+                ? 'bg-primary/10 text-primary'
                 : 'text-muted-foreground hover:bg-muted hover:text-foreground'
             )}
           >
+            {isActive('/settings') && !collapsed && (
+              <span className="absolute left-0 top-1/2 -translate-y-1/2 w-[3px] h-5 bg-primary rounded-r-full" />
+            )}
             <Settings className="h-4 w-4 shrink-0" />
             {!collapsed && <span>Paramètres</span>}
           </Link>
         </div>
-        {/*  )} */}
-      </nav>
 
-      {/* Pied de page */}
-      <div className={cn('border-t py-3', collapsed ? 'px-2' : 'px-3')}>
-        <Separator className="mb-3" />
-        <button
-          onClick={handleSignOut}
-          title={collapsed ? 'Déconnexion' : undefined}
-          className={cn(
-            'flex w-full items-center gap-3 rounded-md py-2 text-sm font-medium text-muted-foreground transition-colors hover:bg-muted hover:text-foreground',
-            collapsed ? 'justify-center px-2' : 'px-3'
-          )}
-        >
-          <LogOut className="h-4 w-4 shrink-0" />
-          {!collapsed && <span>Déconnexion</span>}
-        </button>
-      </div>
+        {/* Séparateur + Mode sombre + Déconnexion — dans le flux de scroll */}
+        <div className="pt-4 mt-2">
+          <Separator className="mb-3" />
+
+          {/* Theme toggle */}
+          <button
+            onClick={toggleTheme}
+            title={collapsed ? (isDark ? 'Mode clair' : 'Mode sombre') : undefined}
+            className={cn(
+              'flex w-full items-center gap-3 rounded-md py-2 text-sm font-medium text-muted-foreground transition-all duration-150 hover:bg-muted hover:text-foreground mb-1',
+              collapsed ? 'justify-center px-2' : 'px-3'
+            )}
+          >
+            {isDark
+              ? <Sun className="h-4 w-4 shrink-0" />
+              : <Moon className="h-4 w-4 shrink-0" />}
+            {!collapsed && <span>Mode {isDark ? 'clair' : 'sombre'}</span>}
+          </button>
+
+          <button
+            onClick={handleSignOut}
+            title={collapsed ? 'Déconnexion' : undefined}
+            className={cn(
+              'flex w-full items-center gap-3 rounded-md py-2 text-sm font-medium text-muted-foreground transition-all duration-150 hover:bg-muted hover:text-foreground',
+              collapsed ? 'justify-center px-2' : 'px-3'
+            )}
+          >
+            <LogOut className="h-4 w-4 shrink-0" />
+            {!collapsed && <span>Déconnexion</span>}
+          </button>
+        </div>
+      </nav>
     </div>
   )
 }

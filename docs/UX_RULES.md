@@ -188,7 +188,41 @@ L'app doit être fully responsive (mobile + desktop) :
 - Formulaires en pleine largeur sur mobile
 - Boutons et inputs adaptés au touch
 
+### 13.1 Règle — Boutons d'action dans la TopBar (⚠️ OBLIGATOIRE)
+
+> **Ne jamais tronquer (`truncate`, `overflow-hidden`) un bouton d'action.**  
+> Un bouton tronqué perd son sens et sa lisibilité.
+
+**Stratégie à appliquer dans cet ordre :**
+
+1. **Label court sur mobile** — utiliser `<span className="sm:hidden">` pour le label court, `<span className="hidden sm:inline">` pour le label complet.
+2. **Abréviation** — si le label court reste trop long, abréger le mot clé (`Fourn.`, `Frn.`).
+3. **Icône seule** — en dernier recours uniquement, bouton icon-only sur mobile avec `title` pour l'accessibilité.
+
+**Pattern standard à utiliser pour tous les boutons `usePageAction` :**
+
+```tsx
+usePageAction(
+  <Button onClick={() => navigate('/suppliers/new')}>
+    <Plus className="mr-1.5 h-4 w-4" />
+    <span className="sm:hidden">Fournisseur</span>
+    <span className="hidden sm:inline">Nouveau fournisseur</span>
+  </Button>
+)
+```
+
+**Tableau de référence des labels :**
+
+| Page | Mobile | Desktop |
+|------|--------|---------|
+| Produits | `Produit` | `Nouveau produit` |
+| Fournisseurs | `Fournisseur` | `Nouveau fournisseur` |
+| Clients | `Client` | `Nouveau client` |
+| Ventes | `Vente` | `Nouvelle vente` |
+| Achats | `Achat` | `Nouvel achat` |
+
 ---
+
 
 ## 15. Liens cliquables et Navigation
 

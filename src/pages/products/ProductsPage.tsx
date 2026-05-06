@@ -10,6 +10,7 @@ import { StockAdjustModal } from '@/features/products/StockAdjustModal'
 import { useProducts, useDeleteProduct } from '@/hooks/useProducts'
 import type { ProductWithStock } from '@/types'
 import { cn } from '@/lib/utils'
+import { usePageAction } from '@/contexts/PageContext'
 
 const STOCK_COLORS: Record<string, string> = {
   ok: 'text-green-600 font-medium',
@@ -31,6 +32,14 @@ export const ProductsPage = () => {
   const [deleteId, setDeleteId] = useState<string | null>(null)
 
   const deleteTarget = products.find(p => p.id === deleteId)
+
+  usePageAction(
+    <Button onClick={() => navigate('/products/new')}>
+      <Plus className="mr-1.5 h-4 w-4" />
+      <span className="sm:hidden">Produit</span>
+      <span className="hidden sm:inline">Nouveau produit</span>
+    </Button>
+  )
 
   const columns: ColumnDef<ProductWithStock>[] = [
     {
@@ -108,15 +117,7 @@ export const ProductsPage = () => {
 
   return (
     <div>
-      <PageHeader
-        title="Produits"
-        actions={
-          <Button onClick={() => navigate('/products/new')}>
-            <Plus className="mr-1.5 h-4 w-4" />
-            Nouveau produit
-          </Button>
-        }
-      />
+      <PageHeader title="Produits" subtitle={`${products.length} produit${products.length !== 1 ? 's' : ''}`} />
 
       <DataTable
         columns={columns}
@@ -152,3 +153,8 @@ export const ProductsPage = () => {
     </div>
   )
 }
+
+
+
+
+

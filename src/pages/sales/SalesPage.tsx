@@ -9,6 +9,7 @@ import { Button } from '@/components/ui/button'
 import { Badge } from '@/components/ui/badge'
 import { useSales, useDeleteSale } from '@/hooks/useSales'
 import { SaleQuickViewModal } from '@/features/sales/SaleQuickViewModal'
+import { usePageAction } from '@/contexts/PageContext'
 
 import { formatCurrency, formatDate } from '@/lib/utils'
 import type { Sale } from '@/types'
@@ -31,6 +32,14 @@ export const SalesPage = () => {
   const [deleteTarget, setDeleteTarget] = useState<Sale | null>(null)
   const [selectedSaleId, setSelectedSaleId] = useState<string | null>(null)
   const [isModalOpen, setIsModalOpen] = useState(false)
+
+  usePageAction(
+    <Button onClick={() => navigate('/sales/new')}>
+      <Plus className="mr-1.5 h-4 w-4" />
+      <span className="sm:hidden">Vente</span>
+      <span className="hidden sm:inline">Nouvelle vente</span>
+    </Button>
+  )
 
 
   const handleQuickView = (id: string) => {
@@ -167,20 +176,12 @@ export const SalesPage = () => {
 
   return (
     <div className="space-y-6">
-      <PageHeader
-        title="Ventes"
-        actions={
-          <Button onClick={() => navigate('/sales/new')}>
-            <Plus className="mr-2 h-4 w-4" />
-            Nouvelle vente
-          </Button>
-        }
-      />
+      <PageHeader title="Ventes" subtitle={`${sales.length} vente${sales.length !== 1 ? 's' : ''}`} />
 
       {/* Filtres */}
       <div className="flex flex-wrap gap-3">
         <select
-          className="h-9 rounded-md border border-input bg-background px-3 text-sm focus-visible:outline-none focus-visible:ring-1 focus-visible:ring-ring"
+          className="h-9 rounded-md border border-input bg-card pl-3 pr-8 py-1.5 text-sm focus-visible:outline-none focus-visible:ring-1 focus-visible:ring-ring cursor-pointer shadow-sm appearance-none"
           value={filterYear}
           onChange={e => setFilterYear(e.target.value)}
         >
@@ -189,7 +190,7 @@ export const SalesPage = () => {
           ))}
         </select>
         <select
-          className="h-9 rounded-md border border-input bg-background px-3 text-sm focus-visible:outline-none focus-visible:ring-1 focus-visible:ring-ring"
+          className="h-9 rounded-md border border-input bg-card pl-3 pr-8 py-1.5 text-sm focus-visible:outline-none focus-visible:ring-1 focus-visible:ring-ring cursor-pointer shadow-sm appearance-none"
           value={filterMonth}
           onChange={e => setFilterMonth(e.target.value)}
         >
@@ -198,16 +199,19 @@ export const SalesPage = () => {
             <option key={i + 1} value={i + 1}>{m}</option>
           ))}
         </select>
-        <select
-          className="h-9 rounded-md border border-input bg-background px-3 text-sm focus-visible:outline-none focus-visible:ring-1 focus-visible:ring-ring"
-          value={filterStatus}
-          onChange={e => setFilterStatus(e.target.value)}
-        >
-          <option value="">Tous les statuts</option>
-          <option value="unpaid">Impayé</option>
-          <option value="partial">Partiel</option>
-          <option value="paid">Payé</option>
-        </select>
+        <div className="sm:ml-auto flex items-center gap-2">
+          <span className="text-sm text-muted-foreground">Statut :</span>
+          <select
+            className="h-9 rounded-md border border-input bg-card pl-3 pr-8 py-1.5 text-sm focus-visible:outline-none focus-visible:ring-1 focus-visible:ring-ring cursor-pointer shadow-sm appearance-none"
+            value={filterStatus}
+            onChange={e => setFilterStatus(e.target.value)}
+          >
+            <option value="">Tous les statuts</option>
+            <option value="unpaid">Impayé</option>
+            <option value="partial">Partiel</option>
+            <option value="paid">Payé</option>
+          </select>
+        </div>
       </div>
 
       <DataTable
@@ -250,3 +254,8 @@ export const SalesPage = () => {
     </div>
   )
 }
+
+
+
+
+
