@@ -46,17 +46,17 @@ const KPICard = ({
   icon: React.ElementType
 }) => (
   <div className={cn(
-    'relative overflow-hidden rounded-xl border bg-card p-4 sm:p-5 transition-all duration-300 hover:shadow-md group',
+    'relative overflow-hidden rounded-xl border bg-card p-3 sm:p-5 transition-all duration-300 hover:shadow-md group',
     color === 'red' && 'border-red-200 dark:border-red-900/50',
     color === 'green' && 'border-green-200 dark:border-green-900/50',
     color === 'blue' && 'border-blue-200 dark:border-blue-900/50',
     color === 'purple' && 'border-purple-200 dark:border-purple-900/50',
   )}>
     <div className="flex items-center justify-between">
-      <div className="space-y-2 relative z-10">
-        <p className="text-[11px] sm:text-xs font-semibold text-muted-foreground uppercase tracking-wider">{label}</p>
+      <div className="space-y-1 sm:space-y-2 relative z-10 min-w-0 sm:pr-12">
+        <p className="text-[10px] sm:text-xs font-semibold text-muted-foreground uppercase tracking-wider leading-tight">{label}</p>
         <p className={cn(
-          'text-xl sm:text-3xl font-bold tracking-tight',
+          'text-base sm:text-3xl font-bold tracking-tight truncate',
           color === 'red' && 'text-red-600 dark:text-red-500',
           color === 'green' && 'text-green-600 dark:text-green-500',
           color === 'blue' && 'text-blue-600 dark:text-blue-500',
@@ -64,10 +64,10 @@ const KPICard = ({
         )}>
           {value}
         </p>
-        <p className="text-[11px] sm:text-xs text-muted-foreground/80 font-medium">{sub}</p>
+        <p className="hidden sm:block text-[11px] sm:text-xs text-muted-foreground/80 font-medium">{sub}</p>
       </div>
       <div className={cn(
-        "absolute right-4 top-1/2 -translate-y-1/2 rounded-full p-3 transition-transform duration-300 group-hover:scale-110",
+        "hidden sm:flex absolute right-4 top-1/2 -translate-y-1/2 rounded-full p-3 transition-transform duration-300 group-hover:scale-110",
         !color && 'bg-primary/10 text-primary',
         color === 'red' && 'bg-red-50 text-red-500 dark:bg-red-950/50',
         color === 'green' && 'bg-green-50 text-green-500 dark:bg-green-950/50',
@@ -179,7 +179,7 @@ export const Dashboard = () => {
       ) : (
         <>
           {/* ── KPIs ── */}
-          <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4 mb-8">
+          <div className="grid grid-cols-2 lg:grid-cols-3 gap-3 sm:gap-4 mb-8">
             {/* Ligne 1 : Ventes */}
             <KPICard label="CA Ventes" value={formatCurrency(data?.ca ?? 0)} sub={`Total facturé ${periodSub}`} icon={Banknote} color="blue" />
             <KPICard label="Encaissé" value={formatCurrency(data?.encaisse ?? 0)} sub={`Reçu des clients ${periodSub}`} color="green" icon={TrendingUp} />
