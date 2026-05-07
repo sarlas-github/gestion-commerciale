@@ -148,7 +148,7 @@ export const SettingsPage = () => {
             className={cn("py-2 px-4 border-b-2 text-sm font-medium whitespace-nowrap", activeTab === 'brand' ? "border-primary text-primary" : "border-transparent text-muted-foreground hover:text-foreground")}
             onClick={() => setActiveTab('brand')}
           >
-            Marque & Design
+            Marque
           </button>
           <button
             type="button"
@@ -401,8 +401,8 @@ export const SettingsPage = () => {
                     onClick={() => setValue('couleur_marque', c.value)}
                     className={cn(
                       'h-10 w-10 rounded-xl border-2 transition-all shadow-sm ring-offset-background',
-                      couleur === c.value 
-                        ? 'border-foreground scale-110 shadow-md ring-2 ring-ring ring-offset-2' 
+                      couleur === c.value
+                        ? 'border-foreground scale-110 shadow-md ring-2 ring-ring ring-offset-2'
                         : 'border-transparent hover:scale-105 hover:shadow-md'
                     )}
                     style={{ backgroundColor: c.value }}

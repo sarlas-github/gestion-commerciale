@@ -9,7 +9,7 @@ import { Button } from '@/components/ui/button'
 import { Badge } from '@/components/ui/badge'
 import { Popover, PopoverContent, PopoverTrigger } from '@/components/ui/popover'
 import { useClients, useDeleteClient, useUnpaidClientsCount, type ClientWithStats } from '@/hooks/useClients'
-import { formatCurrency, formatPhone, cn } from '@/lib/utils'
+import { formatCurrency, formatPhone, formatDate, cn } from '@/lib/utils'
 import { usePageAction } from '@/contexts/PageContext'
 
 const STATUS_OPTIONS = [
@@ -72,6 +72,11 @@ export const ClientsPage = () => {
         accessorKey: 'address',
         header: 'Adresse',
         cell: ({ row }) => row.original.address || '—',
+      },
+      {
+        accessorKey: 'updated_at',
+        header: 'Modifié le',
+        cell: ({ row }) => formatDate(row.original.updated_at),
       },
       {
         accessorKey: 'totalDu',
@@ -244,6 +249,7 @@ export const ClientsPage = () => {
           'Total dû': c.totalDu,
           Statut: c.paymentStatus === 'ok' ? 'OK' : c.paymentStatus === 'partial' ? 'Partiel' : 'Impayé',
         })}
+        defaultSorting={[{ id: 'updated_at', desc: true }]}
       />
 
       <ConfirmDialog

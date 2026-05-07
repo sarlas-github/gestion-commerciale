@@ -11,7 +11,7 @@ import { ConfirmDialog } from '@/components/shared/ConfirmDialog'
 import { StockAdjustModal } from '@/features/products/StockAdjustModal'
 import { useProducts, useDeleteProduct, useStockAlertCount } from '@/hooks/useProducts'
 import type { ProductWithStock } from '@/types'
-import { cn } from '@/lib/utils'
+import { cn, formatDate } from '@/lib/utils'
 import { usePageAction } from '@/contexts/PageContext'
 
 const STOCK_STATUS_OPTIONS = [
@@ -87,6 +87,11 @@ export const ProductsPage = () => {
     {
       accessorKey: 'pieces_count',
       header: 'Pièces',
+    },
+    {
+      accessorKey: 'updated_at',
+      header: 'Modifié le',
+      cell: ({ row }) => formatDate(row.original.updated_at),
     },
     {
       id: 'stock',
@@ -274,6 +279,7 @@ export const ProductsPage = () => {
         columns={columns}
         data={filtered}
         isLoading={isLoading}
+        defaultSorting={[{ id: 'updated_at', desc: true }]}
         exportFileName="produits"
         exportMapper={p => ({
           Nom: p.name,

@@ -112,9 +112,9 @@ export const PurchasesPage = () => {
         cell: ({ row }) => formatDate(row.original.date),
       },
       {
-        accessorKey: 'created_at',
-        header: 'Créé le',
-        cell: ({ row }) => formatDate(row.original.created_at),
+        accessorKey: 'updated_at',
+        header: 'Modifié le',
+        cell: ({ row }) => formatDate(row.original.updated_at),
       },
       {
         accessorKey: 'total',
@@ -285,7 +285,7 @@ export const PurchasesPage = () => {
         data={filtered}
         isLoading={isLoading}
         exportFileName="achats"
-        defaultSorting={[{ id: 'created_at', desc: true }]}
+        defaultSorting={[{ id: 'updated_at', desc: true }]}
         exportMapper={p => ({
           Référence: p.reference ?? '',
           Fournisseur: (p as Purchase & { suppliers?: { name: string } }).suppliers?.name ?? '',

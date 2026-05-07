@@ -9,17 +9,17 @@ import { Button } from '@/components/ui/button'
 import { Badge } from '@/components/ui/badge'
 import { Popover, PopoverContent, PopoverTrigger } from '@/components/ui/popover'
 import { useSuppliers, useDeleteSupplier, useUnpaidSuppliersCount, type SupplierWithStats } from '@/hooks/useSuppliers'
-import { formatCurrency, formatPhone, cn } from '@/lib/utils'
+import { formatCurrency, formatPhone, formatDate, cn } from '@/lib/utils'
 import { usePageAction } from '@/contexts/PageContext'
 
 const STATUS_OPTIONS = [
-  { value: 'unpaid',  label: 'Impayé',  emoji: '🔴', badge: 'bg-red-100 text-red-800'    },
+  { value: 'unpaid', label: 'Impayé', emoji: '🔴', badge: 'bg-red-100 text-red-800' },
   { value: 'partial', label: 'Partiel', emoji: '🟡', badge: 'bg-orange-100 text-orange-800' },
-  { value: 'ok',      label: 'OK',      emoji: '🟢', badge: 'bg-green-100 text-green-800' },
+  { value: 'ok', label: 'OK', emoji: '🟢', badge: 'bg-green-100 text-green-800' },
 ] as const
 
 const StatusBadge = ({ status }: { status: 'ok' | 'partial' | 'unpaid' }) => {
-  if (status === 'ok')      return <Badge className="bg-green-100 text-green-800 hover:bg-green-100">🟢 OK</Badge>
+  if (status === 'ok') return <Badge className="bg-green-100 text-green-800 hover:bg-green-100">🟢 OK</Badge>
   if (status === 'partial') return <Badge className="bg-orange-100 text-orange-800 hover:bg-orange-100">🟡 Partiel</Badge>
   return <Badge className="bg-red-100 text-red-800 hover:bg-red-100">🔴 Impayé</Badge>
 }
@@ -75,6 +75,11 @@ export const SuppliersPage = () => {
         accessorKey: 'address',
         header: 'Adresse',
         cell: ({ row }) => row.original.address || '—',
+      },
+      {
+        accessorKey: 'updated_at',
+        header: 'Modifié le',
+        cell: ({ row }) => formatDate(row.original.updated_at),
       },
       {
         accessorKey: 'totalDu',
@@ -247,6 +252,7 @@ export const SuppliersPage = () => {
           'Total dû': s.totalDu,
           Statut: s.paymentStatus === 'ok' ? 'OK' : s.paymentStatus === 'partial' ? 'Partiel' : 'Impayé',
         })}
+        defaultSorting={[{ id: 'updated_at', desc: true }]}
       />
 
       <ConfirmDialog

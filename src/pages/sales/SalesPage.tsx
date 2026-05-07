@@ -114,9 +114,9 @@ export const SalesPage = () => {
         cell: ({ row }) => formatDate(row.original.date),
       },
       {
-        accessorKey: 'created_at',
-        header: 'Créé le',
-        cell: ({ row }) => formatDate(row.original.created_at),
+        accessorKey: 'updated_at',
+        header: 'Modifié le',
+        cell: ({ row }) => formatDate(row.original.updated_at),
       },
       {
         accessorKey: 'total',
@@ -292,7 +292,7 @@ export const SalesPage = () => {
         data={filtered}
         isLoading={isLoading}
         exportFileName="ventes"
-        defaultSorting={[{ id: 'created_at', desc: true }]}
+        defaultSorting={[{ id: 'updated_at', desc: true }]}
         exportMapper={s => ({
           Client: (s as Sale & { clients?: { name: string } }).clients?.name ?? '',
           Date: formatDate(s.date),

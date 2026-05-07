@@ -14,6 +14,7 @@ export interface StockMovementRow {
   note: string | null
   date: string
   created_at: string
+  updated_at: string
   products: Pick<Product, 'id' | 'name'> | null
   refLabel: string | null // référence lisible ex. "ACH-001" pour les achats
 }

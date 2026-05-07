@@ -124,6 +124,11 @@ export const StockMovementsPage = () => {
         <span className="text-muted-foreground text-sm">{row.original.note ?? '—'}</span>
       ),
     },
+    {
+      accessorKey: 'updated_at',
+      header: 'Modifié le',
+      cell: ({ row }) => formatDate(row.original.updated_at),
+    },
   ]
 
   return (
@@ -197,6 +202,7 @@ export const StockMovementsPage = () => {
               : row.refLabel ?? (row.reference_type === 'purchase' ? 'Achat' : 'Vente'),
           Note: row.note ?? '',
         })}
+        defaultSorting={[{ id: 'date', desc: true }]}
       />
 
       <PurchaseQuickViewModal
