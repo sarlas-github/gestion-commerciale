@@ -15,7 +15,6 @@ import {
   ChevronRight,
   ChevronLeft,
   X,
-  Building2,
   LogOut,
   Sun,
   Moon,
@@ -25,11 +24,9 @@ import { useAuth } from '@/hooks/useAuth'
 import { useStockAlertCount } from '@/hooks/useProducts'
 import { useUnpaidSuppliersCount } from '@/hooks/useSuppliers'
 import { useUnpaidClientsCount } from '@/hooks/useClients'
-import { useCompany } from '@/hooks/useCompany'
 import { useQueryClient } from '@tanstack/react-query'
 import { Button } from '@/components/ui/button'
 import { APP_NAME } from '@/lib/constants'
-import { Separator } from '@/components/ui/separator'
 
 interface NavItem {
   label: string
@@ -105,7 +102,6 @@ export const Sidebar = ({ onClose, collapsed = false, onToggleCollapse }: Sideba
   const { data: alertCount = 0 } = useStockAlertCount()
   const { data: unpaidSuppliers = 0 } = useUnpaidSuppliersCount()
   const { data: unpaidClients = 0 } = useUnpaidClientsCount()
-  const { data: company, isLoading: isCompanyLoading } = useCompany()
   const queryClient = useQueryClient()
   const [expandedItems, setExpandedItems] = useState<string[]>(['Paiements', 'États'])
   const [isDark, setIsDark] = useState(() => document.documentElement.classList.contains('dark'))
@@ -187,8 +183,8 @@ export const Sidebar = ({ onClose, collapsed = false, onToggleCollapse }: Sideba
       >
         <div className="flex h-8 w-8 items-center justify-center rounded-lg bg-primary text-primary-foreground overflow-hidden shrink-0 shadow-sm p-0.5">
           <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 100 100" className="h-full w-full">
-            <path d="M75 35 A25 25 0 1 0 75 65" fill="none" stroke="currentColor" strokeWidth="12" strokeLinecap="round"/>
-            <path d="M50 25 L60 50 L50 75 L40 50 Z" fill="currentColor" transform="rotate(45 50 50)"/>
+            <path d="M75 35 A25 25 0 1 0 75 65" fill="none" stroke="currentColor" strokeWidth="12" strokeLinecap="round" />
+            <path d="M50 25 L60 50 L50 75 L40 50 Z" fill="currentColor" transform="rotate(45 50 50)" />
           </svg>
         </div>
         {!collapsed && (
