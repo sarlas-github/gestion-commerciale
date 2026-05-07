@@ -213,7 +213,7 @@ export const SaleForm = ({ existing, onSubmit, isLoading = false, hasInvoice = f
                   control={control}
                   render={({ field }) => (
                     <select
-                      className="flex h-9 w-full rounded-md border border-input bg-background px-3 py-1 text-sm shadow-sm transition-colors focus-visible:outline-none focus-visible:ring-1 focus-visible:ring-ring disabled:opacity-60 disabled:cursor-not-allowed"
+                      className="flex h-9 w-full rounded-md border border-input px-3 py-1 text-sm shadow-sm transition-colors focus-visible:outline-none focus-visible:ring-1 focus-visible:ring-ring disabled:opacity-60 disabled:cursor-not-allowed"
                       value={field.value}
                       onChange={field.onChange}
                       ref={field.ref}
@@ -354,7 +354,7 @@ export const SaleForm = ({ existing, onSubmit, isLoading = false, hasInvoice = f
                               control={control}
                               render={({ field: f }) => (
                                 <select
-                                  className="flex h-8 w-full rounded-md border border-input bg-background px-2 text-sm focus-visible:outline-none focus-visible:ring-1 focus-visible:ring-ring"
+                                  className="flex h-8 w-full rounded-md border border-input px-2 text-sm focus-visible:outline-none focus-visible:ring-1 focus-visible:ring-ring"
                                   value={f.value}
                                   ref={el => {
                                     f.ref(el)
@@ -505,7 +505,7 @@ export const SaleForm = ({ existing, onSubmit, isLoading = false, hasInvoice = f
                 control={control}
                 render={({ field }) => (
                   <select
-                    className="h-9 rounded-md border border-input bg-background px-3 text-sm focus-visible:outline-none focus-visible:ring-1 focus-visible:ring-ring disabled:opacity-60 disabled:cursor-not-allowed"
+                    className="h-9 rounded-md border border-input px-3 text-sm focus-visible:outline-none focus-visible:ring-1 focus-visible:ring-ring disabled:opacity-60 disabled:cursor-not-allowed"
                     value={field.value}
                     onChange={e => field.onChange(parseFloat(e.target.value))}
                     disabled={hasInvoice}
@@ -553,7 +553,7 @@ export const SaleForm = ({ existing, onSubmit, isLoading = false, hasInvoice = f
           {paymentFields.length > 0 && (
             <div className="space-y-2">
               {paymentFields.map((field, idx) => (
-                <div key={field.id} className="rounded-md border bg-background p-3 space-y-2">
+                <div key={field.id} className="rounded-md border p-3 space-y-2">
                   {/* Ligne 1 : Date + Montant + Supprimer */}
                   <div className="flex gap-2 items-end">
                     <div className="space-y-1 flex-1">
@@ -605,7 +605,7 @@ export const SaleForm = ({ existing, onSubmit, isLoading = false, hasInvoice = f
                         control={control}
                         render={({ field: f }) => (
                           <select
-                            className="flex h-8 w-full rounded-md border border-input bg-background px-2 text-sm focus-visible:outline-none focus-visible:ring-1 focus-visible:ring-ring"
+                            className="flex h-8 w-full rounded-md border border-input px-2 text-sm focus-visible:outline-none focus-visible:ring-1 focus-visible:ring-ring"
                             value={f.value ?? ''}
                             onChange={f.onChange}
                             ref={f.ref}
