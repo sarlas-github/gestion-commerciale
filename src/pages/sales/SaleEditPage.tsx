@@ -56,6 +56,7 @@ export const SaleEditPage = () => {
         onSubmit={handleSubmit}
         isLoading={updateSale.isPending}
         hasInvoice={Boolean(existingInvoice)}
+        savedPayments={sale.client_payments ?? []}
       />
     </div>
   )

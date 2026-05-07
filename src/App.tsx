@@ -42,6 +42,7 @@ import { SalesPage } from '@/pages/sales/SalesPage'
 import { SaleNewPage } from '@/pages/sales/SaleNewPage'
 import { SaleEditPage } from '@/pages/sales/SaleEditPage'
 import { InvoicePreviewPage } from '@/pages/sales/InvoicePreviewPage'
+import { ReceiptPreviewPage } from '@/pages/sales/ReceiptPreviewPage'
 
 // Documents
 import { DocumentsPage } from '@/pages/documents/DocumentsPage'
@@ -109,6 +110,7 @@ export const App = () => {
           <Route path="/sales/new" element={<SaleNewPage />} />
           <Route path="/sales/:id/edit" element={<SaleEditPage />} />
           <Route path="/sales/:id/invoice" element={<InvoicePreviewPage />} />
+          <Route path="/sales/:id/payments/:paymentId/receipt" element={<ReceiptPreviewPage />} />
 
           {/* Documents */}
           <Route path="/documents" element={<DocumentsPage />} />

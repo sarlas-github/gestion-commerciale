@@ -3,7 +3,7 @@ import { useNavigate } from 'react-router-dom'
 import { Controller, useForm, useFieldArray } from 'react-hook-form'
 import { zodResolver } from '@hookform/resolvers/zod'
 import { z } from 'zod'
-import { Plus, Trash2, Loader2, AlertTriangle } from 'lucide-react'
+import { Plus, Trash2, Loader2, AlertTriangle, FileText } from 'lucide-react'
 import { Button } from '@/components/ui/button'
 import { Input } from '@/components/ui/input'
 import { Label } from '@/components/ui/label'
@@ -61,11 +61,12 @@ interface SaleFormProps {
   onSubmit: (values: SaleFormValues) => Promise<void>
   isLoading?: boolean
   hasInvoice?: boolean
+  savedPayments?: Array<{ id: string }>
 }
 
 // ── Composant principal ───────────────────────────────────────────────────────
 
-export const SaleForm = ({ existing, onSubmit, isLoading = false, hasInvoice = false }: SaleFormProps) => {
+export const SaleForm = ({ existing, onSubmit, isLoading = false, hasInvoice = false, savedPayments }: SaleFormProps) => {
   const navigate = useNavigate()
   const today = toISODate(new Date())
 
@@ -638,6 +639,21 @@ export const SaleForm = ({ existing, onSubmit, isLoading = false, hasInvoice = f
                       />
                     </div>
                   </div>
+
+                  {savedPayments?.[idx] && (
+                    <div className="flex justify-end pt-1">
+                      <Button
+                        type="button"
+                        variant="ghost"
+                        size="sm"
+                        className="h-7 text-xs text-muted-foreground"
+                        onClick={() => navigate(`/sales/${existing!.id}/payments/${savedPayments[idx].id}/receipt`)}
+                      >
+                        <FileText className="mr-1.5 h-3.5 w-3.5" />
+                        Aperçu reçu
+                      </Button>
+                    </div>
+                  )}
                 </div>
               ))}
             </div>

@@ -1,5 +1,6 @@
 import { useQuery } from '@tanstack/react-query'
 import { supabase } from '@/lib/supabase'
+import type { ClientPayment } from '@/types'
 
 export interface ClientPaymentRow {
   id: string
@@ -41,4 +42,20 @@ export const useAllClientPayments = () =>
         } as ClientPaymentRow
       })
     },
+  })
+
+export const useClientPayment = (paymentId: string | null | undefined) =>
+  useQuery({
+    queryKey: ['client-payment', paymentId],
+    queryFn: async () => {
+      if (!paymentId) return null
+      const { data, error } = await supabase
+        .from('client_payments')
+        .select('*')
+        .eq('id', paymentId)
+        .single()
+      if (error) throw error
+      return data as ClientPayment
+    },
+    enabled: Boolean(paymentId),
   })
