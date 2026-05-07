@@ -18,7 +18,6 @@ export const SaleEditPage = () => {
       id: id!,
       ...values,
     })
-    navigate('/sales')
   }
 
   if (isLoading) {

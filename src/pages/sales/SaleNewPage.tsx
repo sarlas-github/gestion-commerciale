@@ -10,7 +10,7 @@ export const SaleNewPage = () => {
   const createSale = useCreateSale()
 
   const handleSubmit = async (values: SaleFormValues) => {
-    await createSale.mutateAsync({
+    const sale = await createSale.mutateAsync({
       client_id: values.client_id,
       date: values.date,
       reference: values.reference ?? '',
@@ -26,9 +26,10 @@ export const SaleNewPage = () => {
         date: p.date,
         amount: Number(p.amount),
         note: p.note ?? '',
+        methode_paiement: p.methode_paiement ?? '',
       })),
     })
-    navigate('/sales')
+    navigate(`/sales/${sale.id}/edit`)
   }
 
   return (
