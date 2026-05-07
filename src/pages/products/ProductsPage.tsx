@@ -1,7 +1,7 @@
 import { useMemo, useState } from 'react'
 import { useNavigate } from 'react-router-dom'
 import { type ColumnDef } from '@tanstack/react-table'
-import { Pencil, Package2, Trash2, Plus, ChevronDown, Check } from 'lucide-react'
+import { Pencil, Package2, Trash2, Plus, ChevronDown, Check, AlertTriangle } from 'lucide-react'
 import { Button } from '@/components/ui/button'
 import { Badge } from '@/components/ui/badge'
 import { Popover, PopoverContent, PopoverTrigger } from '@/components/ui/popover'
@@ -9,7 +9,7 @@ import { DataTable } from '@/components/shared/DataTable'
 import { PageHeader } from '@/components/shared/PageHeader'
 import { ConfirmDialog } from '@/components/shared/ConfirmDialog'
 import { StockAdjustModal } from '@/features/products/StockAdjustModal'
-import { useProducts, useDeleteProduct } from '@/hooks/useProducts'
+import { useProducts, useDeleteProduct, useStockAlertCount } from '@/hooks/useProducts'
 import type { ProductWithStock } from '@/types'
 import { cn } from '@/lib/utils'
 import { usePageAction } from '@/contexts/PageContext'
@@ -41,6 +41,7 @@ export const ProductsPage = () => {
   const navigate = useNavigate()
   const { data: products = [], isLoading } = useProducts()
   const deleteProduct = useDeleteProduct()
+  const { data: alertCount = 0 } = useStockAlertCount()
 
   const [adjustProduct, setAdjustProduct] = useState<ProductWithStock | null>(null)
   const [deleteId, setDeleteId] = useState<string | null>(null)
@@ -48,6 +49,13 @@ export const ProductsPage = () => {
 
   const toggleStatus = (v: string) =>
     setFilterStatuses(prev => prev.includes(v) ? prev.filter(s => s !== v) : [...prev, v])
+
+  const ALERT_STATUSES = ['rupture', 'faible']
+  const isAlertFilterActive =
+    ALERT_STATUSES.every(v => filterStatuses.includes(v)) && filterStatuses.length === ALERT_STATUSES.length
+
+  const handleFilterAlerts = () =>
+    setFilterStatuses(isAlertFilterActive ? [] : ALERT_STATUSES)
 
   const deleteTarget = products.find(p => p.id === deleteId)
 
@@ -148,6 +156,33 @@ export const ProductsPage = () => {
   return (
     <div className="space-y-4">
       <PageHeader title="Produits" subtitle={`${products.length} produit${products.length !== 1 ? 's' : ''}`} />
+
+      {alertCount > 0 && (
+        <button
+          onClick={handleFilterAlerts}
+          className={cn(
+            'w-full text-left rounded-lg border px-3 py-2.5 text-sm font-medium',
+            'flex items-center gap-2.5 transition-all duration-150 group',
+            'focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-red-300 focus-visible:ring-offset-1',
+            isAlertFilterActive
+              ? 'bg-red-100 border-red-400 text-red-900'
+              : 'bg-red-50 border-red-200 text-red-800 hover:bg-red-100 hover:border-red-300'
+          )}
+        >
+          <AlertTriangle className="h-4 w-4 shrink-0 text-red-500" />
+          <span className="flex-1">
+            {alertCount} produit{alertCount > 1 ? 's' : ''} actuellement en alerte de stock
+          </span>
+          <span className={cn(
+            'text-xs px-2 py-0.5 rounded-full font-medium shrink-0 transition-colors',
+            isAlertFilterActive
+              ? 'bg-red-700 text-white'
+              : 'bg-red-100 text-red-600 group-hover:bg-red-200'
+          )}>
+            {isAlertFilterActive ? '✓ Filtré' : 'Filtrer'}
+          </span>
+        </button>
+      )}
 
       {/* Filtres */}
       <div className="flex flex-wrap gap-3">
