@@ -1,24 +1,31 @@
 import { useMemo, useState } from 'react'
 import { useNavigate } from 'react-router-dom'
 import { type ColumnDef } from '@tanstack/react-table'
-import { Pencil, Trash2, Plus, Link2, FileText } from 'lucide-react'
+import { Pencil, Trash2, Plus, Link2, FileText, ChevronDown, Check } from 'lucide-react'
 import { DataTable } from '@/components/shared/DataTable'
 import { PageHeader } from '@/components/shared/PageHeader'
 import { ConfirmDialog } from '@/components/shared/ConfirmDialog'
 import { Button } from '@/components/ui/button'
 import { Badge } from '@/components/ui/badge'
+import { Popover, PopoverContent, PopoverTrigger } from '@/components/ui/popover'
 import { useSales, useDeleteSale } from '@/hooks/useSales'
 import { SaleQuickViewModal } from '@/features/sales/SaleQuickViewModal'
 import { usePageAction } from '@/contexts/PageContext'
 
-import { formatCurrency, formatDate } from '@/lib/utils'
+import { formatCurrency, formatDate, cn } from '@/lib/utils'
 import type { Sale } from '@/types'
 
 const StatusBadge = ({ status }: { status: string }) => {
-  if (status === 'paid') return <Badge className="bg-green-100 text-green-800 hover:bg-green-100">🟢 Payé</Badge>
+  if (status === 'paid')    return <Badge className="bg-green-100 text-green-800 hover:bg-green-100">🟢 Payé</Badge>
   if (status === 'partial') return <Badge className="bg-orange-100 text-orange-800 hover:bg-orange-100">🟡 Partiel</Badge>
   return <Badge className="bg-red-100 text-red-800 hover:bg-red-100">🔴 Impayé</Badge>
 }
+
+const STATUS_OPTIONS = [
+  { value: 'unpaid',  label: 'Impayé',  emoji: '🔴', badge: 'bg-red-100 text-red-800'    },
+  { value: 'partial', label: 'Partiel', emoji: '🟡', badge: 'bg-orange-100 text-orange-800' },
+  { value: 'paid',    label: 'Payé',    emoji: '🟢', badge: 'bg-green-100 text-green-800' },
+] as const
 
 const MONTHS_FR = [
   'Janvier', 'Février', 'Mars', 'Avril', 'Mai', 'Juin',
@@ -50,7 +57,9 @@ export const SalesPage = () => {
   const now = new Date()
   const [filterMonth, setFilterMonth] = useState<string>(String(now.getMonth() + 1))
   const [filterYear, setFilterYear] = useState<string>(String(now.getFullYear()))
-  const [filterStatus, setFilterStatus] = useState<string>('')
+  const [filterStatuses, setFilterStatuses] = useState<string[]>([])
+  const toggleStatus = (v: string) =>
+    setFilterStatuses(prev => prev.includes(v) ? prev.filter(s => s !== v) : [...prev, v])
 
   const years = useMemo(() => {
     const set = new Set(sales.map(s => new Date(s.date).getFullYear()))
@@ -63,10 +72,10 @@ export const SalesPage = () => {
       const d = new Date(s.date)
       if (filterYear && d.getFullYear() !== Number(filterYear)) return false
       if (filterMonth && d.getMonth() + 1 !== Number(filterMonth)) return false
-      if (filterStatus && s.status !== filterStatus) return false
+      if (filterStatuses.length > 0 && !filterStatuses.includes(s.status)) return false
       return true
     })
-  }, [sales, filterYear, filterMonth, filterStatus])
+  }, [sales, filterYear, filterMonth, filterStatuses])
 
   const columns = useMemo<ColumnDef<Sale>[]>(
     () => [
@@ -199,18 +208,81 @@ export const SalesPage = () => {
             <option key={i + 1} value={i + 1}>{m}</option>
           ))}
         </select>
-        <div className="sm:ml-auto flex items-center gap-2">
+        {/* Mobile — Filter Chips */}
+        <div className="flex sm:hidden items-center gap-2 overflow-x-auto pb-1 [scrollbar-width:none] [&::-webkit-scrollbar]:hidden">
+          <span className="text-sm text-muted-foreground shrink-0">Statut :</span>
+          {STATUS_OPTIONS.map(s => (
+            <button
+              key={s.value}
+              onClick={() => toggleStatus(s.value)}
+              className={cn(
+                'h-8 px-3 rounded-full text-sm font-medium border-2 shrink-0 transition-all flex items-center gap-1.5',
+                s.badge,
+                filterStatuses.includes(s.value)
+                  ? 'border-current'
+                  : 'border-transparent opacity-55 hover:opacity-80'
+              )}
+            >
+              {s.emoji}
+              {s.label}
+            </button>
+          ))}
+        </div>
+
+        {/* Desktop — Popover multi-select */}
+        <div className="hidden sm:flex items-center gap-2 sm:ml-auto">
           <span className="text-sm text-muted-foreground">Statut :</span>
-          <select
-            className="h-9 rounded-md border border-input bg-card pl-3 pr-8 py-1.5 text-sm focus-visible:outline-none focus-visible:ring-1 focus-visible:ring-ring cursor-pointer shadow-sm appearance-none"
-            value={filterStatus}
-            onChange={e => setFilterStatus(e.target.value)}
-          >
-            <option value="">Tous les statuts</option>
-            <option value="unpaid">Impayé</option>
-            <option value="partial">Partiel</option>
-            <option value="paid">Payé</option>
-          </select>
+          <Popover>
+            <PopoverTrigger className="h-9 min-w-[140px] rounded-md border border-input bg-card pl-3 pr-2.5 py-1.5 text-sm flex items-center justify-between gap-2 shadow-sm hover:bg-accent">
+              <span>
+                {filterStatuses.length === 0
+                  ? 'Tous les statuts'
+                  : filterStatuses.length === 1
+                    ? STATUS_OPTIONS.find(s => s.value === filterStatuses[0])?.label
+                    : `${filterStatuses.length} statuts`}
+              </span>
+              <ChevronDown className="h-4 w-4 text-muted-foreground shrink-0" />
+            </PopoverTrigger>
+            <PopoverContent align="end" className="w-48 p-1.5">
+              <button
+                onClick={() =>
+                  filterStatuses.length === STATUS_OPTIONS.length
+                    ? setFilterStatuses([])
+                    : setFilterStatuses(STATUS_OPTIONS.map(s => s.value) as unknown as string[])
+                }
+                className="flex w-full items-center gap-2 rounded px-2 py-1.5 text-sm hover:bg-accent border-b border-border mb-1 pb-2"
+              >
+                <div className={cn(
+                  'flex h-4 w-4 items-center justify-center rounded border shrink-0',
+                  filterStatuses.length === STATUS_OPTIONS.length
+                    ? 'bg-primary border-primary'
+                    : filterStatuses.length > 0 ? 'border-primary' : 'border-input'
+                )}>
+                  {filterStatuses.length === STATUS_OPTIONS.length && <Check className="h-3 w-3 text-primary-foreground" />}
+                  {filterStatuses.length > 0 && filterStatuses.length < STATUS_OPTIONS.length && (
+                    <span className="h-0.5 w-2.5 bg-primary rounded-full" />
+                  )}
+                </div>
+                <span className="text-muted-foreground">Tout sélectionner</span>
+              </button>
+              {STATUS_OPTIONS.map(s => (
+                <button
+                  key={s.value}
+                  onClick={() => toggleStatus(s.value)}
+                  className="flex w-full items-center gap-2 rounded px-2 py-1.5 text-sm hover:bg-accent"
+                >
+                  <div className={cn(
+                    'flex h-4 w-4 items-center justify-center rounded border shrink-0',
+                    filterStatuses.includes(s.value) ? 'bg-primary border-primary' : 'border-input'
+                  )}>
+                    {filterStatuses.includes(s.value) && <Check className="h-3 w-3 text-primary-foreground" />}
+                  </div>
+                  {s.emoji}
+                  {s.label}
+                </button>
+              ))}
+            </PopoverContent>
+          </Popover>
         </div>
       </div>
 

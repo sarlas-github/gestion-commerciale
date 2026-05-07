@@ -1,8 +1,10 @@
 import { useState } from 'react'
 import { useNavigate } from 'react-router-dom'
 import {
-  Loader2, Banknote, ShoppingCart, TrendingUp, Package, Wallet, Activity, Scale
+  Loader2, Banknote, ShoppingCart, TrendingUp, Package, Wallet, Activity, Scale,
+  ChevronDown, ChevronUp
 } from 'lucide-react'
+import { Button } from '@/components/ui/button'
 import {
   ResponsiveContainer,
   AreaChart, Area, CartesianGrid, XAxis, YAxis,
@@ -128,6 +130,7 @@ export const Dashboard = () => {
   const now = new Date()
   const [year, setYear] = useState(now.getFullYear())
   const [month, setMonth] = useState(now.getMonth() + 1) // 0 = toute l'année
+  const [showDetails, setShowDetails] = useState(false)
   const chartColors = useChartColors()
 
   const { data: availableYears = [now.getFullYear()] } = useAvailableYears('sales')
@@ -179,21 +182,67 @@ export const Dashboard = () => {
       ) : (
         <>
           {/* ── KPIs ── */}
-          <div className="grid grid-cols-2 lg:grid-cols-3 gap-3 sm:gap-4 mb-8">
-            {/* Ligne 1 : Ventes */}
-            <KPICard label="CA Ventes" value={formatCurrency(data?.ca ?? 0)} sub={`Total facturé ${periodSub}`} icon={Banknote} color="blue" />
-            <KPICard label="Encaissé" value={formatCurrency(data?.encaisse ?? 0)} sub={`Reçu des clients ${periodSub}`} color="green" icon={TrendingUp} />
-            <KPICard label="À recevoir" value={formatCurrency(data?.aRecevoir ?? 0)} sub="Impayés clients" color={(data?.aRecevoir ?? 0) > 0 ? 'red' : 'green'} icon={Activity} />
+          <div className="space-y-4 mb-8">
+            {/* Résumé (Performance) - Toujours visible */}
+            <div className="grid grid-cols-2 lg:grid-cols-3 gap-3 sm:gap-4">
+              <KPICard
+                label="Marge brute"
+                value={formatCurrency(data?.marge ?? 0)}
+                sub={`CA − Achats ${periodSub}`}
+                color={(data?.marge ?? 0) < 0 ? 'red' : (data?.marge ?? 0) > 0 ? 'green' : undefined}
+                icon={TrendingUp}
+              />
+              <KPICard
+                label="Trésorerie"
+                value={formatCurrency((data?.encaisse ?? 0) - (data?.decaisse ?? 0))}
+                sub={`Encaissé − Décaissé ${periodSub}`}
+                color={((data?.encaisse ?? 0) - (data?.decaisse ?? 0)) < 0 ? 'red' : ((data?.encaisse ?? 0) - (data?.decaisse ?? 0)) > 0 ? 'green' : undefined}
+                icon={Scale}
+              />
+              <KPICard
+                label="Volume ventes"
+                value={String(data?.nbVentes ?? 0)}
+                sub={`Factures ${periodSub}`}
+                icon={Package}
+              />
+            </div>
 
-            {/* Ligne 2 : Achats */}
-            <KPICard label="Total Achats" value={formatCurrency(data?.totalAchats ?? 0)} sub={`Dépenses engagées ${periodSub}`} icon={ShoppingCart} color="purple" />
-            <KPICard label="Décaissé" value={formatCurrency(data?.decaisse ?? 0)} sub={`Payé aux fournisseurs ${periodSub}`} color="green" icon={Wallet} />
-            <KPICard label="À payer" value={formatCurrency(data?.aPayer ?? 0)} sub="Dettes fournisseurs" color={(data?.aPayer ?? 0) > 0 ? 'red' : 'green'} icon={Activity} />
+            {/* Bouton pour basculer les détails */}
+            <div className="flex justify-center">
+              <Button
+                variant="ghost"
+                size="sm"
+                className="text-xs text-muted-foreground hover:text-foreground transition-all"
+                onClick={() => setShowDetails(!showDetails)}
+              >
+                {showDetails ? (
+                  <>
+                    <ChevronUp className="h-4 w-4 mr-2" />
+                    Masquer les détails de calcul
+                  </>
+                ) : (
+                  <>
+                    <ChevronDown className="h-4 w-4 mr-2" />
+                    Voir les détails de calcul
+                  </>
+                )}
+              </Button>
+            </div>
 
-            {/* Ligne 3 : Performance */}
-            <KPICard label="Marge brute" value={formatCurrency(data?.marge ?? 0)} sub={`CA − Achats ${periodSub}`} color={(data?.marge ?? 0) < 0 ? 'red' : (data?.marge ?? 0) > 0 ? 'green' : undefined} icon={TrendingUp} />
-            <KPICard label="Trésorerie" value={formatCurrency((data?.encaisse ?? 0) - (data?.decaisse ?? 0))} sub={`Encaissé − Décaissé ${periodSub}`} color={((data?.encaisse ?? 0) - (data?.decaisse ?? 0)) < 0 ? 'red' : ((data?.encaisse ?? 0) - (data?.decaisse ?? 0)) > 0 ? 'green' : undefined} icon={Scale} />
-            <KPICard label="Volume ventes" value={String(data?.nbVentes ?? 0)} sub={`Factures ${periodSub}`} icon={Package} />
+            {/* Détails (Ventes + Achats) - Collapsible */}
+            {showDetails && (
+              <div className="grid grid-cols-2 lg:grid-cols-3 gap-3 sm:gap-4 animate-in fade-in slide-in-from-top-2 duration-300">
+                {/* Ventes */}
+                <KPICard label="CA Ventes" value={formatCurrency(data?.ca ?? 0)} sub={`Total facturé ${periodSub}`} icon={Banknote} color="blue" />
+                <KPICard label="Encaissé" value={formatCurrency(data?.encaisse ?? 0)} sub={`Reçu des clients ${periodSub}`} color="green" icon={TrendingUp} />
+                <KPICard label="À recevoir" value={formatCurrency(data?.aRecevoir ?? 0)} sub="Impayés clients" color={(data?.aRecevoir ?? 0) > 0 ? 'red' : 'green'} icon={Activity} />
+
+                {/* Achats */}
+                <KPICard label="Total Achats" value={formatCurrency(data?.totalAchats ?? 0)} sub={`Dépenses engagées ${periodSub}`} icon={ShoppingCart} color="purple" />
+                <KPICard label="Décaissé" value={formatCurrency(data?.decaisse ?? 0)} sub={`Payé aux fournisseurs ${periodSub}`} color="green" icon={Wallet} />
+                <KPICard label="À payer" value={formatCurrency(data?.aPayer ?? 0)} sub="Dettes fournisseurs" color={(data?.aPayer ?? 0) > 0 ? 'red' : 'green'} icon={Activity} />
+              </div>
+            )}
           </div>
 
           {/* ── Alertes stock ── */}

@@ -188,3 +188,14 @@ export interface SupplierWithStats extends Supplier {
   totalDu: number
   paymentStatus: 'ok' | 'partial' | 'unpaid'
 }
+
+export const useUnpaidSuppliersCount = () =>
+  useQuery({
+    queryKey: ['unpaid-suppliers-count'],
+    staleTime: 2 * 60 * 1000,
+    queryFn: async () => {
+      const { data, error } = await supabase.rpc('get_unpaid_suppliers_count')
+      if (error) throw error
+      return (data as number) ?? 0
+    },
+  })

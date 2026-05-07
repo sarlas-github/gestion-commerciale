@@ -1,8 +1,10 @@
-import { useState } from 'react'
+import { useMemo, useState } from 'react'
 import { useNavigate } from 'react-router-dom'
 import { type ColumnDef } from '@tanstack/react-table'
-import { Pencil, Package2, Trash2, Plus } from 'lucide-react'
+import { Pencil, Package2, Trash2, Plus, ChevronDown, Check } from 'lucide-react'
 import { Button } from '@/components/ui/button'
+import { Badge } from '@/components/ui/badge'
+import { Popover, PopoverContent, PopoverTrigger } from '@/components/ui/popover'
 import { DataTable } from '@/components/shared/DataTable'
 import { PageHeader } from '@/components/shared/PageHeader'
 import { ConfirmDialog } from '@/components/shared/ConfirmDialog'
@@ -12,9 +14,21 @@ import type { ProductWithStock } from '@/types'
 import { cn } from '@/lib/utils'
 import { usePageAction } from '@/contexts/PageContext'
 
+const STOCK_STATUS_OPTIONS = [
+  { value: 'rupture', label: 'Rupture',  emoji: '🔴', badge: 'bg-red-100 text-red-800'    },
+  { value: 'faible',  label: 'Faible',   emoji: '🟡', badge: 'bg-orange-100 text-orange-800' },
+  { value: 'ok',      label: 'En stock', emoji: '🟢', badge: 'bg-green-100 text-green-800' },
+] as const
+
+const StockStatusBadge = ({ status }: { status: string }) => {
+  if (status === 'ok')     return <Badge className="bg-green-100 text-green-800 hover:bg-green-100">🟢 En stock</Badge>
+  if (status === 'faible') return <Badge className="bg-orange-100 text-orange-800 hover:bg-orange-100">🟡 Faible</Badge>
+  return <Badge className="bg-red-100 text-red-800 hover:bg-red-100">🔴 Rupture</Badge>
+}
+
 const STOCK_COLORS: Record<string, string> = {
-  ok: 'text-green-600 font-medium',
-  faible: 'text-orange-500 font-medium',
+  ok:      'text-green-600 font-medium',
+  faible:  'text-orange-500 font-medium',
   rupture: 'text-destructive font-medium',
 }
 
@@ -30,8 +44,19 @@ export const ProductsPage = () => {
 
   const [adjustProduct, setAdjustProduct] = useState<ProductWithStock | null>(null)
   const [deleteId, setDeleteId] = useState<string | null>(null)
+  const [filterStatuses, setFilterStatuses] = useState<string[]>([])
+
+  const toggleStatus = (v: string) =>
+    setFilterStatuses(prev => prev.includes(v) ? prev.filter(s => s !== v) : [...prev, v])
 
   const deleteTarget = products.find(p => p.id === deleteId)
+
+  const filtered = useMemo(
+    () => filterStatuses.length === 0
+      ? products
+      : products.filter(p => filterStatuses.includes(p.stockStatus)),
+    [products, filterStatuses]
+  )
 
   usePageAction(
     <Button onClick={() => navigate('/products/new')}>
@@ -72,6 +97,11 @@ export const ProductsPage = () => {
     {
       accessorKey: 'stock_alert',
       header: 'Seuil',
+    },
+    {
+      id: 'stockStatus',
+      header: 'Statut',
+      cell: ({ row }) => <StockStatusBadge status={row.original.stockStatus} />,
     },
     {
       id: 'actions',
@@ -116,12 +146,98 @@ export const ProductsPage = () => {
   }
 
   return (
-    <div>
+    <div className="space-y-4">
       <PageHeader title="Produits" subtitle={`${products.length} produit${products.length !== 1 ? 's' : ''}`} />
+
+      {/* Filtres */}
+      <div className="flex flex-wrap gap-3">
+        {/* Mobile — Filter Chips */}
+        <div className="flex sm:hidden items-center gap-2 overflow-x-auto pb-1 [scrollbar-width:none] [&::-webkit-scrollbar]:hidden">
+          <span className="text-sm text-muted-foreground shrink-0">Statut :</span>
+          {STOCK_STATUS_OPTIONS.map(s => (
+            <button
+              key={s.value}
+              onClick={() => toggleStatus(s.value)}
+              className={cn(
+                'h-8 px-3 rounded-full text-sm font-medium border-2 shrink-0 transition-all flex items-center gap-1.5',
+                s.badge,
+                filterStatuses.includes(s.value)
+                  ? 'border-current'
+                  : 'border-transparent opacity-55 hover:opacity-80'
+              )}
+            >
+              {s.emoji}
+              {s.label}
+            </button>
+          ))}
+        </div>
+
+        {/* Desktop — Popover multi-select */}
+        <div className="hidden sm:flex items-center gap-2 sm:ml-auto">
+          <span className="text-sm text-muted-foreground">Statut stock :</span>
+          <Popover>
+            <PopoverTrigger className="h-9 min-w-[140px] rounded-md border border-input bg-card pl-3 pr-2.5 py-1.5 text-sm flex items-center justify-between gap-2 shadow-sm hover:bg-accent">
+              <span>
+                {filterStatuses.length === 0
+                  ? 'Tous les statuts'
+                  : filterStatuses.length === 1
+                    ? STOCK_STATUS_OPTIONS.find(s => s.value === filterStatuses[0])?.label
+                    : `${filterStatuses.length} statuts`}
+              </span>
+              <ChevronDown className="h-4 w-4 text-muted-foreground shrink-0" />
+            </PopoverTrigger>
+            <PopoverContent align="end" className="w-48 p-1.5">
+              {/* Ligne "Tout" */}
+              <button
+                onClick={() =>
+                  filterStatuses.length === STOCK_STATUS_OPTIONS.length
+                    ? setFilterStatuses([])
+                    : setFilterStatuses(STOCK_STATUS_OPTIONS.map(s => s.value) as unknown as string[])
+                }
+                className="flex w-full items-center gap-2 rounded px-2 py-1.5 text-sm hover:bg-accent border-b border-border mb-1 pb-2"
+              >
+                <div className={cn(
+                  'flex h-4 w-4 items-center justify-center rounded border shrink-0',
+                  filterStatuses.length === STOCK_STATUS_OPTIONS.length
+                    ? 'bg-primary border-primary'
+                    : filterStatuses.length > 0
+                      ? 'border-primary'
+                      : 'border-input'
+                )}>
+                  {filterStatuses.length === STOCK_STATUS_OPTIONS.length && (
+                    <Check className="h-3 w-3 text-primary-foreground" />
+                  )}
+                  {filterStatuses.length > 0 && filterStatuses.length < STOCK_STATUS_OPTIONS.length && (
+                    <span className="h-0.5 w-2.5 bg-primary rounded-full" />
+                  )}
+                </div>
+                <span className="text-muted-foreground">Tout sélectionner</span>
+              </button>
+
+              {STOCK_STATUS_OPTIONS.map(s => (
+                <button
+                  key={s.value}
+                  onClick={() => toggleStatus(s.value)}
+                  className="flex w-full items-center gap-2 rounded px-2 py-1.5 text-sm hover:bg-accent"
+                >
+                  <div className={cn(
+                    'flex h-4 w-4 items-center justify-center rounded border shrink-0',
+                    filterStatuses.includes(s.value) ? 'bg-primary border-primary' : 'border-input'
+                  )}>
+                    {filterStatuses.includes(s.value) && <Check className="h-3 w-3 text-primary-foreground" />}
+                  </div>
+                  {s.emoji}
+                  {s.label}
+                </button>
+              ))}
+            </PopoverContent>
+          </Popover>
+        </div>
+      </div>
 
       <DataTable
         columns={columns}
-        data={products}
+        data={filtered}
         isLoading={isLoading}
         searchPlaceholder="Rechercher un produit..."
         exportFileName="produits"
@@ -131,7 +247,7 @@ export const ProductsPage = () => {
           Pièces: p.pieces_count,
           Stock: p.stock?.quantity ?? 0,
           'Seuil alerte': p.stock_alert,
-          Statut: p.stockStatus,
+          Statut: p.stockStatus === 'ok' ? 'En stock' : p.stockStatus === 'faible' ? 'Faible' : 'Rupture',
         })}
       />
 
@@ -153,8 +269,3 @@ export const ProductsPage = () => {
     </div>
   )
 }
-
-
-
-
-

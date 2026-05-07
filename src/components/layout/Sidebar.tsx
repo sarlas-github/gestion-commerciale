@@ -23,6 +23,8 @@ import {
 import { cn } from '@/lib/utils'
 import { useAuth } from '@/hooks/useAuth'
 import { useStockAlertCount } from '@/hooks/useProducts'
+import { useUnpaidSuppliersCount } from '@/hooks/useSuppliers'
+import { useUnpaidClientsCount } from '@/hooks/useClients'
 import { useCompany } from '@/hooks/useCompany'
 import { useQueryClient } from '@tanstack/react-query'
 import { Button } from '@/components/ui/button'
@@ -101,6 +103,8 @@ export const Sidebar = ({ onClose, collapsed = false, onToggleCollapse }: Sideba
   const navigate = useNavigate()
   const { signOut } = useAuth()
   const { data: alertCount = 0 } = useStockAlertCount()
+  const { data: unpaidSuppliers = 0 } = useUnpaidSuppliersCount()
+  const { data: unpaidClients = 0 } = useUnpaidClientsCount()
   const { data: company, isLoading: isCompanyLoading } = useCompany()
   const queryClient = useQueryClient()
   const [expandedItems, setExpandedItems] = useState<string[]>(['Paiements', 'États'])
@@ -244,7 +248,11 @@ export const Sidebar = ({ onClose, collapsed = false, onToggleCollapse }: Sideba
                   item={
                     item.href === '/products' && alertCount > 0
                       ? { ...item, badge: alertCount }
-                      : item
+                      : item.href === '/suppliers' && unpaidSuppliers > 0
+                        ? { ...item, badge: unpaidSuppliers }
+                        : item.href === '/clients' && unpaidClients > 0
+                          ? { ...item, badge: unpaidClients }
+                          : item
                   }
                 />
               ))}

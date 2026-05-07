@@ -186,3 +186,14 @@ export const useDeleteClient = () => {
     },
   })
 }
+
+export const useUnpaidClientsCount = () =>
+  useQuery({
+    queryKey: ['unpaid-clients-count'],
+    staleTime: 2 * 60 * 1000,
+    queryFn: async () => {
+      const { data, error } = await supabase.rpc('get_unpaid_clients_count')
+      if (error) throw error
+      return (data as number) ?? 0
+    },
+  })
