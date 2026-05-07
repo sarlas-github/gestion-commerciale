@@ -7,6 +7,7 @@ import {
   getPaginationRowModel,
   type ColumnDef,
   type SortingState,
+  type FilterFn,
   flexRender,
 } from '@tanstack/react-table'
 import * as XLSX from 'xlsx'
@@ -16,6 +17,30 @@ import { Input } from '@/components/ui/input'
 import { Table, TableBody, TableCell, TableFooter, TableHead, TableHeader, TableRow } from '@/components/ui/table'
 import { Skeleton } from '@/components/ui/skeleton'
 import { DEFAULT_PAGE_SIZE } from '@/lib/utils'
+
+const STATUS_LABELS: Record<string, string> = {
+  paid: 'payé',
+  unpaid: 'impayé',
+  partial: 'partiel',
+  ok: 'en stock',
+  rupture: 'rupture',
+  faible: 'faible',
+}
+
+// eslint-disable-next-line @typescript-eslint/no-explicit-any
+const rowGlobalFilter: FilterFn<any> = (row, _columnId, filterValue) => {
+  const search = String(filterValue).toLowerCase()
+  const check = (val: unknown): boolean => {
+    if (val == null) return false
+    if (typeof val === 'object') return Object.values(val as Record<string, unknown>).some(check)
+    const str = String(val).toLowerCase()
+    if (str.includes(search)) return true
+    const label = STATUS_LABELS[str]
+    return label ? label.includes(search) : false
+  }
+  return check(row.original)
+}
+rowGlobalFilter.autoRemove = (val: unknown) => !val
 
 interface DataTableProps<TData> {
   columns: ColumnDef<TData>[]
@@ -51,6 +76,7 @@ export function DataTable<TData>({
     state: { sorting, globalFilter },
     onSortingChange: setSorting,
     onGlobalFilterChange: setGlobalFilter,
+    globalFilterFn: rowGlobalFilter,
     getCoreRowModel: getCoreRowModel(),
     getSortedRowModel: getSortedRowModel(),
     getFilteredRowModel: getFilteredRowModel(),
