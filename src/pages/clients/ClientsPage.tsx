@@ -43,12 +43,7 @@ export const ClientsPage = () => {
   const handleFilterAlerts = () =>
     setFilterStatuses(isAlertFilterActive ? [] : ALERT_STATUSES)
 
-  const statusCounts = useMemo(
-    () => Object.fromEntries(
-      STATUS_OPTIONS.map(s => [s.value, clients.filter(x => x.paymentStatus === s.value).length])
-    ) as Record<string, number>,
-    [clients]
-  )
+
 
   const filtered = useMemo(
     () => filterStatuses.length === 0
@@ -138,7 +133,7 @@ export const ClientsPage = () => {
         >
           <AlertTriangle className="h-4 w-4 shrink-0 text-red-500" />
           <span className="flex-1">
-            {alertCount} client{alertCount > 1 ? 's' : ''} avec des impayés ou paiements partiels
+            {alertCount} client{alertCount > 1 ? 's' : ''} avec des impayés
           </span>
           <span className={cn(
             'text-xs px-2 py-0.5 rounded-full font-medium shrink-0 transition-colors',
@@ -155,7 +150,8 @@ export const ClientsPage = () => {
       <div className="flex flex-wrap gap-3">
         {/* Mobile — Filter Chips */}
         <div className="flex sm:hidden items-center gap-2 overflow-x-auto pb-1 [scrollbar-width:none] [&::-webkit-scrollbar]:hidden">
-          <span className="text-sm text-muted-foreground shrink-0">Statut :</span>
+          {/* Label masqué sur mobile */}
+          <span className="text-sm text-muted-foreground shrink-0 hidden sm:inline">Statut :</span>
           {STATUS_OPTIONS.map(s => (
             <button
               key={s.value}
@@ -170,9 +166,6 @@ export const ClientsPage = () => {
             >
               {s.emoji}
               {s.label}
-              {statusCounts[s.value] > 0 && (
-                <span className="text-xs font-semibold tabular-nums">{statusCounts[s.value]}</span>
-              )}
             </button>
           ))}
         </div>
@@ -242,7 +235,6 @@ export const ClientsPage = () => {
         columns={columns}
         data={filtered}
         isLoading={isLoading}
-        searchPlaceholder="Rechercher un client..."
         exportFileName="clients"
         exportMapper={c => ({
           Nom: c.name,

@@ -107,7 +107,7 @@ export const ProductsPage = () => {
       header: 'Seuil',
     },
     {
-      id: 'stockStatus',
+      accessorKey: 'stockStatus',
       header: 'Statut',
       cell: ({ row }) => <StockStatusBadge status={row.original.stockStatus} />,
     },
@@ -170,8 +170,8 @@ export const ProductsPage = () => {
           )}
         >
           <AlertTriangle className="h-4 w-4 shrink-0 text-red-500" />
-          <span className="flex-1">
-            {alertCount} produit{alertCount > 1 ? 's' : ''} actuellement en alerte de stock
+          <span className="flex-1 truncate">
+            {alertCount} produit{alertCount > 1 ? 's' : ''} en alerte
           </span>
           <span className={cn(
             'text-xs px-2 py-0.5 rounded-full font-medium shrink-0 transition-colors',
@@ -188,7 +188,7 @@ export const ProductsPage = () => {
       <div className="flex flex-wrap gap-3">
         {/* Mobile — Filter Chips */}
         <div className="flex sm:hidden items-center gap-2 overflow-x-auto pb-1 [scrollbar-width:none] [&::-webkit-scrollbar]:hidden">
-          <span className="text-sm text-muted-foreground shrink-0">Statut :</span>
+          <span className="text-sm text-muted-foreground shrink-0 hidden sm:block">Statut :</span>
           {STOCK_STATUS_OPTIONS.map(s => (
             <button
               key={s.value}
@@ -274,7 +274,6 @@ export const ProductsPage = () => {
         columns={columns}
         data={filtered}
         isLoading={isLoading}
-        searchPlaceholder="Rechercher un produit..."
         exportFileName="produits"
         exportMapper={p => ({
           Nom: p.name,

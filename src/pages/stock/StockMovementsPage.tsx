@@ -17,7 +17,6 @@ import { formatDate } from '@/lib/utils'
 const TYPE_CONFIG = {
   in:     { label: 'IN',     className: 'bg-green-100 text-green-700 dark:bg-green-900/30 dark:text-green-400' },
   out:    { label: 'OUT',    className: 'bg-red-100 text-red-700 dark:bg-red-900/30 dark:text-red-400' },
-  adjust: { label: 'ADJUST', className: 'bg-blue-100 text-blue-700 dark:bg-blue-900/30 dark:text-blue-400' },
 } as const
 
 const MONTHS = [
@@ -66,10 +65,11 @@ export const StockMovementsPage = () => {
       accessorKey: 'type',
       header: 'Type',
       cell: ({ row }) => {
-        const cfg = TYPE_CONFIG[row.original.type]
+        const type = row.original.type as 'in' | 'out'
+        const cfg = TYPE_CONFIG[type]
         return (
-          <span className={`inline-flex rounded-full px-2 py-0.5 text-xs font-medium ${cfg?.className}`}>
-            {cfg?.label ?? row.original.type.toUpperCase()}
+          <span className={`inline-flex rounded-full px-2 py-0.5 text-xs font-medium ${cfg?.className ?? 'bg-muted text-muted-foreground'}`}>
+            {cfg?.label ?? type.toUpperCase()}
           </span>
         )
       },
@@ -165,18 +165,17 @@ export const StockMovementsPage = () => {
 
         {/* Filtre Type */}
         <div className="sm:ml-auto flex items-center gap-2">
-          <span className="text-sm text-muted-foreground">Type :</span>
+          <span className="text-sm text-muted-foreground hidden sm:inline">Type :</span>
           <Select value={typeFilter} onValueChange={v => setTypeFilter(v ?? 'all')}>
             <SelectTrigger size="sm" className="w-40">
               <span className="flex-1 text-left">
-                {typeFilter === 'all' ? 'Tous les types' : typeFilter === 'in' ? 'IN 🟢' : typeFilter === 'out' ? 'OUT 🔴' : 'ADJUST 🔵'}
+                {typeFilter === 'all' ? 'Tous les types' : typeFilter === 'in' ? 'IN 🟢' : 'OUT 🔴'}
               </span>
             </SelectTrigger>
             <SelectContent>
               <SelectItem value="all">Tous les types</SelectItem>
               <SelectItem value="in">IN 🟢</SelectItem>
               <SelectItem value="out">OUT 🔴</SelectItem>
-              <SelectItem value="adjust">ADJUST 🔵</SelectItem>
             </SelectContent>
           </Select>
         </div>
@@ -186,7 +185,6 @@ export const StockMovementsPage = () => {
         columns={columns}
         data={filtered}
         isLoading={isLoading}
-        searchPlaceholder="Rechercher un produit..."
         exportFileName="mouvements-stock"
         exportMapper={row => ({
           Date: formatDate(row.date),

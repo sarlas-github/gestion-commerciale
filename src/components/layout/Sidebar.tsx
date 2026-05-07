@@ -72,19 +72,19 @@ const navGroups: NavGroup[] = [
 
 const financesExpandable: ExpandableNavItem[] = [
   {
-    label: 'Paiements',
-    icon: CreditCard,
-    children: [
-      { label: 'Clients', href: '/payments/clients', icon: CreditCard },
-      { label: 'Fournisseurs', href: '/payments/suppliers', icon: CreditCard },
-    ],
-  },
-  {
     label: 'États',
     icon: BarChart3,
     children: [
       { label: 'État clients', href: '/reports/clients', icon: BarChart3 },
       { label: 'État fournisseurs', href: '/reports/suppliers', icon: BarChart3 },
+    ],
+  },
+  {
+    label: 'Paiements',
+    icon: CreditCard,
+    children: [
+      { label: 'Clients', href: '/payments/clients', icon: CreditCard },
+      { label: 'Fournisseurs', href: '/payments/suppliers', icon: CreditCard },
     ],
   },
 ]

@@ -2,7 +2,7 @@
 
 export type PaymentStatus = 'paid' | 'partial' | 'unpaid'
 export type StockStatus = 'ok' | 'faible' | 'rupture'
-export type StockMovementType = 'IN' | 'OUT' | 'ADJUST'
+export type StockMovementType = 'IN' | 'OUT'
 export type StockMovementReference = 'purchase' | 'sale' | 'manual'
 export type ProductType = 'individual' | 'pack'
 export type DocumentType = 'invoice' | 'receipt' | 'quote' | 'order' | 'delivery'

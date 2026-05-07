@@ -125,7 +125,6 @@ export const SupplierPaymentsPage = () => {
         columns={columns}
         data={filtered}
         isLoading={isLoading}
-        searchPlaceholder="Rechercher par fournisseur, référence..."
         exportFileName="paiements-fournisseurs"
         exportMapper={p => ({
           Date: formatDate(p.date),

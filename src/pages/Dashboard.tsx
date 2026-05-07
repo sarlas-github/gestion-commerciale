@@ -1,5 +1,5 @@
 import { useState } from 'react'
-import { useNavigate } from 'react-router-dom'
+
 import {
   Loader2, Banknote, ShoppingCart, TrendingUp, Package, Wallet, Activity, Scale,
   ChevronDown, ChevronUp
@@ -126,7 +126,6 @@ const TooltipMAD = ({
 // ── Composant principal ───────────────────────────────────────────────────────
 
 export const Dashboard = () => {
-  const navigate = useNavigate()
   const now = new Date()
   const [year, setYear] = useState(now.getFullYear())
   const [month, setMonth] = useState(now.getMonth() + 1) // 0 = toute l'année
@@ -245,30 +244,7 @@ export const Dashboard = () => {
             )}
           </div>
 
-          {/* ── Alertes stock ── */}
-          {(data?.stockAlerts ?? []).length > 0 && (
-            <div className="rounded-lg border border-amber-200 dark:border-amber-700/50 bg-amber-50 dark:bg-amber-950/30 p-4 space-y-2">
-              <p className="text-sm font-semibold text-amber-800 dark:text-amber-400">⚠️ Alertes stock</p>
-              <div className="space-y-1">
-                {data!.stockAlerts.map(a => (
-                  <div
-                    key={a.id}
-                    className="flex items-center justify-between text-sm cursor-pointer hover:underline"
-                    onClick={() => navigate('/products')}
-                  >
-                    <span className="font-medium">
-                      {a.status === 'rupture' ? '🔴' : '🟡'} {a.name}
-                    </span>
-                    <span className="text-muted-foreground">
-                      {a.status === 'rupture'
-                        ? `Rupture (stock : ${a.quantity} / seuil : ${a.stock_alert})`
-                        : `Faible (stock : ${a.quantity} / seuil : ${a.stock_alert})`}
-                    </span>
-                  </div>
-                ))}
-              </div>
-            </div>
-          )}
+
 
           {/* ── Graphiques ── */}
           <div className="grid gap-6 lg:grid-cols-2">

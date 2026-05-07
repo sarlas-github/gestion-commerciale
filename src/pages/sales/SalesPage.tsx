@@ -210,7 +210,8 @@ export const SalesPage = () => {
         </select>
         {/* Mobile — Filter Chips */}
         <div className="flex sm:hidden items-center gap-2 overflow-x-auto pb-1 [scrollbar-width:none] [&::-webkit-scrollbar]:hidden">
-          <span className="text-sm text-muted-foreground shrink-0">Statut :</span>
+          {/* Label masqué sur mobile */}
+          <span className="text-sm text-muted-foreground shrink-0 hidden sm:inline">Statut :</span>
           {STATUS_OPTIONS.map(s => (
             <button
               key={s.value}
@@ -290,7 +291,6 @@ export const SalesPage = () => {
         columns={columns}
         data={filtered}
         isLoading={isLoading}
-        searchPlaceholder="Rechercher par client..."
         exportFileName="ventes"
         defaultSorting={[{ id: 'created_at', desc: true }]}
         exportMapper={s => ({

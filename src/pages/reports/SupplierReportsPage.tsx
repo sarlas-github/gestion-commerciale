@@ -2,8 +2,6 @@ import { useMemo, useRef, useState } from 'react'
 import { Link2 } from 'lucide-react'
 import { useNavigate } from 'react-router-dom'
 import { type ColumnDef } from '@tanstack/react-table'
-import jsPDF from 'jspdf'
-import autoTable from 'jspdf-autotable'
 import {
   Select,
   SelectContent,
@@ -69,67 +67,7 @@ export const SupplierReportsPage = () => {
     [filteredRows]
   )
 
-  const periodLabel = month === 0 ? `Année ${year}` : `${MONTHS_FR[month - 1]} ${year}`
   const periodSlug = month === 0 ? `${year}` : `${MONTHS_FR[month - 1]}-${year}`
-
-  const exportPDF = () => {
-    const doc = new jsPDF()
-    doc.setFontSize(14)
-    doc.text(`État fournisseurs — ${periodLabel}`, 14, 15)
-
-    const formatPdfVal = (v: number) => formatCurrency(v).replace(/[\u202F\u00A0]/g, ' ')
-
-    const tableData = filteredRows.map(r => [
-      r.supplier_name,
-      formatPdfVal(r.total_achats),
-      formatPdfVal(r.total_paye),
-      formatPdfVal(r.reste)
-    ])
-
-    // Ligne de total
-    if (filteredRows.length > 0) {
-      tableData.push([
-        'TOTAL',
-        formatPdfVal(filteredTotals.total_achats),
-        formatPdfVal(filteredTotals.total_paye),
-        formatPdfVal(filteredTotals.reste)
-      ])
-    }
-
-    autoTable(doc, {
-      startY: 20,
-      head: [['Fournisseur', 'Total achats', 'Payé', 'Reste']],
-      body: tableData,
-      theme: 'grid',
-      styles: { fontSize: 10, font: 'helvetica' },
-      headStyles: { fillColor: [79, 70, 229] }, // bg-primary indigo-600
-      willDrawCell: (data) => {
-        // Mettre en gras et colorer la ligne TOTAL
-        if (data.row.index === filteredRows.length) {
-          data.cell.styles.fontStyle = 'bold'
-          data.cell.styles.fillColor = [245, 245, 245]
-
-          if (data.column.index === 3) {
-            data.cell.styles.textColor = filteredTotals.reste > 0 ? [220, 38, 38] : [22, 163, 74] // red/green
-          } else if (data.column.index === 2) {
-            data.cell.styles.textColor = [22, 163, 74] // green
-          }
-        } else {
-          // Colorer le Reste et Payé pour les autres lignes
-          if (data.column.index === 3) {
-            const val = filteredRows[data.row.index]?.reste ?? 0
-            data.cell.styles.textColor = val > 0 ? [220, 38, 38] : [22, 163, 74]
-            data.cell.styles.fontStyle = 'bold'
-          }
-          if (data.column.index === 2) {
-            data.cell.styles.textColor = [22, 163, 74]
-          }
-        }
-      }
-    })
-
-    doc.save(`etat-fournisseurs-${periodSlug}.pdf`)
-  }
 
   const columns = useMemo<ColumnDef<SupplierReportRow>[]>(
     () => [
@@ -169,7 +107,7 @@ export const SupplierReportsPage = () => {
         ),
       },
     ],
-    []
+    [navigate]
   )
 
   const tableFooter = filteredRows.length > 0 ? (
@@ -217,8 +155,8 @@ export const SupplierReportsPage = () => {
         </Select>
 
         {/* Filtre dettes */}
-        <div className="flex items-center gap-2 ml-auto">
-          <span className="text-sm text-muted-foreground">Afficher :</span>
+        <div className="flex items-center gap-2 sm:ml-auto">
+          <span className="text-sm text-muted-foreground hidden sm:inline">Afficher :</span>
           <Select value={debtFilter} onValueChange={(v) => v && setDebtFilter(v as DebtFilter)}>
             <SelectTrigger size="sm" className="w-44">
               <span className="flex-1 text-left">{DEBT_LABELS[debtFilter]}</span>
@@ -237,7 +175,6 @@ export const SupplierReportsPage = () => {
           columns={columns}
           data={filteredRows}
           isLoading={isLoading}
-          searchPlaceholder="Rechercher un fournisseur..."
           exportFileName={`etat-fournisseurs-${periodSlug}`}
           exportMapper={(r) => ({
             Fournisseur: r.supplier_name,
@@ -245,7 +182,6 @@ export const SupplierReportsPage = () => {
             Payé: r.total_paye,
             Reste: r.reste,
           })}
-          onExportPdf={exportPDF}
           defaultSorting={[{ id: 'supplier_name', desc: false }]}
           footer={tableFooter}
         />
@@ -273,8 +209,3 @@ export const SupplierReportsPage = () => {
     </div>
   )
 }
-
-
-
-
-

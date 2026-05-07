@@ -125,7 +125,6 @@ export const ClientPaymentsPage = () => {
         columns={columns}
         data={filtered}
         isLoading={isLoading}
-        searchPlaceholder="Rechercher par client, référence..."
         exportFileName="paiements-clients"
         exportMapper={p => ({
           Date: formatDate(p.date),
