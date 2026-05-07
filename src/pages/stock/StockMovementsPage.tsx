@@ -125,9 +125,9 @@ export const StockMovementsPage = () => {
       ),
     },
     {
-      accessorKey: 'updated_at',
-      header: 'Modifié le',
-      cell: ({ row }) => formatDate(row.original.updated_at),
+      accessorKey: 'created_at',
+      header: 'Créé le',
+      cell: ({ row }) => formatDate(row.original.created_at),
     },
   ]
 

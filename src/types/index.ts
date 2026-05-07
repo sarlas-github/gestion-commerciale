@@ -106,7 +106,6 @@ export interface StockMovement {
   note: string | null
   date: string
   created_at: string
-  updated_at: string
   // Join
   products?: Pick<Product, 'id' | 'name' | 'pieces_count'>
 }
