@@ -254,7 +254,6 @@ multi-tables présentes et futures.
 - Ne jamais exposer la service_role key
 - Ne jamais faire de requêtes Supabase dans les composants
 - Ne jamais utiliser `any` en TypeScript
-- Ne pas modifier `src/components/ui/`
 - Ne jamais bypasser le RLS Supabase
 - Ne pas créer de CSS séparé
 

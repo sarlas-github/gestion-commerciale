@@ -77,7 +77,7 @@ export const StockAdjustModal = ({
         {/* Produit (lecture seule) */}
         <div className="space-y-1.5">
           <Label>Produit</Label>
-          <div className="flex h-8 items-center rounded-lg border border-input bg-muted/30 px-2.5 text-sm">
+          <div className="flex h-8 items-center rounded-lg border border-input bg-card px-2.5 text-sm">
             {product?.name ?? '—'}
           </div>
         </div>
@@ -85,7 +85,7 @@ export const StockAdjustModal = ({
         {/* Stock Actuel */}
         <div className="space-y-1.5">
           <Label>Stock actuel</Label>
-          <div className="flex h-8 items-center rounded-lg border border-input bg-muted/30 px-2.5 text-sm font-medium">
+          <div className="flex h-8 items-center rounded-lg border border-input bg-card px-2.5 text-sm font-medium">
             {currentQty}
           </div>
         </div>
@@ -177,7 +177,7 @@ export const StockAdjustModal = ({
 
         {/* Aperçu résultat */}
         {qty > 0 && (
-          <div className="rounded-lg border bg-muted/30 p-3 flex justify-between items-center text-sm">
+          <div className="rounded-lg border bg-card p-3 flex justify-between items-center text-sm">
             <span className="text-muted-foreground">Nouveau stock</span>
             <span className={`font-bold tabular-nums ${opType === 'in' ? 'text-green-600' : 'text-amber-600'}`}>
               {currentQty} {opType === 'in' ? '+' : '−'} {qty} = {newQty}

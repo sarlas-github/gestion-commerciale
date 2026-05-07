@@ -224,6 +224,28 @@ usePageAction(
 ---
 
 
+## 14. Fond des contrôles — Règle absolue
+
+**Jamais de contrôle ou carte avec fond gris sur fond de page gris.**
+
+Le fond de page (`--background`) est gris clair en light mode. Tout élément interactif ou informatif doit utiliser `bg-card` pour se démarquer visuellement. `bg-card` est automatiquement blanc en light mode et sombre en dark mode.
+
+### S'applique à
+- Inputs, Textarea, SelectTrigger → `bg-card` (enforced dans les composants `ui/`)
+- Cartes d'information (NOM, TÉLÉPHONE, ADRESSE…) dans les pages de détail → `bg-card`
+- Cartes KPI / stats → `bg-card`
+- Champs en lecture seule (display-only) → `bg-card`
+- Conteneurs de formulaire → `bg-card`
+
+### Interdit
+- `bg-muted/30`, `bg-muted/50` sur des cartes ou champs posés sur fond de page
+- `bg-transparent` sur des inputs (ils deviennent gris sur gris)
+
+### Exception acceptée
+`even:bg-muted/40` pour le zébrage des lignes de tableau, **uniquement à l'intérieur** d'un conteneur `bg-card`.
+
+---
+
 ## 15. Liens cliquables et Navigation
 
 ### Colonnes de tableau standardisées

@@ -88,7 +88,7 @@ const TabInfos = ({ supplier }: { supplier: ReturnType<typeof useSupplier>['data
         { label: 'Adresse', value: supplier.address || '—' },
         { label: 'ICE', value: supplier.ice || '—' },
       ].map(({ label, value }) => (
-        <div key={label} className="rounded-lg border bg-muted/30 p-4">
+        <div key={label} className="rounded-lg border bg-card p-4">
           <dt className="text-xs font-medium text-muted-foreground uppercase tracking-wide mb-1">{label}</dt>
           <dd className="text-sm font-medium">{value}</dd>
         </div>
@@ -275,15 +275,15 @@ const TabEtat = ({ supplierId }: { supplierId: string }) => {
         </div>
       ) : (
         <div className="grid gap-4 sm:grid-cols-3">
-          <div className="rounded-lg border bg-muted/30 p-5 space-y-1">
+          <div className="rounded-lg border bg-card p-5 space-y-1">
             <p className="text-xs font-medium text-muted-foreground uppercase tracking-wide">Total achats</p>
             <p className="text-2xl font-bold">{formatCurrency(data?.totalAchats ?? 0)}</p>
           </div>
-          <div className="rounded-lg border bg-muted/30 p-5 space-y-1">
+          <div className="rounded-lg border bg-card p-5 space-y-1">
             <p className="text-xs font-medium text-muted-foreground uppercase tracking-wide">Total payé</p>
             <p className="text-2xl font-bold text-green-600">{formatCurrency(data?.totalPaye ?? 0)}</p>
           </div>
-          <div className={`rounded-lg border p-5 space-y-1 ${(data?.resteAPayer ?? 0) > 0 ? 'bg-red-50 border-red-200' : 'bg-muted/30'}`}>
+          <div className={`rounded-lg border p-5 space-y-1 ${(data?.resteAPayer ?? 0) > 0 ? 'bg-red-50 border-red-200' : 'bg-card'}`}>
             <p className="text-xs font-medium text-muted-foreground uppercase tracking-wide">Reste à payer</p>
             <p className={`text-2xl font-bold ${(data?.resteAPayer ?? 0) > 0 ? 'text-red-600' : 'text-muted-foreground'}`}>
               {formatCurrency(data?.resteAPayer ?? 0)}
