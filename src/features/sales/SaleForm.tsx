@@ -205,7 +205,10 @@ export const SaleForm = ({ id, existing, onSubmit, hasInvoice = false, savedPaym
 
         {/* ── Entête ── */}
         <div className="rounded-lg border bg-card overflow-hidden">
-          <div className="flex items-center justify-between p-4 sm:p-6 pb-2 sm:pb-3">
+          <div
+            className={`flex items-center justify-between p-4 sm:p-6 pb-2 sm:pb-3 transition-colors ${!expandedInfo ? 'cursor-pointer hover:bg-muted/50' : ''}`}
+            onClick={!expandedInfo ? () => setExpandedInfo(true) : undefined}
+          >
             <h2 className="text-sm font-semibold uppercase tracking-wide text-muted-foreground flex items-center gap-2">
               Informations
             </h2>
@@ -214,7 +217,14 @@ export const SaleForm = ({ id, existing, onSubmit, hasInvoice = false, savedPaym
               variant="ghost"
               size="icon"
               className="h-8 w-8"
-              onClick={() => setExpandedInfo(!expandedInfo)}
+              onClick={(e) => {
+                if (expandedInfo) {
+                  e.stopPropagation()
+                  setExpandedInfo(false)
+                } else {
+                  setExpandedInfo(true)
+                }
+              }}
             >
               {expandedInfo ? <ChevronUp className="h-4 w-4 text-muted-foreground" /> : <ChevronDown className="h-4 w-4 text-muted-foreground" />}
             </Button>
@@ -290,7 +300,10 @@ export const SaleForm = ({ id, existing, onSubmit, hasInvoice = false, savedPaym
 
         {/* ── Produits ── */}
         <div className="rounded-lg border bg-card overflow-hidden">
-          <div className="flex items-center justify-between p-4 sm:p-6 pb-2 sm:pb-3">
+          <div
+            className={`flex items-center justify-between p-4 sm:p-6 pb-2 sm:pb-3 transition-colors ${!expandedProducts ? 'cursor-pointer hover:bg-muted/50' : ''}`}
+            onClick={!expandedProducts ? () => setExpandedProducts(true) : undefined}
+          >
             <h2 className="text-sm font-semibold uppercase tracking-wide text-muted-foreground">Produits</h2>
             <div className="flex items-center gap-2">
               {expandedProducts && !hasExistingPayments && !hasInvoice && (
@@ -298,7 +311,8 @@ export const SaleForm = ({ id, existing, onSubmit, hasInvoice = false, savedPaym
                   type="button"
                   variant="outline"
                   size="sm"
-                  onClick={() => {
+                  onClick={(e) => {
+                    e.stopPropagation()
                     appendItem({ product_id: '', quantity: 1, unit_price: 0, pieces_count: 1 })
                   }}
                 >
@@ -311,7 +325,10 @@ export const SaleForm = ({ id, existing, onSubmit, hasInvoice = false, savedPaym
                 variant="ghost"
                 size="icon"
                 className="h-8 w-8"
-                onClick={() => setExpandedProducts(!expandedProducts)}
+                onClick={(e) => {
+                  e.stopPropagation()
+                  setExpandedProducts(!expandedProducts)
+                }}
               >
                 {expandedProducts ? <ChevronUp className="h-4 w-4 text-muted-foreground" /> : <ChevronDown className="h-4 w-4 text-muted-foreground" />}
               </Button>
@@ -527,7 +544,10 @@ export const SaleForm = ({ id, existing, onSubmit, hasInvoice = false, savedPaym
 
         {/* ── Paiements ── */}
         <div className="rounded-lg border bg-card overflow-hidden">
-          <div className="flex items-center justify-between p-4 sm:p-6 pb-2 sm:pb-3">
+          <div
+            className={`flex items-center justify-between p-4 sm:p-6 pb-2 sm:pb-3 transition-colors ${!expandedPayments ? 'cursor-pointer hover:bg-muted/50' : ''}`}
+            onClick={!expandedPayments ? () => setExpandedPayments(true) : undefined}
+          >
             <h2 className="text-sm font-semibold uppercase tracking-wide text-muted-foreground">Paiements</h2>
             <div className="flex items-center gap-2">
               {expandedPayments && (
@@ -535,7 +555,10 @@ export const SaleForm = ({ id, existing, onSubmit, hasInvoice = false, savedPaym
                   type="button"
                   variant="outline"
                   size="sm"
-                  onClick={() => appendPayment({ date: today, amount: remaining > 0 ? remaining : 0, note: '', methode_paiement: '' })}
+                  onClick={(e) => {
+                    e.stopPropagation()
+                    appendPayment({ date: today, amount: remaining > 0 ? remaining : 0, note: '', methode_paiement: '' })
+                  }}
                 >
                   <Plus className="mr-1.5 h-4 w-4" />
                   Ajouter un paiement
@@ -546,7 +569,10 @@ export const SaleForm = ({ id, existing, onSubmit, hasInvoice = false, savedPaym
                 variant="ghost"
                 size="icon"
                 className="h-8 w-8"
-                onClick={() => setExpandedPayments(!expandedPayments)}
+                onClick={(e) => {
+                  e.stopPropagation()
+                  setExpandedPayments(!expandedPayments)
+                }}
               >
                 {expandedPayments ? <ChevronUp className="h-4 w-4 text-muted-foreground" /> : <ChevronDown className="h-4 w-4 text-muted-foreground" />}
               </Button>
