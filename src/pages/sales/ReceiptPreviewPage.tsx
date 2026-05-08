@@ -282,7 +282,7 @@ export const ReceiptPreviewPage = () => {
       )}
 
       {/* Mobile Sticky Bar */}
-      <div className="fixed bottom-0 left-0 right-0 p-4 bg-card border-t md:hidden flex justify-end gap-2 z-50 shadow-[0_-4px_6px_-1px_rgba(0,0,0,0.05)]">
+      <div className="fixed bottom-0 left-0 right-0 h-16 px-4 bg-card border-t md:hidden flex items-center justify-end gap-3 z-50 shadow-[0_-4px_6px_-1px_rgba(0,0,0,0.05)]">
         {!existingReceipt && (
           <Button size="sm" onClick={handleGenerate} disabled={isWorking || !previewData}>
             {createReceipt.isPending && <Loader2 className="mr-1.5 h-3.5 w-3.5 animate-spin" />}

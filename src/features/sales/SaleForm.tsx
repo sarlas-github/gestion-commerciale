@@ -441,7 +441,7 @@ export const SaleForm = ({ id, existing, onSubmit, hasInvoice = false, savedPaym
 
             {/* Récapitulatif financier */}
             <div className="flex flex-col items-end pt-3 border-t text-sm">
-              <div className="grid grid-cols-[auto_130px] gap-x-6 gap-y-2 items-center">
+              <div className="grid grid-cols-[auto_130px] gap-x-4 gap-y-2 items-center">
                 <span className="text-muted-foreground text-right">Total HT :</span>
                 <span className="font-semibold text-right">{formatCurrency(totalHT)}</span>
                 
@@ -474,7 +474,7 @@ export const SaleForm = ({ id, existing, onSubmit, hasInvoice = false, savedPaym
                   </>
                 )}
 
-                <div className="col-span-2 border-t pt-2 mt-1 grid grid-cols-[auto_130px] gap-x-6 items-center">
+                <div className="col-span-2 border-t pt-2 mt-1 grid grid-cols-[auto_130px] gap-x-4 items-center">
                   <span className="font-bold text-base text-right whitespace-nowrap">Total TTC :</span>
                   <span className="font-bold text-base text-right">{formatCurrency(totalTTC)}</span>
                 </div>

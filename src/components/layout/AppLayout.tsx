@@ -53,7 +53,7 @@ export const AppLayout = () => {
         {/* Contenu principal */}
         <div className="flex flex-1 flex-col overflow-hidden">
           <TopBar onMenuOpen={() => setMobileOpen(true)} />
-          <main id="main-scroll" className="flex-1 overflow-y-auto p-4 lg:p-6">
+          <main id="main-scroll" className="flex-1 overflow-y-auto p-4 lg:p-4">
             <ScrollToTop />
             <Outlet />
           </main>
