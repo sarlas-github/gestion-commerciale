@@ -1,9 +1,10 @@
-import { useState, useCallback, useRef, useEffect } from 'react'
+import { useState, useCallback, useEffect } from 'react'
 import { useNavigate } from 'react-router-dom'
 import { Controller, useForm, useFieldArray } from 'react-hook-form'
 import { zodResolver } from '@hookform/resolvers/zod'
 import { z } from 'zod'
 import { Plus, Trash2, Loader2 } from 'lucide-react'
+import { EntityAutocomplete } from '@/components/shared/EntityAutocomplete'
 import { Button } from '@/components/ui/button'
 import { Input } from '@/components/ui/input'
 import { Label } from '@/components/ui/label'
@@ -126,7 +127,6 @@ export const PurchaseForm = ({ existing, onSubmit, isLoading = false }: Purchase
   }, [existing, company, setValue])
 
   const [newItemIdx, setNewItemIdx] = useState<number | null>(null)
-  const selectRefs = useRef<Map<number, HTMLSelectElement>>(new Map())
 
   const { fields: itemFields, append: appendItem, remove: removeItem } = useFieldArray({
     control,
@@ -202,34 +202,21 @@ export const PurchaseForm = ({ existing, onSubmit, isLoading = false }: Purchase
               <Label>
                 Fournisseur <span className="text-destructive">*</span>
               </Label>
-              <div className="flex gap-2">
-                <Controller
-                  name="supplier_id"
-                  control={control}
-                  render={({ field }) => (
-                    <select
-                      className="flex h-9 w-full rounded-md border border-input px-3 py-1 text-sm shadow-sm transition-colors focus-visible:outline-none focus-visible:ring-1 focus-visible:ring-ring"
-                      value={field.value}
-                      onChange={field.onChange}
-                      ref={field.ref}
-                    >
-                      <option value="">— Choisir un fournisseur —</option>
-                      {suppliers.map(s => (
-                        <option key={s.id} value={s.id}>{s.name}</option>
-                      ))}
-                    </select>
-                  )}
-                />
-                <Button
-                  type="button"
-                  variant="outline"
-                  size="sm"
-                  className="shrink-0"
-                  onClick={() => setShowNewSupplier(true)}
-                >
-                  <Plus className="h-4 w-4" />
-                </Button>
-              </div>
+              <Controller
+                name="supplier_id"
+                control={control}
+                render={({ field }) => (
+                  <EntityAutocomplete
+                    value={field.value}
+                    onChange={field.onChange}
+                    options={suppliers.map(s => ({ id: s.id, label: s.name }))}
+                    placeholder="Rechercher un fournisseur..."
+                    onAddNew={() => setShowNewSupplier(true)}
+                    size="md"
+                    errorMessage="Sélectionnez un fournisseur ou utilisez + pour en créer un"
+                  />
+                )}
+              />
               {errors.supplier_id && (
                 <p className="text-xs text-destructive">{errors.supplier_id.message}</p>
               )}
@@ -284,13 +271,10 @@ export const PurchaseForm = ({ existing, onSubmit, isLoading = false }: Purchase
                 variant="outline"
                 size="sm"
                 onClick={() => {
-                  appendItem({ product_id: '', quantity: 1, unit_price: 0, pieces_count: 1 })
                   const newIdx = itemFields.length
+                  appendItem({ product_id: '', quantity: 1, unit_price: 0, pieces_count: 1 })
                   setNewItemIdx(newIdx)
-                  setTimeout(() => {
-                    selectRefs.current.get(newIdx)?.focus()
-                    setNewItemIdx(null)
-                  }, 100)
+                  setTimeout(() => setNewItemIdx(null), 300)
                 }}
               >
                 <Plus className="mr-1.5 h-4 w-4" />
@@ -335,55 +319,32 @@ export const PurchaseForm = ({ existing, onSubmit, isLoading = false }: Purchase
                           {products.find(p => p.id === field.product_id)?.name || 'Produit inconnu'}
                         </span>
                       ) : (
-                        <div className="flex gap-1.5 items-center">
-                          <Controller
-                            name={`items.${idx}.product_id`}
-                            control={control}
-                            render={({ field: f }) => (
-                              <select
-                                className="flex h-8 w-full rounded-md border border-input px-2 text-sm focus-visible:outline-none focus-visible:ring-1 focus-visible:ring-ring"
-                                value={f.value}
-                                ref={el => {
-                                  f.ref(el)
-                                  if (el) selectRefs.current.set(idx, el)
-                                  else selectRefs.current.delete(idx)
-                                }}
-                                autoFocus={newItemIdx === idx}
-                                onChange={e => {
-                                  f.onChange(e.target.value)
-                                  handleProductChange(idx, e.target.value)
-                                }}
-                              >
-                                <option value="">— Produit —</option>
-                                {products.map(p => (
-                                  <option key={p.id} value={p.id}>{p.name}</option>
-                                ))}
-                              </select>
-                            )}
-                          />
-                          <Button
-                            type="button"
-                            variant="outline"
-                            size="icon"
-                            className="h-8 w-8 shrink-0 hidden sm:flex"
-                            title="Nouveau produit"
-                            onClick={() => setShowNewProductIdx(idx)}
-                          >
-                            <Plus className="h-3.5 w-3.5" />
-                          </Button>
-                        </div>
+                        <Controller
+                          name={`items.${idx}.product_id`}
+                          control={control}
+                          render={({ field: f }) => (
+                            <EntityAutocomplete
+                              value={f.value}
+                              onChange={id => {
+                                f.onChange(id)
+                                handleProductChange(idx, id)
+                              }}
+                              options={products.map(p => ({ id: p.id, label: p.name }))}
+                              placeholder="Rechercher un produit..."
+                              onAddNew={() => setShowNewProductIdx(idx)}
+                              autoFocus={newItemIdx === idx}
+                              size="sm"
+                              errorMessage="Sélectionnez un produit ou utilisez + pour en créer un"
+                            />
+                          )}
+                        />
                       )}
                       {errors.items?.[idx]?.product_id && (
                         <p className="text-xs text-destructive mt-0.5">{errors.items[idx]?.product_id?.message}</p>
                       )}
                     </div>
-                    {/* Boutons — mobile uniquement */}
+                    {/* Boutons — mobile uniquement (le + est intégré dans l'autocomplete) */}
                     <div className="flex gap-1 sm:hidden">
-                      {!field.original_id && (
-                        <Button type="button" variant="ghost" size="icon" className="h-8 w-8 shrink-0" title="Nouveau produit" onClick={() => setShowNewProductIdx(idx)}>
-                          <Plus className="h-3.5 w-3.5" />
-                        </Button>
-                      )}
                       {!field.original_id && itemFields.length > 1 && (
                         <Button type="button" variant="ghost" size="icon" className="h-8 w-8 shrink-0 text-destructive hover:text-destructive" onClick={() => removeItem(idx)}>
                           <Trash2 className="h-3.5 w-3.5" />

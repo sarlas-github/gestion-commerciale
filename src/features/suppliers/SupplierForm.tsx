@@ -1,4 +1,4 @@
-import { useForm, Controller } from 'react-hook-form'
+import { useForm, Controller, type UseFormSetError } from 'react-hook-form'
 import { zodResolver } from '@hookform/resolvers/zod'
 import { z } from 'zod'
 import { Loader2 } from 'lucide-react'
@@ -19,7 +19,7 @@ export type SupplierFormValues = z.infer<typeof supplierSchema>
 
 interface SupplierFormProps {
   defaultValues?: Partial<Supplier>
-  onSubmit: (values: SupplierFormValues) => Promise<void>
+  onSubmit: (values: SupplierFormValues, setError: UseFormSetError<SupplierFormValues>) => Promise<void>
   onCancel: () => void
   isLoading?: boolean
 }
@@ -33,6 +33,7 @@ export const SupplierForm = ({
   const {
     control,
     handleSubmit,
+    setError,
     formState: { errors },
   } = useForm<SupplierFormValues>({
     resolver: zodResolver(supplierSchema),
@@ -46,7 +47,7 @@ export const SupplierForm = ({
 
   return (
     // noValidate : désactive la validation HTML5 native, laisse Zod gérer (GOTCHA #1)
-    <form onSubmit={handleSubmit(onSubmit)} noValidate className="space-y-4">
+    <form onSubmit={handleSubmit((data) => onSubmit(data, setError))} noValidate className="space-y-4">
       <div className="space-y-1.5">
         <Label htmlFor="name">
           Nom <span className="text-destructive">*</span>

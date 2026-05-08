@@ -4,6 +4,8 @@ import { Button } from '@/components/ui/button'
 import { PageHeader } from '@/components/shared/PageHeader'
 import { SupplierForm, type SupplierFormValues } from '@/features/suppliers/SupplierForm'
 import { useSupplier, useUpdateSupplier } from '@/hooks/useSuppliers'
+import { isUniqueNameError } from '@/lib/utils'
+import type { UseFormSetError } from 'react-hook-form'
 
 export const SupplierEditPage = () => {
   const { id } = useParams<{ id: string }>()
@@ -11,9 +13,15 @@ export const SupplierEditPage = () => {
   const { data: supplier, isLoading } = useSupplier(id!)
   const updateSupplier = useUpdateSupplier()
 
-  const handleSubmit = async (values: SupplierFormValues) => {
-    await updateSupplier.mutateAsync({ id: id!, ...values })
-    navigate('/suppliers')
+  const handleSubmit = async (values: SupplierFormValues, setError: UseFormSetError<SupplierFormValues>) => {
+    try {
+      await updateSupplier.mutateAsync({ id: id!, ...values })
+      navigate('/suppliers')
+    } catch (err) {
+      if (isUniqueNameError(err)) {
+        setError('name', { message: 'Un fournisseur avec ce nom existe déjà' })
+      }
+    }
   }
 
   if (isLoading) return <div className="p-6 text-muted-foreground">Chargement...</div>

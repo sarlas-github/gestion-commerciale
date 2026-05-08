@@ -65,6 +65,15 @@ export const formatDocumentNumber = (
 
 export const DEFAULT_PAGE_SIZE = 10
 
+export function isUniqueNameError(err: unknown): boolean {
+  return (
+    typeof err === 'object' &&
+    err !== null &&
+    'code' in err &&
+    (err as Record<string, unknown>).code === '23505'
+  )
+}
+
 // Convertit un montant en lettres (français, dirhams marocains)
 // Exemple : 2300.50 → "Deux mille trois cents dirhams et cinquante centimes"
 export function numberToWords(amount: number): string {

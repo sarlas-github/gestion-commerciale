@@ -1,5 +1,5 @@
 import { useEffect } from 'react'
-import { useForm, Controller } from 'react-hook-form'
+import { useForm, Controller, type UseFormSetError } from 'react-hook-form'
 import { zodResolver } from '@hookform/resolvers/zod'
 import { z } from 'zod'
 import { Loader2 } from 'lucide-react'
@@ -21,7 +21,7 @@ export type ProductFormData = z.infer<typeof schema>
 
 interface ProductFormProps {
   initial?: ProductWithStock | null
-  onSubmit: (data: ProductFormData) => void | Promise<void>
+  onSubmit: (data: ProductFormData, setError: UseFormSetError<ProductFormData>) => void | Promise<void>
   onCancel: () => void
   isLoading?: boolean
 }
@@ -38,6 +38,7 @@ export const ProductForm = ({
     watch,
     setValue,
     control,
+    setError,
     formState: { errors },
   } = useForm<ProductFormData>({
     resolver: zodResolver(schema),
@@ -56,7 +57,7 @@ export const ProductForm = ({
   }, [type, setValue])
 
   return (
-    <form onSubmit={handleSubmit(onSubmit)} noValidate className="space-y-5">
+    <form onSubmit={handleSubmit((data) => onSubmit(data, setError))} noValidate className="space-y-5">
       {/* Nom */}
       <div className="space-y-1.5">
         <Label htmlFor="pf-name">

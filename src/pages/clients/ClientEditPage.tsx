@@ -4,6 +4,8 @@ import { Button } from '@/components/ui/button'
 import { PageHeader } from '@/components/shared/PageHeader'
 import { ClientForm, type ClientFormValues } from '@/features/clients/ClientForm'
 import { useClient, useUpdateClient } from '@/hooks/useClients'
+import { isUniqueNameError } from '@/lib/utils'
+import type { UseFormSetError } from 'react-hook-form'
 
 export const ClientEditPage = () => {
   const { id } = useParams<{ id: string }>()
@@ -11,9 +13,15 @@ export const ClientEditPage = () => {
   const { data: client, isLoading } = useClient(id!)
   const updateClient = useUpdateClient()
 
-  const handleSubmit = async (values: ClientFormValues) => {
-    await updateClient.mutateAsync({ id: id!, ...values })
-    navigate('/clients')
+  const handleSubmit = async (values: ClientFormValues, setError: UseFormSetError<ClientFormValues>) => {
+    try {
+      await updateClient.mutateAsync({ id: id!, ...values })
+      navigate('/clients')
+    } catch (err) {
+      if (isUniqueNameError(err)) {
+        setError('name', { message: 'Un client avec ce nom existe déjà' })
+      }
+    }
   }
 
   if (isLoading) return <div className="p-6 text-muted-foreground">Chargement...</div>

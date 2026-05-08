@@ -1,7 +1,9 @@
 import { SupplierForm, type SupplierFormValues } from '@/features/suppliers/SupplierForm'
 import { useCreateSupplier, useUpdateSupplier } from '@/hooks/useSuppliers'
 import { ResponsiveModal } from '@/components/shared/ResponsiveModal'
+import { isUniqueNameError } from '@/lib/utils'
 import type { Supplier } from '@/types'
+import type { UseFormSetError } from 'react-hook-form'
 
 interface SupplierModalProps {
   supplier?: Supplier | null
@@ -17,21 +19,27 @@ export const SupplierModal = ({ supplier, open, onOpenChange, onSuccess }: Suppl
   const isEditing = Boolean(supplier)
   const isPending = createSupplier.isPending || updateSupplier.isPending
 
-  const handleSubmit = async (data: SupplierFormValues) => {
+  const handleSubmit = async (data: SupplierFormValues, setError: UseFormSetError<SupplierFormValues>) => {
     const normalized = {
       ...data,
       phone: data.phone || null,
       address: data.address || null,
       ice: data.ice || null,
     }
-    let result;
-    if (isEditing && supplier) {
-      result = await updateSupplier.mutateAsync({ id: supplier.id, ...normalized })
-    } else {
-      result = await createSupplier.mutateAsync(normalized)
+    try {
+      let result;
+      if (isEditing && supplier) {
+        result = await updateSupplier.mutateAsync({ id: supplier.id, ...normalized })
+      } else {
+        result = await createSupplier.mutateAsync(normalized)
+      }
+      onSuccess?.(result)
+      onOpenChange(false)
+    } catch (err) {
+      if (isUniqueNameError(err)) {
+        setError('name', { message: 'Un fournisseur avec ce nom existe déjà' })
+      }
     }
-    onSuccess?.(result)
-    onOpenChange(false)
   }
 
   return (

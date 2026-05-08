@@ -4,14 +4,22 @@ import { Button } from '@/components/ui/button'
 import { PageHeader } from '@/components/shared/PageHeader'
 import { ProductForm, type ProductFormData } from '@/features/products/ProductForm'
 import { useCreateProduct } from '@/hooks/useProducts'
+import { isUniqueNameError } from '@/lib/utils'
+import type { UseFormSetError } from 'react-hook-form'
 
 export const ProductNewPage = () => {
   const navigate = useNavigate()
   const createProduct = useCreateProduct()
 
-  const handleSubmit = async (data: ProductFormData) => {
-    await createProduct.mutateAsync(data)
-    navigate('/products')
+  const handleSubmit = async (data: ProductFormData, setError: UseFormSetError<ProductFormData>) => {
+    try {
+      await createProduct.mutateAsync(data)
+      navigate('/products')
+    } catch (err) {
+      if (isUniqueNameError(err)) {
+        setError('name', { message: 'Un produit avec ce nom existe déjà' })
+      }
+    }
   }
 
   return (

@@ -4,6 +4,8 @@ import { Button } from '@/components/ui/button'
 import { PageHeader } from '@/components/shared/PageHeader'
 import { ProductForm, type ProductFormData } from '@/features/products/ProductForm'
 import { useProduct, useUpdateProduct } from '@/hooks/useProducts'
+import { isUniqueNameError } from '@/lib/utils'
+import type { UseFormSetError } from 'react-hook-form'
 
 export const ProductEditPage = () => {
   const { id } = useParams<{ id: string }>()
@@ -11,9 +13,15 @@ export const ProductEditPage = () => {
   const { data: product, isLoading } = useProduct(id!)
   const updateProduct = useUpdateProduct()
 
-  const handleSubmit = async (data: ProductFormData) => {
-    await updateProduct.mutateAsync({ id: id!, ...data })
-    navigate('/products')
+  const handleSubmit = async (data: ProductFormData, setError: UseFormSetError<ProductFormData>) => {
+    try {
+      await updateProduct.mutateAsync({ id: id!, ...data })
+      navigate('/products')
+    } catch (err) {
+      if (isUniqueNameError(err)) {
+        setError('name', { message: 'Un produit avec ce nom existe déjà' })
+      }
+    }
   }
 
   if (isLoading) return <div className="p-6 text-muted-foreground">Chargement...</div>

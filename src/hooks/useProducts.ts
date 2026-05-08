@@ -2,7 +2,7 @@ import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query'
 import { toast } from 'sonner'
 import { supabase } from '@/lib/supabase'
 import type { Product, ProductWithStock, CreateProductInput, UpdateProductInput } from '@/types'
-import { getStockStatus } from '@/lib/utils'
+import { getStockStatus, isUniqueNameError } from '@/lib/utils'
 
 // ── Types internes ────────────────────────────────────────────────────────────
 
@@ -116,7 +116,9 @@ export const useCreateProduct = () => {
       toast.success('Produit créé avec succès')
     },
     onError: (err: Error) => {
-      toast.error(err.message || 'Erreur lors de la création du produit')
+      if (!isUniqueNameError(err)) {
+        toast.error(err.message || 'Erreur lors de la création du produit')
+      }
     },
   })
 }
@@ -142,7 +144,9 @@ export const useUpdateProduct = () => {
       toast.success('Produit mis à jour')
     },
     onError: (err: Error) => {
-      toast.error(err.message || 'Erreur lors de la mise à jour')
+      if (!isUniqueNameError(err)) {
+        toast.error(err.message || 'Erreur lors de la mise à jour')
+      }
     },
   })
 }

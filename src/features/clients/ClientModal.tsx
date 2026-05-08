@@ -1,7 +1,9 @@
 import { ClientForm, type ClientFormValues } from '@/features/clients/ClientForm'
 import { useCreateClient, useUpdateClient } from '@/hooks/useClients'
 import { ResponsiveModal } from '@/components/shared/ResponsiveModal'
+import { isUniqueNameError } from '@/lib/utils'
 import type { Client } from '@/types'
+import type { UseFormSetError } from 'react-hook-form'
 
 interface ClientModalProps {
   client?: Client | null
@@ -17,21 +19,27 @@ export const ClientModal = ({ client, open, onOpenChange, onSuccess }: ClientMod
   const isEditing = Boolean(client)
   const isPending = createClient.isPending || updateClient.isPending
 
-  const handleSubmit = async (data: ClientFormValues) => {
+  const handleSubmit = async (data: ClientFormValues, setError: UseFormSetError<ClientFormValues>) => {
     const normalized = {
       ...data,
       phone: data.phone || null,
       address: data.address || null,
       ice: data.ice || null,
     }
-    let result;
-    if (isEditing && client) {
-      result = await updateClient.mutateAsync({ id: client.id, ...normalized })
-    } else {
-      result = await createClient.mutateAsync(normalized)
+    try {
+      let result;
+      if (isEditing && client) {
+        result = await updateClient.mutateAsync({ id: client.id, ...normalized })
+      } else {
+        result = await createClient.mutateAsync(normalized)
+      }
+      onSuccess?.(result)
+      onOpenChange(false)
+    } catch (err) {
+      if (isUniqueNameError(err)) {
+        setError('name', { message: 'Un client avec ce nom existe déjà' })
+      }
     }
-    onSuccess?.(result)
-    onOpenChange(false)
   }
 
   return (

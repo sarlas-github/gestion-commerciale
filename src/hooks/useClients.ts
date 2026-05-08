@@ -1,6 +1,7 @@
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query'
 import { toast } from 'sonner'
 import { supabase } from '@/lib/supabase'
+import { isUniqueNameError } from '@/lib/utils'
 import type { Client, CreateClientInput, UpdateClientInput, Sale, ClientPayment } from '@/types'
 
 // ── Types enrichis ────────────────────────────────────────────────────────────
@@ -130,7 +131,9 @@ export const useCreateClient = () => {
       toast.success('Client créé avec succès')
     },
     onError: (err: Error) => {
-      toast.error(err.message || 'Erreur lors de la création')
+      if (!isUniqueNameError(err)) {
+        toast.error(err.message || 'Erreur lors de la création')
+      }
     },
   })
 }
@@ -155,7 +158,9 @@ export const useUpdateClient = () => {
       toast.success('Client mis à jour')
     },
     onError: (err: Error) => {
-      toast.error(err.message || 'Erreur lors de la mise à jour')
+      if (!isUniqueNameError(err)) {
+        toast.error(err.message || 'Erreur lors de la mise à jour')
+      }
     },
   })
 }

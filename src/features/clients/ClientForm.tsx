@@ -1,4 +1,4 @@
-import { useForm, Controller } from 'react-hook-form'
+import { useForm, Controller, type UseFormSetError } from 'react-hook-form'
 import { zodResolver } from '@hookform/resolvers/zod'
 import { z } from 'zod'
 import { Loader2 } from 'lucide-react'
@@ -19,7 +19,7 @@ export type ClientFormValues = z.infer<typeof clientSchema>
 
 interface ClientFormProps {
   defaultValues?: Partial<Client>
-  onSubmit: (values: ClientFormValues) => Promise<void>
+  onSubmit: (values: ClientFormValues, setError: UseFormSetError<ClientFormValues>) => Promise<void>
   onCancel: () => void
   isLoading?: boolean
 }
@@ -33,6 +33,7 @@ export const ClientForm = ({
   const {
     control,
     handleSubmit,
+    setError,
     formState: { errors },
   } = useForm<ClientFormValues>({
     resolver: zodResolver(clientSchema),
@@ -45,7 +46,7 @@ export const ClientForm = ({
   })
 
   return (
-    <form onSubmit={handleSubmit(onSubmit)} noValidate className="space-y-4">
+    <form onSubmit={handleSubmit((data) => onSubmit(data, setError))} noValidate className="space-y-4">
       <div className="space-y-1.5">
         <Label htmlFor="cf-name">
           Nom <span className="text-destructive">*</span>
