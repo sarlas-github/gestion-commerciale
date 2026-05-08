@@ -3,7 +3,7 @@ import { useNavigate } from 'react-router-dom'
 import { Controller, useForm, useFieldArray } from 'react-hook-form'
 import { zodResolver } from '@hookform/resolvers/zod'
 import { z } from 'zod'
-import { Plus, Trash2, AlertTriangle, FileText } from 'lucide-react'
+import { Plus, Trash2, AlertTriangle, FileText, ChevronDown, ChevronUp } from 'lucide-react'
 import { EntityAutocomplete } from '@/components/shared/EntityAutocomplete'
 import { Button } from '@/components/ui/button'
 import { Input } from '@/components/ui/input'
@@ -76,6 +76,9 @@ export const SaleForm = ({ id, existing, onSubmit, hasInvoice = false, savedPaym
 
   const [showNewClient, setShowNewClient] = useState(false)
   const [showNewProductIdx, setShowNewProductIdx] = useState<number | null>(null)
+  const [expandedInfo, setExpandedInfo] = useState(true)
+  const [expandedProducts, setExpandedProducts] = useState(true)
+  const [expandedPayments, setExpandedPayments] = useState(true)
 
   const { data: clients = [] } = useClients()
   const { data: products = [] } = useProducts()
@@ -201,10 +204,25 @@ export const SaleForm = ({ id, existing, onSubmit, hasInvoice = false, savedPaym
         )}
 
         {/* ── Entête ── */}
-        <div className="rounded-lg border bg-card p-4 sm:p-6 space-y-4">
-          <h2 className="text-sm font-semibold uppercase tracking-wide text-muted-foreground">Informations</h2>
+        <div className="rounded-lg border bg-card overflow-hidden">
+          <div className="flex items-center justify-between p-4 sm:p-6 pb-2 sm:pb-3">
+            <h2 className="text-sm font-semibold uppercase tracking-wide text-muted-foreground flex items-center gap-2">
+              Informations
+            </h2>
+            <Button
+              type="button"
+              variant="ghost"
+              size="icon"
+              className="h-8 w-8"
+              onClick={() => setExpandedInfo(!expandedInfo)}
+            >
+              {expandedInfo ? <ChevronUp className="h-4 w-4 text-muted-foreground" /> : <ChevronDown className="h-4 w-4 text-muted-foreground" />}
+            </Button>
+          </div>
 
-          <div className="grid gap-4 sm:grid-cols-2">
+          {expandedInfo && (
+            <div className="p-4 sm:p-6 pt-2 sm:pt-3 space-y-4">
+              <div className="grid gap-4 sm:grid-cols-2">
             {/* Client */}
             <div className="space-y-1.5 sm:col-span-2">
               <Label>Client <span className="text-destructive">*</span></Label>
@@ -266,26 +284,42 @@ export const SaleForm = ({ id, existing, onSubmit, hasInvoice = false, savedPaym
               />
             </div>
           </div>
+          </div>
+          )}
         </div>
 
         {/* ── Produits ── */}
-        <div className="rounded-lg border bg-card p-4 sm:p-6 space-y-3">
-          <div className="flex items-center justify-between">
+        <div className="rounded-lg border bg-card overflow-hidden">
+          <div className="flex items-center justify-between p-4 sm:p-6 pb-2 sm:pb-3">
             <h2 className="text-sm font-semibold uppercase tracking-wide text-muted-foreground">Produits</h2>
-            {!hasExistingPayments && !hasInvoice && (
+            <div className="flex items-center gap-2">
+              {expandedProducts && !hasExistingPayments && !hasInvoice && (
+                <Button
+                  type="button"
+                  variant="outline"
+                  size="sm"
+                  onClick={() => {
+                    appendItem({ product_id: '', quantity: 1, unit_price: 0, pieces_count: 1 })
+                  }}
+                >
+                  <Plus className="mr-1.5 h-4 w-4" />
+                  Ajouter une ligne
+                </Button>
+              )}
               <Button
                 type="button"
-                variant="outline"
-                size="sm"
-                onClick={() => {
-                  appendItem({ product_id: '', quantity: 1, unit_price: 0, pieces_count: 1 })
-                }}
+                variant="ghost"
+                size="icon"
+                className="h-8 w-8"
+                onClick={() => setExpandedProducts(!expandedProducts)}
               >
-                <Plus className="mr-1.5 h-4 w-4" />
-                Ajouter une ligne
+                {expandedProducts ? <ChevronUp className="h-4 w-4 text-muted-foreground" /> : <ChevronDown className="h-4 w-4 text-muted-foreground" />}
               </Button>
-            )}
+            </div>
           </div>
+
+          {expandedProducts && (
+            <div className="p-4 sm:p-6 pt-2 sm:pt-3 space-y-3">
 
           {hasExistingPayments && (
             <p className="text-xs text-amber-600 bg-amber-50 rounded px-3 py-2">
@@ -485,24 +519,42 @@ export const SaleForm = ({ id, existing, onSubmit, hasInvoice = false, savedPaym
           {typeof errors.items?.message === 'string' && (
             <p className="text-xs text-destructive">{errors.items.message}</p>
           )}
+          </div>
+          )}
         </div>
 
 
 
         {/* ── Paiements ── */}
-        <div className="rounded-lg border bg-card p-4 sm:p-6 space-y-3">
-          <div className="flex items-center justify-between">
+        <div className="rounded-lg border bg-card overflow-hidden">
+          <div className="flex items-center justify-between p-4 sm:p-6 pb-2 sm:pb-3">
             <h2 className="text-sm font-semibold uppercase tracking-wide text-muted-foreground">Paiements</h2>
-            <Button
-              type="button"
-              variant="outline"
-              size="sm"
-              onClick={() => appendPayment({ date: today, amount: remaining > 0 ? remaining : 0, note: '', methode_paiement: '' })}
-            >
-              <Plus className="mr-1.5 h-4 w-4" />
-              Ajouter un paiement
-            </Button>
+            <div className="flex items-center gap-2">
+              {expandedPayments && (
+                <Button
+                  type="button"
+                  variant="outline"
+                  size="sm"
+                  onClick={() => appendPayment({ date: today, amount: remaining > 0 ? remaining : 0, note: '', methode_paiement: '' })}
+                >
+                  <Plus className="mr-1.5 h-4 w-4" />
+                  Ajouter un paiement
+                </Button>
+              )}
+              <Button
+                type="button"
+                variant="ghost"
+                size="icon"
+                className="h-8 w-8"
+                onClick={() => setExpandedPayments(!expandedPayments)}
+              >
+                {expandedPayments ? <ChevronUp className="h-4 w-4 text-muted-foreground" /> : <ChevronDown className="h-4 w-4 text-muted-foreground" />}
+              </Button>
+            </div>
           </div>
+
+          {expandedPayments && (
+            <div className="p-4 sm:p-6 pt-2 sm:pt-3 space-y-3">
 
           {/* Cartes paiements — pas de scroll horizontal */}
           {paymentFields.length > 0 && (
@@ -637,6 +689,8 @@ export const SaleForm = ({ id, existing, onSubmit, hasInvoice = false, savedPaym
               </div>
             </div>
           </div>
+          </div>
+          )}
         </div>
       </form>
     </>
