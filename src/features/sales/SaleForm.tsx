@@ -128,7 +128,7 @@ export const SaleForm = ({ existing, onSubmit, isLoading = false, hasInvoice = f
     }
   }, [existing, company, setValue])
 
-  const [newItemIdx, setNewItemIdx] = useState<number | null>(null)
+
 
   const { fields: itemFields, append: appendItem, remove: removeItem } = useFieldArray({
     control,
@@ -278,10 +278,7 @@ export const SaleForm = ({ existing, onSubmit, isLoading = false, hasInvoice = f
                 variant="outline"
                 size="sm"
                 onClick={() => {
-                  const newIdx = itemFields.length
                   appendItem({ product_id: '', quantity: 1, unit_price: 0, pieces_count: 1 })
-                  setNewItemIdx(newIdx)
-                  setTimeout(() => setNewItemIdx(null), 300)
                 }}
               >
                 <Plus className="mr-1.5 h-4 w-4" />
@@ -320,7 +317,7 @@ export const SaleForm = ({ existing, onSubmit, isLoading = false, hasInvoice = f
               return (
                 <div
                   key={field.id}
-                  className="rounded-md border bg-background p-3 space-y-2 sm:rounded-none sm:border-x-0 sm:border-t-0 sm:border-b sm:last:border-b-0 sm:bg-transparent sm:p-0 sm:py-2 sm:space-y-0 sm:grid sm:grid-cols-[1fr_60px_90px_140px_120px_40px] sm:gap-2 sm:items-start"
+                  className="rounded-md border bg-card p-3 space-y-2 sm:rounded-none sm:border-x-0 sm:border-t-0 sm:border-b sm:last:border-b-0 sm:bg-transparent sm:p-0 sm:py-2 sm:space-y-0 sm:grid sm:grid-cols-[1fr_60px_90px_140px_120px_40px] sm:gap-2 sm:items-start"
                 >
                   {/* Col 1 / Ligne 1 mobile : produit + boutons mobile */}
                   <div className="flex gap-2 items-start sm:items-center">
@@ -344,7 +341,7 @@ export const SaleForm = ({ existing, onSubmit, isLoading = false, hasInvoice = f
                                 options={products.map(p => ({ id: p.id, label: p.name }))}
                                 placeholder="Rechercher un produit..."
                                 onAddNew={() => setShowNewProductIdx(idx)}
-                                autoFocus={newItemIdx === idx}
+
                                 size="sm"
                                 errorMessage="Sélectionnez un produit ou utilisez + pour en créer un"
                               />
@@ -442,10 +439,46 @@ export const SaleForm = ({ existing, onSubmit, isLoading = false, hasInvoice = f
               )
             })}
 
-            {/* Total produits */}
-            <div className="flex justify-end pt-2 gap-2 text-sm sm:border-t sm:pt-3">
-              <span className="font-semibold text-muted-foreground">Total HT :</span>
-              <span className="font-bold">{formatCurrency(totalHT)}</span>
+            {/* Récapitulatif financier */}
+            <div className="flex flex-col items-end pt-3 border-t text-sm">
+              <div className="grid grid-cols-[auto_130px] gap-x-6 gap-y-2 items-center">
+                <span className="text-muted-foreground text-right">Total HT :</span>
+                <span className="font-semibold text-right">{formatCurrency(totalHT)}</span>
+                
+                <div className="col-span-2 border-t border-dashed my-1 opacity-50" />
+
+                <span className="text-muted-foreground text-right">Taux TVA :</span>
+                <Controller
+                  name="tva_rate"
+                  control={control}
+                  render={({ field }) => (
+                    <select
+                      className="h-8 w-full rounded-md border border-input px-2 text-xs focus-visible:outline-none focus-visible:ring-1 focus-visible:ring-ring disabled:opacity-60 disabled:cursor-not-allowed bg-background"
+                      value={field.value}
+                      onChange={e => field.onChange(parseFloat(e.target.value))}
+                      disabled={hasInvoice}
+                    >
+                      <option value={0}>0%</option>
+                      <option value={7}>7%</option>
+                      <option value={10}>10%</option>
+                      <option value={14}>14%</option>
+                      <option value={20}>20%</option>
+                    </select>
+                  )}
+                />
+
+                {watchedTvaRate > 0 && (
+                  <>
+                    <span className="text-muted-foreground text-right whitespace-nowrap">TVA ({watchedTvaRate}%) :</span>
+                    <span className="font-semibold text-right">{formatCurrency(tvaAmount)}</span>
+                  </>
+                )}
+
+                <div className="col-span-2 border-t pt-2 mt-1 grid grid-cols-[auto_130px] gap-x-6 items-center">
+                  <span className="font-bold text-base text-right whitespace-nowrap">Total TTC :</span>
+                  <span className="font-bold text-base text-right">{formatCurrency(totalTTC)}</span>
+                </div>
+              </div>
             </div>
           </div>
 
@@ -454,45 +487,7 @@ export const SaleForm = ({ existing, onSubmit, isLoading = false, hasInvoice = f
           )}
         </div>
 
-        {/* ── TVA ── */}
-        <div className="rounded-lg border bg-card p-4 sm:p-6 space-y-3">
-          <h2 className="text-sm font-semibold uppercase tracking-wide text-muted-foreground">TVA</h2>
-          <div className="flex flex-col items-end gap-2 text-sm">
-            <div className="flex items-center gap-4">
-              <span className="text-muted-foreground">Taux TVA :</span>
-              <Controller
-                name="tva_rate"
-                control={control}
-                render={({ field }) => (
-                  <select
-                    className="h-9 rounded-md border border-input px-3 text-sm focus-visible:outline-none focus-visible:ring-1 focus-visible:ring-ring disabled:opacity-60 disabled:cursor-not-allowed"
-                    value={field.value}
-                    onChange={e => field.onChange(parseFloat(e.target.value))}
-                    disabled={hasInvoice}
-                  >
-                    <option value={0}>0% (Hors TVA)</option>
-                    <option value={7}>7%</option>
-                    <option value={10}>10%</option>
-                    <option value={14}>14%</option>
-                    <option value={20}>20%</option>
-                  </select>
-                )}
-              />
-            </div>
-            <div className="flex gap-8">
-              <span className="text-muted-foreground">Total HT :</span>
-              <span className="font-semibold w-32 text-right">{formatCurrency(totalHT)}</span>
-            </div>
-            <div className="flex gap-8">
-              <span className="text-muted-foreground">TVA ({Number(watchedTvaRate) || 0}%) :</span>
-              <span className="font-semibold w-32 text-right">{formatCurrency(tvaAmount)}</span>
-            </div>
-            <div className="flex gap-8 border-t pt-2">
-              <span className="font-semibold">Total TTC :</span>
-              <span className="font-bold w-32 text-right">{formatCurrency(totalTTC)}</span>
-            </div>
-          </div>
-        </div>
+
 
         {/* ── Paiements ── */}
         <div className="rounded-lg border bg-card p-4 sm:p-6 space-y-3">
