@@ -1,4 +1,4 @@
--- Dernière version déployée : 20260507_03_create_receipt_function.sql
+-- Dernière version déployée : 20260508_04_fix_security_definer_functions.sql
 
 CREATE OR REPLACE FUNCTION create_receipt(
   p_payment_id    uuid,
@@ -26,6 +26,13 @@ DECLARE
   v_company   record;
   v_item      jsonb;
 BEGIN
+  IF NOT EXISTS (SELECT 1 FROM sales WHERE id = p_sale_id AND user_id = v_user_id) THEN
+    RAISE EXCEPTION 'Unauthorized';
+  END IF;
+  IF NOT EXISTS (SELECT 1 FROM client_payments WHERE id = p_payment_id AND user_id = v_user_id) THEN
+    RAISE EXCEPTION 'Unauthorized';
+  END IF;
+
   INSERT INTO document_sequences (user_id, type, year, last_number)
   VALUES (v_user_id, 'receipt', v_year, 1)
   ON CONFLICT (user_id, type, year) DO UPDATE

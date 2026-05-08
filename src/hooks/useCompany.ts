@@ -2,7 +2,11 @@ import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query'
 import { toast } from 'sonner'
 import { supabase } from '@/lib/supabase'
 import { DEFAULT_BRAND_COLOR } from '@/lib/constants'
+import { getApiErrorMessage } from '@/lib/apiError'
 import type { Company } from '@/types'
+
+const ALLOWED_LOGO_MIME = ['image/png', 'image/jpeg', 'image/webp']
+const MAX_LOGO_SIZE = 2 * 1024 * 1024
 
 async function getCurrentUser() {
   const { data: { user } } = await supabase.auth.getUser()
@@ -52,7 +56,11 @@ export const useUpsertCompany = () => {
       let logo_url = input.logo_url ?? null
 
       if (input.logoFile) {
-        // Créer le bucket s'il n'existe pas encore (ignoré s'il existe déjà)
+        if (!ALLOWED_LOGO_MIME.includes(input.logoFile.type))
+          throw new Error('Format non autorisé. Utilisez PNG, JPG ou WebP.')
+        if (input.logoFile.size > MAX_LOGO_SIZE)
+          throw new Error('Logo trop lourd. Maximum 2 Mo.')
+
         await supabase.storage.createBucket('logos', { public: true }).catch(() => {})
 
         const ext = input.logoFile.name.split('.').pop()?.toLowerCase() ?? 'png'
@@ -107,7 +115,7 @@ export const useUpsertCompany = () => {
       toast.success('Paramètres enregistrés')
     },
     onError: (err: Error) => {
-      toast.error(err.message || 'Erreur lors de la sauvegarde')
+      toast.error(getApiErrorMessage(err, 'Erreur lors de la sauvegarde'))
     },
   })
 }

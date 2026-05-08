@@ -1,5 +1,6 @@
-import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query'
+﻿import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query'
 import { toast } from 'sonner'
+import { getApiErrorMessage } from '@/lib/apiError'
 import { supabase } from '@/lib/supabase'
 import { isUniqueNameError } from '@/lib/utils'
 import type { Client, CreateClientInput, UpdateClientInput, Sale, ClientPayment } from '@/types'
@@ -132,7 +133,7 @@ export const useCreateClient = () => {
     },
     onError: (err: Error) => {
       if (!isUniqueNameError(err)) {
-        toast.error(err.message || 'Erreur lors de la création')
+        toast.error(getApiErrorMessage(err, 'Erreur lors de la création'))
       }
     },
   })
@@ -159,7 +160,7 @@ export const useUpdateClient = () => {
     },
     onError: (err: Error) => {
       if (!isUniqueNameError(err)) {
-        toast.error(err.message || 'Erreur lors de la mise à jour')
+        toast.error(getApiErrorMessage(err, 'Erreur lors de la mise à jour'))
       }
     },
   })
@@ -187,7 +188,7 @@ export const useDeleteClient = () => {
       toast.success('Client supprimé')
     },
     onError: (err: Error) => {
-      toast.error(err.message || 'Erreur lors de la suppression')
+      toast.error(getApiErrorMessage(err, 'Erreur lors de la suppression'))
     },
   })
 }

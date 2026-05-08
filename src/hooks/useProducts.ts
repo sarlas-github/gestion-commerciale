@@ -1,5 +1,6 @@
-import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query'
+﻿import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query'
 import { toast } from 'sonner'
+import { getApiErrorMessage } from '@/lib/apiError'
 import { supabase } from '@/lib/supabase'
 import type { Product, ProductWithStock, CreateProductInput, UpdateProductInput } from '@/types'
 import { getStockStatus, isUniqueNameError } from '@/lib/utils'
@@ -117,7 +118,7 @@ export const useCreateProduct = () => {
     },
     onError: (err: Error) => {
       if (!isUniqueNameError(err)) {
-        toast.error(err.message || 'Erreur lors de la création du produit')
+        toast.error(getApiErrorMessage(err, 'Erreur lors de la création du produit'))
       }
     },
   })
@@ -145,7 +146,7 @@ export const useUpdateProduct = () => {
     },
     onError: (err: Error) => {
       if (!isUniqueNameError(err)) {
-        toast.error(err.message || 'Erreur lors de la mise à jour')
+        toast.error(getApiErrorMessage(err, 'Erreur lors de la mise à jour'))
       }
     },
   })
@@ -184,7 +185,7 @@ export const useDeleteProduct = () => {
       toast.success('Produit supprimé')
     },
     onError: (err: Error) => {
-      toast.error(err.message || 'Erreur lors de la suppression')
+      toast.error(getApiErrorMessage(err, 'Erreur lors de la suppression'))
     },
   })
 }
@@ -225,7 +226,7 @@ export const useAdjustStock = () => {
       toast.success('Stock corrigé')
     },
     onError: (err: Error) => {
-      toast.error(err.message || 'Erreur lors de la correction stock')
+      toast.error(getApiErrorMessage(err, 'Erreur lors de la correction stock'))
     },
   })
 }

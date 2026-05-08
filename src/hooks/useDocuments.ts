@@ -1,5 +1,6 @@
-import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query'
+﻿import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query'
 import { toast } from 'sonner'
+import { getApiErrorMessage } from '@/lib/apiError'
 import { supabase } from '@/lib/supabase'
 import type { Document } from '@/types'
 
@@ -65,7 +66,7 @@ export const useCreateInvoice = () => {
       toast.success('Facture générée avec succès')
     },
     onError: (err: Error) => {
-      toast.error(err.message || 'Erreur lors de la génération de la facture')
+      toast.error(getApiErrorMessage(err, 'Erreur lors de la génération de la facture'))
     },
   })
 }
@@ -131,7 +132,7 @@ export const useCreateReceipt = () => {
       toast.success('Reçu généré avec succès')
     },
     onError: (err: Error) => {
-      toast.error(err.message || 'Erreur lors de la génération du reçu')
+      toast.error(getApiErrorMessage(err, 'Erreur lors de la génération du reçu'))
     },
   })
 }
@@ -152,7 +153,7 @@ export const useUpdateInvoiceModePaiement = () => {
       toast.success('Mode de paiement mis à jour')
     },
     onError: (err: Error) => {
-      toast.error(err.message || 'Erreur lors de la mise à jour')
+      toast.error(getApiErrorMessage(err, 'Erreur lors de la mise à jour'))
     },
   })
 }

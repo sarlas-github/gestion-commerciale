@@ -1,5 +1,6 @@
-import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query'
+﻿import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query'
 import { toast } from 'sonner'
+import { getApiErrorMessage } from '@/lib/apiError'
 import { supabase } from '@/lib/supabase'
 import { getPaymentStatus, toISODate } from '@/lib/utils'
 import type { Sale } from '@/types'
@@ -209,7 +210,7 @@ export const useCreateSale = () => {
       toast.success('Vente enregistrée avec succès')
     },
     onError: (err: Error) => {
-      toast.error(err.message || "Erreur lors de l'enregistrement")
+      toast.error(getApiErrorMessage(err, "Erreur lors de l'enregistrement"))
     },
   })
 }
@@ -342,7 +343,7 @@ export const useUpdateSale = () => {
       toast.success('Vente mise à jour')
     },
     onError: (err: Error) => {
-      toast.error(err.message || 'Erreur lors de la mise à jour')
+      toast.error(getApiErrorMessage(err, 'Erreur lors de la mise à jour'))
     },
   })
 }
@@ -363,7 +364,7 @@ export const useDeleteSale = () => {
       toast.success('Vente supprimée')
     },
     onError: (err: Error) => {
-      toast.error(err.message || 'Erreur lors de la suppression')
+      toast.error(getApiErrorMessage(err, 'Erreur lors de la suppression'))
     },
   })
 }
