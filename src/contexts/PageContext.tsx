@@ -3,6 +3,8 @@ import { createContext, useContext, useState, useCallback, useEffect, type React
 interface PageContextValue {
   action: ReactNode
   setAction: (action: ReactNode) => void
+  leftAction: ReactNode
+  setLeftAction: (action: ReactNode) => void
   title: string
   setTitle: (title: string) => void
   subtitle: string
@@ -12,6 +14,8 @@ interface PageContextValue {
 const PageContext = createContext<PageContextValue>({
   action: null,
   setAction: () => {},
+  leftAction: null,
+  setLeftAction: () => {},
   title: '',
   setTitle: () => {},
   subtitle: '',
@@ -20,15 +24,17 @@ const PageContext = createContext<PageContextValue>({
 
 export const PageProvider = ({ children }: { children: ReactNode }) => {
   const [action, setActionState] = useState<ReactNode>(null)
+  const [leftAction, setLeftActionState] = useState<ReactNode>(null)
   const [title, setTitleState] = useState('')
   const [subtitle, setSubtitleState] = useState('')
 
   const setAction = useCallback((a: ReactNode) => setActionState(a), [])
+  const setLeftAction = useCallback((a: ReactNode) => setLeftActionState(a), [])
   const setTitle = useCallback((t: string) => setTitleState(t), [])
   const setSubtitle = useCallback((s: string) => setSubtitleState(s), [])
 
   return (
-    <PageContext.Provider value={{ action, setAction, title, setTitle, subtitle, setSubtitle }}>
+    <PageContext.Provider value={{ action, setAction, leftAction, setLeftAction, title, setTitle, subtitle, setSubtitle }}>
       {children}
     </PageContext.Provider>
   )

@@ -46,7 +46,7 @@ export const TopBar = ({ onMenuOpen }: TopBarProps) => {
   const navigate = useNavigate()
   const { user, signOut } = useAuth()
   const queryClient = useQueryClient()
-  const { action, title: contextTitle, subtitle: contextSubtitle } = usePageContext()
+  const { action, leftAction, title: contextTitle, subtitle: contextSubtitle } = usePageContext()
 
   const getPageTitle = () => {
     const exactMatch = pageTitles[location.pathname]
@@ -81,22 +81,31 @@ export const TopBar = ({ onMenuOpen }: TopBarProps) => {
         <span className="sr-only">Ouvrir le menu</span>
       </Button>
 
-      {/* Titre & Sous-titre — flex-1 min-w-0 pour tronquer sans pousser le reste */}
-      <div className="flex flex-col justify-center min-w-0 flex-1">
-        <h1 className="text-base sm:text-xl font-bold tracking-tight text-foreground leading-tight truncate">
-          {displayTitle}
-        </h1>
-        {contextSubtitle && (
-          <p className="hidden sm:block text-[0.8rem] text-muted-foreground leading-none mt-1 truncate">
-            {contextSubtitle}
-          </p>
-        )}
+      {/* Titre & Sous-titre */}
+      <div className="flex items-center gap-2 flex-1 min-w-0">
+        <div className="hidden md:block">
+          {leftAction}
+        </div>
+        <div className="flex flex-col justify-center min-w-0 flex-1">
+          <h1 className="text-base sm:text-xl font-bold tracking-tight text-foreground leading-tight truncate">
+            {displayTitle}
+          </h1>
+          {contextSubtitle && (
+            <p className="hidden sm:block text-[0.8rem] text-muted-foreground leading-none mt-1 truncate">
+              {contextSubtitle}
+            </p>
+          )}
+        </div>
       </div>
 
       {/* CTA Action + Avatar — shrink-0 pour ne jamais être écrasés */}
       <div className="flex items-center gap-2 shrink-0">
         {/* Bouton principal de la page courante */}
         {action}
+        
+        <div className="md:hidden">
+          {leftAction}
+        </div>
 
         {/* Avatar / compte */}
         <DropdownMenu>

@@ -3,7 +3,7 @@ import { useNavigate } from 'react-router-dom'
 import { Controller, useForm, useFieldArray } from 'react-hook-form'
 import { zodResolver } from '@hookform/resolvers/zod'
 import { z } from 'zod'
-import { Plus, Trash2, Loader2, AlertTriangle, FileText } from 'lucide-react'
+import { Plus, Trash2, AlertTriangle, FileText } from 'lucide-react'
 import { EntityAutocomplete } from '@/components/shared/EntityAutocomplete'
 import { Button } from '@/components/ui/button'
 import { Input } from '@/components/ui/input'
@@ -58,16 +58,16 @@ const StatusBadge = ({ status }: { status: string }) => {
 // ── Props ─────────────────────────────────────────────────────────────────────
 
 interface SaleFormProps {
+  id?: string
   existing?: Sale
   onSubmit: (values: SaleFormValues) => Promise<void>
-  isLoading?: boolean
   hasInvoice?: boolean
   savedPayments?: Array<{ id: string }>
 }
 
 // ── Composant principal ───────────────────────────────────────────────────────
 
-export const SaleForm = ({ existing, onSubmit, isLoading = false, hasInvoice = false, savedPayments }: SaleFormProps) => {
+export const SaleForm = ({ id, existing, onSubmit, hasInvoice = false, savedPayments }: SaleFormProps) => {
   const navigate = useNavigate()
   const today = toISODate(new Date())
 
@@ -193,7 +193,7 @@ export const SaleForm = ({ existing, onSubmit, isLoading = false, hasInvoice = f
         onSuccess={handleQuickProductSuccess}
       />
 
-      <form onSubmit={handleSubmit(onSubmit)} noValidate className="space-y-8">
+      <form id={id} onSubmit={handleSubmit(onSubmit)} noValidate className="space-y-8">
         {hasInvoice && (
           <div className="rounded-lg border border-amber-200 bg-amber-50 px-4 py-3 text-sm text-amber-700">
             <span className="font-semibold">Facture générée</span> — Seule la section Paiements reste modifiable.
@@ -637,17 +637,6 @@ export const SaleForm = ({ existing, onSubmit, isLoading = false, hasInvoice = f
               </div>
             </div>
           </div>
-        </div>
-
-        {/* ── Actions ── */}
-        <div className="flex justify-end gap-3">
-          <Button type="button" variant="outline" onClick={() => navigate(-1)} disabled={isLoading}>
-            Annuler
-          </Button>
-          <Button type="submit" disabled={isLoading}>
-            {isLoading && <Loader2 className="mr-2 h-4 w-4 animate-spin" />}
-            {isLoading ? 'Enregistrement...' : 'Enregistrer'}
-          </Button>
         </div>
       </form>
     </>

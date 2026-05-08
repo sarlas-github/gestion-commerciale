@@ -53,6 +53,7 @@ export const ClientModal = ({ client, open, onOpenChange, onSuccess }: ClientMod
         onSubmit={handleSubmit}
         onCancel={() => onOpenChange(false)}
         isLoading={isPending}
+        isModal={true}
       />
     </ResponsiveModal>
   )

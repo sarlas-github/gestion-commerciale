@@ -47,6 +47,7 @@ export const ProductModal = ({ product, open, onOpenChange, onSuccess }: Product
         onSubmit={handleSubmit}
         onCancel={() => onOpenChange(false)}
         isLoading={isPending}
+        isModal={true}
       />
     </ResponsiveModal>
   )

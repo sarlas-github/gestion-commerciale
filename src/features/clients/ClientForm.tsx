@@ -22,13 +22,17 @@ interface ClientFormProps {
   onSubmit: (values: ClientFormValues, setError: UseFormSetError<ClientFormValues>) => Promise<void>
   onCancel: () => void
   isLoading?: boolean
+  isModal?: boolean
+  id?: string
 }
 
 export const ClientForm = ({
+  id,
   defaultValues,
   onSubmit,
   onCancel,
   isLoading = false,
+  isModal = false,
 }: ClientFormProps) => {
   const {
     control,
@@ -45,8 +49,8 @@ export const ClientForm = ({
     },
   })
 
-  return (
-    <form onSubmit={handleSubmit((data) => onSubmit(data, setError))} noValidate className="space-y-4">
+  const formContent = (
+    <>
       <div className="space-y-1.5">
         <Label htmlFor="cf-name">
           Nom <span className="text-destructive">*</span>
@@ -123,15 +127,23 @@ export const ClientForm = ({
         />
       </div>
 
-      <div className="flex justify-end gap-3 pt-2">
-        <Button type="button" variant="outline" onClick={onCancel} disabled={isLoading}>
-          Annuler
-        </Button>
-        <Button type="submit" disabled={isLoading}>
-          {isLoading && <Loader2 className="mr-2 h-4 w-4 animate-spin" />}
-          {isLoading ? 'Enregistrement...' : 'Enregistrer'}
-        </Button>
-      </div>
+      {isModal && (
+        <div className="flex justify-end gap-3 pt-2">
+          <Button type="button" variant="outline" onClick={onCancel} disabled={isLoading}>
+            Annuler
+          </Button>
+          <Button type="submit" disabled={isLoading}>
+            {isLoading && <Loader2 className="mr-2 h-4 w-4 animate-spin" />}
+            {isLoading ? 'Enregistrement...' : 'Enregistrer'}
+          </Button>
+        </div>
+      )}
+    </>
+  )
+
+  return (
+    <form id={id} onSubmit={handleSubmit((data) => onSubmit(data, setError))} noValidate className={isModal ? 'space-y-4' : 'space-y-4 rounded-lg border bg-card p-4 sm:p-6'}>
+      {formContent}
     </form>
   )
 }

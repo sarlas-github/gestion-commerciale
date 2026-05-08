@@ -53,6 +53,7 @@ export const SupplierModal = ({ supplier, open, onOpenChange, onSuccess }: Suppl
         onSubmit={handleSubmit}
         onCancel={() => onOpenChange(false)}
         isLoading={isPending}
+        isModal={true}
       />
     </ResponsiveModal>
   )

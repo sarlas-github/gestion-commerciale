@@ -1,9 +1,9 @@
 import { useState, useCallback, useEffect } from 'react'
-import { useNavigate } from 'react-router-dom'
+
 import { Controller, useForm, useFieldArray } from 'react-hook-form'
 import { zodResolver } from '@hookform/resolvers/zod'
 import { z } from 'zod'
-import { Plus, Trash2, Loader2 } from 'lucide-react'
+import { Plus, Trash2 } from 'lucide-react'
 import { EntityAutocomplete } from '@/components/shared/EntityAutocomplete'
 import { Button } from '@/components/ui/button'
 import { Input } from '@/components/ui/input'
@@ -58,15 +58,14 @@ const StatusBadge = ({ status }: { status: string }) => {
 // ── Props ─────────────────────────────────────────────────────────────────────
 
 interface PurchaseFormProps {
+  id?: string
   existing?: Purchase
   onSubmit: (values: PurchaseFormValues) => Promise<void>
-  isLoading?: boolean
 }
 
 // ── Composant principal ───────────────────────────────────────────────────────
 
-export const PurchaseForm = ({ existing, onSubmit, isLoading = false }: PurchaseFormProps) => {
-  const navigate = useNavigate()
+export const PurchaseForm = ({ id, existing, onSubmit }: PurchaseFormProps) => {
   const today = toISODate(new Date())
 
   const hasExistingPayments =
@@ -191,7 +190,7 @@ export const PurchaseForm = ({ existing, onSubmit, isLoading = false }: Purchase
         onSuccess={handleQuickProductSuccess}
       />
 
-      <form onSubmit={handleSubmit(onSubmit)} noValidate className="space-y-8">
+      <form id={id} onSubmit={handleSubmit(onSubmit)} noValidate className="space-y-8">
         {/* ── Entête ── */}
         <div className="rounded-lg border bg-card p-4 sm:p-6 space-y-4">
           <h2 className="text-sm font-semibold uppercase tracking-wide text-muted-foreground">Informations</h2>
@@ -603,17 +602,6 @@ export const PurchaseForm = ({ existing, onSubmit, isLoading = false }: Purchase
               </div>
             </div>
           </div>
-        </div>
-
-        {/* ── Actions ── */}
-        <div className="flex justify-end gap-3">
-          <Button type="button" variant="outline" onClick={() => navigate(-1)} disabled={isLoading}>
-            Annuler
-          </Button>
-          <Button type="submit" disabled={isLoading}>
-            {isLoading && <Loader2 className="mr-2 h-4 w-4 animate-spin" />}
-            {isLoading ? 'Enregistrement...' : 'Enregistrer'}
-          </Button>
         </div>
       </form>
     </>

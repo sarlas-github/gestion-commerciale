@@ -32,36 +32,53 @@ export const SaleEditPage = () => {
     return <div className="text-center text-muted-foreground py-20">Vente introuvable.</div>
   }
 
+  const formId = "sale-edit-form"
+
   return (
-    <div className="space-y-6 max-w-3xl">
+    <div className="space-y-6 max-w-3xl pb-24 md:pb-0">
       <PageHeader
         title={`Vente — ${sale.clients?.name ?? 'Client inconnu'}`}
+        leftAction={
+          <Button variant="ghost" size="icon" onClick={() => navigate('/sales')} className="mr-1 shrink-0">
+            <ArrowLeft className="h-5 w-5" />
+          </Button>
+        }
         actions={
-          <div className="flex items-center gap-2">
+          <div className="hidden md:flex items-center gap-3">
             <Button variant="outline" size="sm" onClick={() => navigate(`/sales/${id}/invoice`)}>
               <FileText className="mr-2 h-4 w-4" />
               {existingInvoice ? 'Voir facture' : 'Aperçu facture'}
             </Button>
-            <Button variant="ghost" size="sm" onClick={() => navigate(-1)}>
-              <ArrowLeft className="mr-2 h-4 w-4" />
-              Retour
+            <Button variant="outline" onClick={() => navigate(-1)} disabled={updateSale.isPending}>
+              Annuler
+            </Button>
+            <Button type="submit" form={formId} disabled={updateSale.isPending}>
+              Enregistrer
             </Button>
           </div>
         }
       />
       <SaleForm
+        id={formId}
         key={sale.id}
         existing={sale}
         onSubmit={handleSubmit}
-        isLoading={updateSale.isPending}
         hasInvoice={Boolean(existingInvoice)}
         savedPayments={sale.client_payments ?? []}
       />
+
+      {/* Mobile Sticky Bar */}
+      <div className="fixed bottom-0 left-0 right-0 p-4 bg-card border-t md:hidden flex justify-end gap-3 z-50 shadow-[0_-4px_6px_-1px_rgba(0,0,0,0.05)]">
+        <Button variant="outline" size="icon" onClick={() => navigate(`/sales/${id}/invoice`)} title="Facture">
+           <FileText className="h-4 w-4" />
+        </Button>
+        <Button variant="outline" className="bg-card" onClick={() => navigate(-1)} disabled={updateSale.isPending}>
+          Annuler
+        </Button>
+        <Button type="submit" form={formId} disabled={updateSale.isPending}>
+          Enregistrer
+        </Button>
+      </div>
     </div>
   )
 }
-
-
-
-
-

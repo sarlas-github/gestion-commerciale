@@ -20,17 +20,21 @@ const schema = z.object({
 export type ProductFormData = z.infer<typeof schema>
 
 interface ProductFormProps {
+  id?: string
   initial?: ProductWithStock | null
   onSubmit: (data: ProductFormData, setError: UseFormSetError<ProductFormData>) => void | Promise<void>
   onCancel: () => void
   isLoading?: boolean
+  isModal?: boolean
 }
 
 export const ProductForm = ({
+  id,
   initial,
   onSubmit,
   onCancel,
   isLoading = false,
+  isModal = false,
 }: ProductFormProps) => {
   const {
     register,
@@ -56,8 +60,8 @@ export const ProductForm = ({
     if (type === 'individual') setValue('pieces_count', 1)
   }, [type, setValue])
 
-  return (
-    <form onSubmit={handleSubmit((data) => onSubmit(data, setError))} noValidate className="space-y-5">
+  const formContent = (
+    <>
       {/* Nom */}
       <div className="space-y-1.5">
         <Label htmlFor="pf-name">
@@ -170,16 +174,24 @@ export const ProductForm = ({
         )}
       </div>
 
-      {/* Actions */}
-      <div className="flex justify-end gap-2 pt-2">
-        <Button type="button" variant="outline" onClick={onCancel} disabled={isLoading}>
-          Annuler
-        </Button>
-        <Button type="submit" disabled={isLoading}>
-          {isLoading && <Loader2 className="mr-2 h-4 w-4 animate-spin" />}
-          Enregistrer
-        </Button>
-      </div>
+      {/* Actions (uniquement si modal) */}
+      {isModal && (
+        <div className="flex justify-end gap-2 pt-2">
+          <Button type="button" variant="outline" onClick={onCancel} disabled={isLoading}>
+            Annuler
+          </Button>
+          <Button type="submit" disabled={isLoading}>
+            {isLoading && <Loader2 className="mr-2 h-4 w-4 animate-spin" />}
+            Enregistrer
+          </Button>
+        </div>
+      )}
+    </>
+  )
+
+  return (
+    <form id={id} onSubmit={handleSubmit((data) => onSubmit(data, setError))} noValidate className={isModal ? 'space-y-5' : 'space-y-5 rounded-lg border bg-card p-4 sm:p-6'}>
+      {formContent}
     </form>
   )
 }
