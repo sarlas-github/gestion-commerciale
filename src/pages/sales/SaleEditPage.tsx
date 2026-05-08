@@ -69,8 +69,9 @@ export const SaleEditPage = () => {
 
       {/* Mobile Sticky Bar */}
       <div className="fixed bottom-0 left-0 right-0 p-4 bg-card border-t md:hidden flex justify-end gap-3 z-50 shadow-[0_-4px_6px_-1px_rgba(0,0,0,0.05)]">
-        <Button variant="outline" size="icon" onClick={() => navigate(`/sales/${id}/invoice`)} title="Facture">
-           <FileText className="h-4 w-4" />
+        <Button variant="outline" size="sm" onClick={() => navigate(`/sales/${id}/invoice`)} className="bg-card">
+          <FileText className="mr-1.5 h-4 w-4" />
+          {existingInvoice ? 'Facture' : 'Aperçu'}
         </Button>
         <Button variant="outline" className="bg-card" onClick={() => navigate(-1)} disabled={updateSale.isPending}>
           Annuler

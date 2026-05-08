@@ -510,19 +510,19 @@ export const SaleForm = ({ id, existing, onSubmit, hasInvoice = false, savedPaym
               {paymentFields.map((field, idx) => (
                 <div key={field.id} className="rounded-md border p-3 space-y-2">
                   {/* Ligne 1 : Date + Montant + Supprimer */}
-                  <div className="flex gap-2 items-end">
-                    <div className="space-y-1 flex-1">
+                  <div className="grid grid-cols-[1.1fr_1fr_auto] gap-2 items-end">
+                    <div className="space-y-1">
                       <span className="text-xs text-muted-foreground block">Date</span>
                       <Controller
                         name={`payments.${idx}.date`}
                         control={control}
                         render={({ field: f }) => (
-                          <Input type="date" className="h-8" value={f.value} onChange={f.onChange} ref={f.ref} />
+                          <Input type="date" className="h-8 px-1 text-xs sm:text-sm" value={f.value} onChange={f.onChange} ref={f.ref} />
                         )}
                       />
                     </div>
-                    <div className="space-y-1 flex-1">
-                      <span className="text-xs text-muted-foreground block">Montant (MAD)</span>
+                    <div className="space-y-1">
+                      <span className="text-xs text-muted-foreground block truncate">Montant</span>
                       <Controller
                         name={`payments.${idx}.amount`}
                         control={control}
@@ -531,7 +531,7 @@ export const SaleForm = ({ id, existing, onSubmit, hasInvoice = false, savedPaym
                             type="number"
                             min={0}
                             step="0.01"
-                            className="h-8 text-right"
+                            className="h-8 text-right px-1 text-xs sm:text-sm"
                             value={f.value}
                             onChange={e => f.onChange(e.target.value === '' ? 0 : Number(e.target.value))}
                             onFocus={e => e.target.select()}

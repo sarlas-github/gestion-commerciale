@@ -263,3 +263,23 @@ Dans toutes les pages de détail ou d'édition, le bouton "Retour" placé dans l
 
 ### Vue Rapide (QuickView)
 Pour les entités complexes (Ventes, Achats), privilégier une modale de vue rapide au clic sur la référence dans les listes transversales (ex: Mouvements de stock) pour éviter de perdre le contexte de recherche.
+
+---
+
+## 16. Standardisation des Formulaires (Mobile & Desktop)
+
+Pour garantir une expérience unifiée, les pages de formulaires (Ventes, Achats, Produits, Clients, Fournisseurs) et d'aperçu de document (Factures, Reçus) doivent respecter la structure suivante :
+
+### Conteneur Principal
+Les éléments du formulaire (champs, tableaux de lignes) doivent toujours être encapsulés dans un conteneur blanc (ou couleur carte en mode sombre) : `className="bg-card"`.
+
+### Bouton Retour (`leftAction` de la TopBar)
+- Le bouton "Retour" est toujours affiché.
+- Il ne contient **pas de texte**, uniquement l'icône `<ArrowLeft className="h-5 w-5" />`.
+- **Sur Desktop** : Il s'affiche à gauche du titre de la page.
+- **Sur Mobile** : Il s'affiche tout à droite de la `TopBar`, juste avant l'avatar. (Comportement géré dynamiquement par `TopBar`).
+
+### Boutons d'Action (Enregistrer, Annuler, Imprimer...)
+- **Sur Desktop** : Ils sont placés dans le `PageHeader` (côté droit).
+- **Sur Mobile** : Ils sont fixés en bas de l'écran (Sticky Bar) via un conteneur `fixed bottom-0 bg-card border-t md:hidden`.
+- **Fond de la Sticky Bar** : Elle doit avoir le fond `bg-card` pour ne pas se fondre avec le fond gris, et les boutons secondaires (qui ont `variant="outline"`) doivent explicitement porter la classe `className="bg-card"` s'ils risquent de se confondre avec l'arrière plan.
