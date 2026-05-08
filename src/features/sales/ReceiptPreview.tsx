@@ -49,15 +49,14 @@ interface CopyProps {
 }
 
 const ReceiptCopy = ({ data, isDuplicata }: CopyProps) => {
-  const { receiptNumber, date, company, items, tvaRate, totalTTC, modePaiement } = data
+  const { receiptNumber, date, company, items, tvaRate, tvaAmount, totalTTC, modePaiement } = data
   const isDraft = !receiptNumber
   const displayNumber = receiptNumber ?? 'REC-****'
   const brandColor = company.couleur_marque || '#1e40af'
 
-  const colQty = 55
-  const colPrix = 120
-  const colTva = 60
-  const colTotal = 120
+  const colQty = 60
+  const colPrix = 140
+  const colTotal = 140
   const colPad = 10
 
   return (
@@ -86,9 +85,6 @@ const ReceiptCopy = ({ data, isDuplicata }: CopyProps) => {
             </div>
           )}
           <div style={{ fontSize: '15px', fontWeight: 700, color: C.black }}>{company.name ?? '—'}</div>
-          {company.address && <div style={{ fontSize: '12px', color: C.gray500, whiteSpace: 'pre-line' }}>{company.address}</div>}
-          {company.phone && <div style={{ fontSize: '12px', color: C.gray500 }}>{company.phone}</div>}
-          {company.email && <div style={{ fontSize: '12px', color: C.gray500 }}>{company.email}</div>}
         </div>
 
         <div style={{ textAlign: 'right', marginLeft: '24px' }}>
@@ -116,7 +112,6 @@ const ReceiptCopy = ({ data, isDuplicata }: CopyProps) => {
           <col />
           <col style={{ width: `${colQty}px` }} />
           <col style={{ width: `${colPrix}px` }} />
-          <col style={{ width: `${colTva}px` }} />
           <col style={{ width: `${colTotal}px` }} />
         </colgroup>
         <thead>
@@ -124,7 +119,6 @@ const ReceiptCopy = ({ data, isDuplicata }: CopyProps) => {
             <th style={{ textAlign: 'left', padding: `8px ${colPad}px`, fontWeight: 600, backgroundColor: brandColor, color: C.white }}>Description</th>
             <th style={{ textAlign: 'center', padding: `8px ${colPad}px`, fontWeight: 600, backgroundColor: brandColor, color: C.white }}>Qté</th>
             <th style={{ textAlign: 'right', padding: `8px ${colPad}px`, fontWeight: 600, backgroundColor: brandColor, color: C.white }}>Prix</th>
-            <th style={{ textAlign: 'center', padding: `8px ${colPad}px`, fontWeight: 600, backgroundColor: brandColor, color: C.white }}>TVA</th>
             <th style={{ textAlign: 'right', padding: `8px ${colPad}px`, fontWeight: 600, backgroundColor: brandColor, color: C.white }}>Total</th>
           </tr>
         </thead>
@@ -134,7 +128,6 @@ const ReceiptCopy = ({ data, isDuplicata }: CopyProps) => {
               <td style={{ padding: `6px ${colPad}px`, color: C.gray800, backgroundColor: i % 2 === 0 ? C.white : C.gray50, borderBottom: `1px solid ${C.gray100}` }}>{item.productName}</td>
               <td style={{ padding: `6px ${colPad}px`, textAlign: 'center', color: C.gray700, fontVariantNumeric: 'tabular-nums', backgroundColor: i % 2 === 0 ? C.white : C.gray50, borderBottom: `1px solid ${C.gray100}` }}>{item.quantity}</td>
               <td style={{ padding: `6px ${colPad}px`, textAlign: 'right', color: C.gray700, fontVariantNumeric: 'tabular-nums', backgroundColor: i % 2 === 0 ? C.white : C.gray50, borderBottom: `1px solid ${C.gray100}` }}>{formatCurrency(item.unitPrice)}</td>
-              <td style={{ padding: `6px ${colPad}px`, textAlign: 'center', color: C.gray700, backgroundColor: i % 2 === 0 ? C.white : C.gray50, borderBottom: `1px solid ${C.gray100}` }}>{tvaRate > 0 ? `${tvaRate}%` : '—'}</td>
               <td style={{ padding: `6px ${colPad}px`, textAlign: 'right', fontWeight: 500, color: C.gray800, fontVariantNumeric: 'tabular-nums', backgroundColor: i % 2 === 0 ? C.white : C.gray50, borderBottom: `1px solid ${C.gray100}` }}>{formatCurrency(item.subtotal)}</td>
             </tr>
           ))}
@@ -144,8 +137,15 @@ const ReceiptCopy = ({ data, isDuplicata }: CopyProps) => {
       {/* Totaux */}
       <div style={{ display: 'flex', justifyContent: 'flex-end', marginBottom: '16px' }}>
         <div style={{ display: 'inline-block', width: '240px' }}>
+          {tvaAmount > 0 && (
+            <div style={{ fontSize: '13px', padding: '4px 12px', borderBottom: `1px solid ${C.gray200}`, color: C.gray700 }}>
+              <span style={{ float: 'left' }}>TVA ({tvaRate}%) :</span>
+              <span style={{ float: 'right', fontVariantNumeric: 'tabular-nums' }}>{formatCurrency(tvaAmount)}</span>
+              <div style={{ clear: 'both' }} />
+            </div>
+          )}
           <div style={{ overflow: 'hidden', fontSize: '15px', fontWeight: 700, padding: '7px 12px', color: C.white, backgroundColor: brandColor }}>
-            <span style={{ float: 'left' }}>TOTAL</span>
+            <span style={{ float: 'left' }}>TOTAL TTC</span>
             <span style={{ float: 'right', fontVariantNumeric: 'tabular-nums' }}>{formatCurrency(totalTTC)}</span>
           </div>
         </div>
