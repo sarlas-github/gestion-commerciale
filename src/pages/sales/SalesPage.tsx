@@ -292,7 +292,7 @@ export const SalesPage = () => {
         data={filtered}
         isLoading={isLoading}
         exportFileName="ventes"
-        defaultSorting={[{ id: 'updated_at', desc: true }]}
+        defaultSorting={[{ id: 'date', desc: true }]}
         exportMapper={s => ({
           Client: (s as Sale & { clients?: { name: string } }).clients?.name ?? '',
           Date: formatDate(s.date),

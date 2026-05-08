@@ -285,7 +285,7 @@ export const PurchasesPage = () => {
         data={filtered}
         isLoading={isLoading}
         exportFileName="achats"
-        defaultSorting={[{ id: 'updated_at', desc: true }]}
+        defaultSorting={[{ id: 'date', desc: true }]}
         exportMapper={p => ({
           Référence: p.reference ?? '',
           Fournisseur: (p as Purchase & { suppliers?: { name: string } }).suppliers?.name ?? '',
