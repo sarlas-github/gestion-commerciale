@@ -15,7 +15,6 @@ import { useCompany } from '@/hooks/useCompany'
 import { ClientModal } from '@/features/clients/ClientModal'
 import { ProductModal } from '@/features/products/ProductModal'
 import { formatCurrency, getPaymentStatus, toISODate } from '@/lib/utils'
-import { useNextSaleNumber } from '@/hooks/useSales'
 import type { Sale } from '@/types'
 
 // ── Schéma Zod ────────────────────────────────────────────────────────────────
@@ -38,7 +37,6 @@ const paymentSchema = z.object({
 export const saleSchema = z.object({
   client_id: z.string().min(1, 'Client obligatoire'),
   date: z.string().min(1, 'Date obligatoire'),
-  reference: z.string().optional().or(z.literal('')),
   note: z.string().optional().or(z.literal('')),
   tva_rate: z.number().default(0),
   items: z.array(itemSchema).min(1, 'Ajouter au moins un produit'),
@@ -82,7 +80,6 @@ export const SaleForm = ({ id, existing, onSubmit, hasInvoice = false, savedPaym
 
   const { data: clients = [] } = useClients()
   const { data: products = [] } = useProducts()
-  const { data: nextRef } = useNextSaleNumber()
   const { data: company } = useCompany()
 
   const defaultItems = existing?.sale_items?.map(i => ({
@@ -111,19 +108,12 @@ export const SaleForm = ({ id, existing, onSubmit, hasInvoice = false, savedPaym
     defaultValues: {
       client_id: existing?.client_id ?? '',
       date: existing?.date ?? today,
-      reference: existing?.reference ?? '',
       note: existing?.note ?? '',
       tva_rate: existing?.tva_rate ?? 0,
       items: defaultItems,
       payments: defaultPayments,
     },
   })
-
-  useEffect(() => {
-    if (!existing && nextRef && !watch('reference')) {
-      setValue('reference', nextRef)
-    }
-  }, [existing, nextRef, setValue, watch])
 
   useEffect(() => {
     if (!existing && company != null) {
@@ -273,12 +263,11 @@ export const SaleForm = ({ id, existing, onSubmit, hasInvoice = false, savedPaym
             {/* Référence */}
             <div className="space-y-1.5">
               <Label>Référence</Label>
-              <Controller
-                name="reference"
-                control={control}
-                render={({ field }) => (
-                  <Input placeholder="Auto-généré" {...field} className="font-mono" disabled={hasInvoice} />
-                )}
+              <Input
+                readOnly
+                value={existing?.reference ?? ''}
+                placeholder="Généré à l'enregistrement"
+                className="font-mono bg-muted text-muted-foreground cursor-default"
               />
             </div>
 

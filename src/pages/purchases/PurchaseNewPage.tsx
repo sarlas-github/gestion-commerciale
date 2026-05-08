@@ -13,7 +13,6 @@ export const PurchaseNewPage = () => {
     await createPurchase.mutateAsync({
       supplier_id: values.supplier_id,
       date: values.date,
-      reference: values.reference ?? '',
       note: values.note ?? '',
       tva_rate: values.tva_rate ?? 0,
       items: values.items,

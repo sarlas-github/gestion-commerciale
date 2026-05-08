@@ -13,7 +13,6 @@ export const SaleNewPage = () => {
     const sale = await createSale.mutateAsync({
       client_id: values.client_id,
       date: values.date,
-      reference: values.reference ?? '',
       note: values.note ?? '',
       tva_rate: values.tva_rate ?? 0,
       items: values.items.map(i => ({

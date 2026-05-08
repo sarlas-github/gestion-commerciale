@@ -15,7 +15,6 @@ import { useCompany } from '@/hooks/useCompany'
 import { SupplierModal } from '@/features/suppliers/SupplierModal'
 import { ProductModal } from '@/features/products/ProductModal'
 import { formatCurrency, getPaymentStatus, toISODate } from '@/lib/utils'
-import { useNextPurchaseNumber } from '@/hooks/usePurchases'
 import type { Purchase } from '@/types'
 
 // ── Schéma Zod ────────────────────────────────────────────────────────────────
@@ -38,7 +37,6 @@ const paymentSchema = z.object({
 export const purchaseSchema = z.object({
   supplier_id: z.string().min(1, 'Fournisseur obligatoire'),
   date: z.string().min(1, 'Date obligatoire'),
-  reference: z.string().optional().or(z.literal('')),
   note: z.string().optional().or(z.literal('')),
   tva_rate: z.number().default(0),
   items: z.array(itemSchema).min(1, 'Ajouter au moins un produit'),
@@ -79,7 +77,6 @@ export const PurchaseForm = ({ id, existing, onSubmit }: PurchaseFormProps) => {
 
   const { data: suppliers = [] } = useSuppliers()
   const { data: products = [] } = useProducts()
-  const { data: nextRef } = useNextPurchaseNumber()
   const { data: company } = useCompany()
 
   const defaultItems = existing?.purchase_items?.map(i => ({
@@ -108,19 +105,12 @@ export const PurchaseForm = ({ id, existing, onSubmit }: PurchaseFormProps) => {
     defaultValues: {
       supplier_id: existing?.supplier_id ?? '',
       date: existing?.date ?? today,
-      reference: existing?.reference ?? '',
       note: existing?.note ?? '',
       tva_rate: existing?.tva_rate ?? 0,
       items: defaultItems,
       payments: defaultPayments,
     },
   })
-
-  useEffect(() => {
-    if (!existing && nextRef && !watch('reference')) {
-      setValue('reference', nextRef)
-    }
-  }, [existing, nextRef, setValue, watch])
 
   useEffect(() => {
     if (!existing && company != null) {
@@ -265,12 +255,11 @@ export const PurchaseForm = ({ id, existing, onSubmit }: PurchaseFormProps) => {
             {/* Référence */}
             <div className="space-y-1.5">
               <Label>Référence</Label>
-              <Controller
-                name="reference"
-                control={control}
-                render={({ field }) => (
-                  <Input placeholder="ACH-001 (optionnel)" value={field.value ?? ''} onChange={field.onChange} ref={field.ref} />
-                )}
+              <Input
+                readOnly
+                value={existing?.reference ?? ''}
+                placeholder="Généré à l'enregistrement"
+                className="font-mono bg-muted text-muted-foreground cursor-default"
               />
             </div>
 

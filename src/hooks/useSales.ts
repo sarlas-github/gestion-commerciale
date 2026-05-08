@@ -24,7 +24,6 @@ export interface SalePaymentInput {
 export interface CreateSalePayload {
   client_id: string
   date: string
-  reference?: string
   note?: string
   tva_rate?: number
   items: SaleItemInput[]
@@ -41,94 +40,6 @@ async function getCurrentUser() {
   const { data: { user } } = await supabase.auth.getUser()
   if (!user) throw new Error('Non authentifié')
   return user
-}
-
-export async function getNextSaleNumber(
-  userId: string,
-  year: number,
-  providedRef?: string
-): Promise<string> {
-  const { data: existing } = await supabase
-    .from('document_sequences')
-    .select('id, last_number')
-    .eq('user_id', userId)
-    .eq('type', 'sale')
-    .eq('year', year)
-    .maybeSingle()
-
-  let nextNumber: number
-  let providedNumber = 0
-
-  if (providedRef && providedRef.startsWith(`VEN-${year}-`)) {
-    const match = providedRef.match(/-(\d+)$/)
-    if (match) providedNumber = parseInt(match[1], 10)
-  }
-
-  if (existing) {
-    if (providedNumber > 0) {
-      nextNumber = Math.max(existing.last_number, providedNumber)
-    } else {
-      nextNumber = existing.last_number + 1
-    }
-    await supabase
-      .from('document_sequences')
-      .update({ last_number: nextNumber })
-      .eq('id', existing.id)
-  } else {
-    nextNumber = providedNumber > 0 ? providedNumber : 1
-    await supabase
-      .from('document_sequences')
-      .insert({ user_id: userId, type: 'sale', year, last_number: nextNumber })
-  }
-
-  if (providedRef) return providedRef
-  return `VEN-${year}-${String(nextNumber).padStart(3, '0')}`
-}
-
-export const useNextSaleNumber = () => {
-  return useQuery({
-    queryKey: ['next-sale-number'],
-    queryFn: async () => {
-      const user = await getCurrentUser()
-      const year = new Date().getFullYear()
-      const { data: existing, error: seqErr } = await supabase
-        .from('document_sequences')
-        .select('last_number')
-        .eq('user_id', user.id)
-        .eq('type', 'sale')
-        .eq('year', year)
-        .maybeSingle()
-      
-      if (seqErr) console.error("Error fetching sequence", seqErr)
-
-      let nextNumber = (existing?.last_number || 0) + 1
-
-      // Auto-heal: Check actual sales in case sequence is out of sync
-      if (nextNumber === 1) {
-        const { data: maxSale } = await supabase
-          .from('sales')
-          .select('reference')
-          .eq('user_id', user.id)
-          .ilike('reference', `VEN-${year}-%`)
-          .order('reference', { ascending: false })
-          .limit(1)
-          .maybeSingle()
-          
-        if (maxSale && maxSale.reference) {
-          const match = maxSale.reference.match(/-(\d+)$/)
-          if (match) {
-            const maxNum = parseInt(match[1], 10)
-            if (maxNum >= nextNumber) {
-              nextNumber = maxNum + 1
-            }
-          }
-        }
-      }
-
-      return `VEN-${year}-${String(nextNumber).padStart(3, '0')}`
-    },
-    staleTime: 0,
-  })
 }
 
 // ── Queries ───────────────────────────────────────────────────────────────────
@@ -184,8 +95,12 @@ export const useCreateSale = () => {
       const paid = payload.payments.reduce((s, p) => s + p.amount, 0)
       const status = getPaymentStatus(paid, total)
 
-      // 2. INSERT sale (remaining est GENERATED — GOTCHA #6)
-      const reference = await getNextSaleNumber(uid, year, payload.reference)
+      // 2. Génération atomique de la référence via la séquence PostgreSQL
+      const { data: seqNum, error: seqErr } = await supabase.rpc('get_next_doc_sequence', {
+        p_user_id: uid, p_type: 'sale', p_year: year,
+      })
+      if (seqErr) throw seqErr
+      const reference = `VEN-${year}-${String(seqNum).padStart(3, '0')}`
 
       const { data: sale, error: sErr } = await supabase
         .from('sales')
@@ -285,7 +200,6 @@ export const useCreateSale = () => {
     },
     onSuccess: () => {
       qc.invalidateQueries({ queryKey: ['sales'] })
-      qc.invalidateQueries({ queryKey: ['next-sale-number'] })
       qc.invalidateQueries({ queryKey: ['clients'] })
       qc.invalidateQueries({ queryKey: ['products'] })
       qc.invalidateQueries({ queryKey: ['stock-movements'] })
@@ -304,7 +218,7 @@ export const useUpdateSale = () => {
   const qc = useQueryClient()
   return useMutation({
     mutationFn: async (payload: UpdateSalePayload) => {
-      const { id, client_id, date, reference, note, items, payments, tva_rate } = payload
+      const { id, client_id, date, note, items, payments, tva_rate } = payload
       const user = await getCurrentUser()
 
       // 1. Récupère la vente actuelle (avec items)
@@ -329,7 +243,7 @@ export const useUpdateSale = () => {
         .update({
           client_id,
           date,
-          reference: reference || oldSale.reference,
+          reference: oldSale.reference,
           note: note || null,
           total,
           tva_rate: tvaRate,
@@ -442,7 +356,6 @@ export const useDeleteSale = () => {
     },
     onSuccess: () => {
       qc.invalidateQueries({ queryKey: ['sales'] })
-      qc.invalidateQueries({ queryKey: ['next-sale-number'] })
       qc.invalidateQueries({ queryKey: ['clients'] })
       qc.invalidateQueries({ queryKey: ['products'] })
       qc.invalidateQueries({ queryKey: ['stock-alerts'] })
