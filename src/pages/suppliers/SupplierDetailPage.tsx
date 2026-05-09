@@ -25,7 +25,7 @@ import {
   useSupplierPayments,
   useSupplierMonthlyState,
 } from '@/hooks/useSuppliers'
-import { formatCurrency, formatDate, formatPhone } from '@/lib/utils'
+import { formatCurrency, formatDate, formatPhone, cn } from '@/lib/utils'
 import type { Purchase, SupplierPayment } from '@/types'
 
 // ── MonthPicker inline ────────────────────────────────────────────────────────
@@ -71,8 +71,9 @@ const MonthPicker = ({
 // ── Badge statut paiement ─────────────────────────────────────────────────────
 
 const PaymentBadge = ({ status }: { status: string }) => {
-  if (status === 'paid') return <Badge className="bg-green-100 text-green-800 hover:bg-green-100">🟢 Payé</Badge>
-  if (status === 'partial') return <Badge className="bg-orange-100 text-orange-800 hover:bg-orange-100">🟡 Partiel</Badge>
+  if (status === 'paid')      return <Badge className="bg-green-100 text-green-800 hover:bg-green-100">🟢 Payé</Badge>
+  if (status === 'partial')   return <Badge className="bg-orange-100 text-orange-800 hover:bg-orange-100">🟡 Partiel</Badge>
+  if (status === 'cancelled') return <Badge className="bg-gray-100 text-gray-500 hover:bg-gray-100">⛔ Annulé</Badge>
   return <Badge className="bg-red-100 text-red-800 hover:bg-red-100">🔴 Impayé</Badge>
 }
 
@@ -125,13 +126,33 @@ const TabAchats = ({ supplierId }: { supplierId: string }) => {
       ),
     },
     { accessorKey: 'date', header: 'Date', cell: ({ row }) => formatDate(row.original.date) },
-    { accessorKey: 'total', header: 'Total', cell: ({ row }) => formatCurrency(row.original.total) },
-    { accessorKey: 'paid', header: 'Payé', cell: ({ row }) => formatCurrency(row.original.paid) },
+    {
+      accessorKey: 'total',
+      header: 'Total',
+      cell: ({ row }) => (
+        <span className={cn('font-medium', row.original.status === 'cancelled' && 'line-through text-muted-foreground')}>
+          {formatCurrency(row.original.total)}
+        </span>
+      ),
+    },
+    {
+      accessorKey: 'paid',
+      header: 'Payé',
+      cell: ({ row }) => (
+        <span className={cn(row.original.status === 'cancelled' && 'line-through text-muted-foreground')}>
+          {formatCurrency(row.original.paid)}
+        </span>
+      ),
+    },
     {
       accessorKey: 'remaining',
       header: 'Reste',
       cell: ({ row }) => (
-        <span className={row.original.remaining > 0 ? 'text-red-600 font-medium' : 'text-muted-foreground'}>
+        <span className={cn(
+          row.original.status === 'cancelled'
+            ? 'line-through text-muted-foreground'
+            : row.original.remaining > 0 ? 'text-red-600 font-medium' : 'text-muted-foreground'
+        )}>
           {formatCurrency(row.original.remaining)}
         </span>
       ),

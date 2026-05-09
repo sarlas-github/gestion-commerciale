@@ -23,7 +23,6 @@ DECLARE
   v_date       date;
   v_paid       numeric;
   v_item       record;
-  v_stock_qty  numeric;
   v_status     text;
 BEGIN
   -- ── 0. Auth ────────────────────────────────────────────────────────────────
@@ -70,32 +69,7 @@ BEGIN
     RAISE EXCEPTION 'Annulation impossible : un paiement a déjà été enregistré pour cette transaction.';
   END IF;
 
-  -- ── 5. Pré-validation stock (ACHAT uniquement) ────────────────────────────
-  -- Un achat a augmenté le stock ; l'annuler va soustraire les quantités.
-  -- On vérifie que chaque produit a suffisamment de stock.
-  IF p_type = 'purchase' THEN
-    FOR v_item IN
-      SELECT pi.product_id, pi.quantity
-        FROM purchase_items pi
-       WHERE pi.purchase_id = p_id
-    LOOP
-      SELECT COALESCE(quantity, 0)
-        INTO v_stock_qty
-        FROM stock
-       WHERE product_id = v_item.product_id
-         AND user_id    = v_uid;
-
-      IF v_stock_qty - v_item.quantity < 0 THEN
-        RAISE EXCEPTION
-          'Stock insuffisant pour annuler cet achat : le produit "%" a un stock de % unité(s), mais l''annulation nécessite de retirer % unité(s). Des produits de cet achat ont peut-être déjà été vendus.',
-          (SELECT name FROM products WHERE id = v_item.product_id),
-          v_stock_qty,
-          v_item.quantity;
-      END IF;
-    END LOOP;
-  END IF;
-
-  -- ── 6. Mise à jour du statut ──────────────────────────────────────────────
+  -- ── 5. Mise à jour du statut ──────────────────────────────────────────────
   IF p_type = 'purchase' THEN
     UPDATE purchases
        SET status     = v_cancelled,

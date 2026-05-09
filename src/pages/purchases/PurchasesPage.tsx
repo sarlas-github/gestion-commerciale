@@ -325,9 +325,7 @@ export const PurchasesPage = () => {
         title="Annuler l'achat"
         description={
           `Annuler l'achat ${cancelTarget?.reference ?? 'sans référence'} ?\n\n` +
-          `Le stock sera mis à jour (quantités soustraites). ` +
-          `Si des produits de cet achat ont déjà été revendus, l'annulation sera bloquée automatiquement.\n\n` +
-          `Cette opération est irréversible.`
+          `Le stock sera mis à jour (quantités soustraites). Cette opération est irréversible.`
         }
         onConfirm={() => {
           if (cancelTarget) {
