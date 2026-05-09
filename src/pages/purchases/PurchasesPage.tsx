@@ -1,14 +1,14 @@
 import { useMemo, useState } from 'react'
 import { useNavigate } from 'react-router-dom'
 import { type ColumnDef } from '@tanstack/react-table'
-import { Pencil, Trash2, Plus, Link2, ChevronDown, Check } from 'lucide-react'
+import { Pencil, Plus, Link2, ChevronDown, Check, Ban } from 'lucide-react'
 import { DataTable } from '@/components/shared/DataTable'
 import { PageHeader } from '@/components/shared/PageHeader'
 import { ConfirmDialog } from '@/components/shared/ConfirmDialog'
 import { Button } from '@/components/ui/button'
 import { Badge } from '@/components/ui/badge'
 import { Popover, PopoverContent, PopoverTrigger } from '@/components/ui/popover'
-import { usePurchases, useDeletePurchase } from '@/hooks/usePurchases'
+import { usePurchases, useCancelPurchase } from '@/hooks/usePurchases'
 import { PurchaseQuickViewModal } from '@/features/purchases/PurchaseQuickViewModal'
 import { formatCurrency, formatDate, cn } from '@/lib/utils'
 import type { Purchase } from '@/types'
@@ -17,6 +17,7 @@ import { usePageAction } from '@/contexts/PageContext'
 const StatusBadge = ({ status }: { status: string }) => {
   if (status === 'paid')    return <Badge className="bg-green-100 text-green-800 hover:bg-green-100">🟢 Payé</Badge>
   if (status === 'partial') return <Badge className="bg-orange-100 text-orange-800 hover:bg-orange-100">🟡 Partiel</Badge>
+  if (status === 'cancelled') return <Badge className="bg-gray-100 text-gray-500 hover:bg-gray-100 line-through">⛔ Annulé</Badge>
   return <Badge className="bg-red-100 text-red-800 hover:bg-red-100">🔴 Impayé</Badge>
 }
 
@@ -24,6 +25,7 @@ const STATUS_OPTIONS = [
   { value: 'unpaid',  label: 'Impayé',  emoji: '🔴', badge: 'bg-red-100 text-red-800'    },
   { value: 'partial', label: 'Partiel', emoji: '🟡', badge: 'bg-orange-100 text-orange-800' },
   { value: 'paid',    label: 'Payé',    emoji: '🟢', badge: 'bg-green-100 text-green-800' },
+  { value: 'cancelled',  label: 'Annulé',  emoji: '⛔', badge: 'bg-gray-100 text-gray-500'   },
 ] as const
 
 const MONTHS_FR = [
@@ -34,8 +36,8 @@ const MONTHS_FR = [
 export const PurchasesPage = () => {
   const navigate = useNavigate()
   const { data: purchases = [], isLoading } = usePurchases()
-  const deletePurchase = useDeletePurchase()
-  const [deleteTarget, setDeleteTarget] = useState<Purchase | null>(null)
+  const cancelPurchase = useCancelPurchase()
+  const [cancelTarget, setCancelTarget] = useState<Purchase | null>(null)
   const [selectedPurchaseId, setSelectedPurchaseId] = useState<string | null>(null)
   const [isModalOpen, setIsModalOpen] = useState(false)
 
@@ -119,19 +121,30 @@ export const PurchasesPage = () => {
       {
         accessorKey: 'total',
         header: 'Total',
-        cell: ({ row }) => <span className="font-medium">{formatCurrency(row.original.total)}</span>,
+        cell: ({ row }) => (
+          <span className={cn('font-medium', row.original.status === 'cancelled' && 'line-through text-muted-foreground')}>
+            {formatCurrency(row.original.total)}
+          </span>
+        ),
       },
       {
         accessorKey: 'paid',
         header: 'Payé',
-        cell: ({ row }) => formatCurrency(row.original.paid),
+        cell: ({ row }) => (
+          <span className={cn(row.original.status === 'cancelled' && 'text-muted-foreground')}>
+            {formatCurrency(row.original.paid)}
+          </span>
+        ),
       },
       {
         accessorKey: 'remaining',
         header: 'Reste',
         cell: ({ row }) => (
-          <span className={row.original.remaining > 0 ? 'text-red-600 font-medium' : 'text-muted-foreground'}>
-            {formatCurrency(row.original.remaining)}
+          <span className={row.original.status === 'cancelled'
+            ? 'text-muted-foreground'
+            : row.original.remaining > 0 ? 'text-red-600 font-medium' : 'text-muted-foreground'
+          }>
+            {row.original.status === 'cancelled' ? '—' : formatCurrency(row.original.remaining)}
           </span>
         ),
       },
@@ -144,28 +157,33 @@ export const PurchasesPage = () => {
         id: 'actions',
         header: 'Actions',
         enableSorting: false,
-        cell: ({ row }) => (
-          <div className="flex items-center gap-1">
-            <Button
-              variant="ghost"
-              size="icon"
-              className="h-8 w-8"
-              title="Modifier"
-              onClick={() => navigate(`/purchases/${row.original.id}/edit`)}
-            >
-              <Pencil className="h-4 w-4" />
-            </Button>
-            <Button
-              variant="ghost"
-              size="icon"
-              className="h-8 w-8 text-destructive hover:text-destructive"
-              title="Supprimer"
-              onClick={() => setDeleteTarget(row.original)}
-            >
-              <Trash2 className="h-4 w-4" />
-            </Button>
-          </div>
-        ),
+        cell: ({ row }) => {
+          const isCancelled = row.original.status === 'cancelled'
+          return (
+            <div className="flex items-center gap-1">
+              <Button
+                variant="ghost"
+                size="icon"
+                className="h-8 w-8"
+                title={isCancelled ? 'Modification impossible (annulé)' : 'Modifier'}
+                disabled={isCancelled}
+                onClick={() => navigate(`/purchases/${row.original.id}/edit`)}
+              >
+                <Pencil className="h-4 w-4" />
+              </Button>
+              <Button
+                variant="ghost"
+                size="icon"
+                className="h-8 w-8 text-amber-600 hover:text-amber-700 hover:bg-amber-50"
+                title={isCancelled ? 'Déjà annulé' : 'Annuler cet achat'}
+                disabled={isCancelled}
+                onClick={() => setCancelTarget(row.original)}
+              >
+                <Ban className="h-4 w-4" />
+              </Button>
+            </div>
+          )
+        },
       },
     ],
     [navigate]
@@ -198,7 +216,6 @@ export const PurchasesPage = () => {
         </select>
         {/* Mobile — Filter Chips */}
         <div className="flex sm:hidden items-center gap-2 overflow-x-auto pb-1 [scrollbar-width:none] [&::-webkit-scrollbar]:hidden">
-          {/* Label masqué sur mobile */}
           <span className="text-sm text-muted-foreground shrink-0 hidden sm:inline">Statut :</span>
           {STATUS_OPTIONS.map(s => (
             <button
@@ -233,7 +250,6 @@ export const PurchasesPage = () => {
               <ChevronDown className="h-4 w-4 text-muted-foreground shrink-0" />
             </PopoverTrigger>
             <PopoverContent align="end" className="w-48 p-1.5">
-              {/* Ligne "Tout" — sélectionner / désélectionner */}
               <button
                 onClick={() =>
                   filterStatuses.length === STATUS_OPTIONS.length
@@ -293,21 +309,27 @@ export const PurchasesPage = () => {
           Total: p.total,
           Payé: p.paid,
           Reste: p.remaining,
-          Statut: p.status === 'paid' ? 'Payé' : p.status === 'partial' ? 'Partiel' : 'Impayé',
+          Statut: p.status === 'paid' ? 'Payé' : p.status === 'partial' ? 'Partiel' : p.status === 'cancelled' ? 'Annulé' : 'Impayé',
         })}
       />
 
+      {/* Dialog annulation */}
       <ConfirmDialog
-        open={Boolean(deleteTarget)}
-        onOpenChange={open => { if (!open) setDeleteTarget(null) }}
-        title="Supprimer l'achat"
-        description={`Supprimer l'achat ${deleteTarget?.reference ?? 'sans référence'} ? Cette action est irréversible.`}
+        open={Boolean(cancelTarget)}
+        onOpenChange={open => { if (!open) setCancelTarget(null) }}
+        title="Annuler l'achat"
+        description={
+          `Annuler l'achat ${cancelTarget?.reference ?? 'sans référence'} ?\n\n` +
+          `Le stock sera mis à jour (quantités soustraites). ` +
+          `Si le stock actuel est insuffisant (des produits ont déjà été revendus), l'annulation sera bloquée automatiquement.\n\n` +
+          `Cette opération est irréversible.`
+        }
         onConfirm={() => {
-          if (deleteTarget) {
-            deletePurchase.mutate(deleteTarget.id, { onSettled: () => setDeleteTarget(null) })
+          if (cancelTarget) {
+            cancelPurchase.mutate(cancelTarget.id, { onSettled: () => setCancelTarget(null) })
           }
         }}
-        loading={deletePurchase.isPending}
+        loading={cancelPurchase.isPending}
       />
 
       <PurchaseQuickViewModal
@@ -318,8 +340,3 @@ export const PurchasesPage = () => {
     </div>
   )
 }
-
-
-
-
-

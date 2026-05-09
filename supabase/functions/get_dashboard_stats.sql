@@ -1,5 +1,5 @@
--- Dernière version déployée : 20260506_01_dashboard_remove_panier_moyen.sql
--- Ce fichier = source de vérité. Toute modif passe par un script dans scripts/
+-- Dernière version déployée : 20260509_01_cancel_transaction.sql
+-- Ce fichier = source de vérité. Toute modif passe par un script dans migrations/
 -- puis on met à jour ce fichier en même temps.
 
 CREATE OR REPLACE FUNCTION get_dashboard_stats(p_year int, p_month int)
@@ -9,15 +9,16 @@ SECURITY INVOKER
 SET search_path = public
 AS $$
 DECLARE
-  v_start  date;
-  v_end    date;
-  v_ca     numeric := 0;
-  v_enc    numeric := 0;
-  v_arec   numeric := 0;
-  v_nb     bigint  := 0;
-  v_ach    numeric := 0;
-  v_dec    numeric := 0;
-  v_apay   numeric := 0;
+  v_cancelled    CONSTANT text := 'cancelled';
+  v_start        date;
+  v_end          date;
+  v_ca           numeric := 0;
+  v_enc          numeric := 0;
+  v_arec         numeric := 0;
+  v_nb           bigint  := 0;
+  v_ach          numeric := 0;
+  v_dec          numeric := 0;
+  v_apay         numeric := 0;
   v_vpj          json;
   v_produits_agg json;
   v_top5p        json;
@@ -34,7 +35,7 @@ BEGIN
     v_end   := (make_date(p_year, p_month, 1) + interval '1 month' - interval '1 day')::date;
   END IF;
 
-  -- ── KPIs ventes (1 query) ─────────────────────────────────────────────────
+  -- ── KPIs ventes (hors annulées) ─────────────────────────────────────────────
   SELECT
     COALESCE(SUM(total),     0),
     COALESCE(SUM(paid),      0),
@@ -43,9 +44,10 @@ BEGIN
   INTO v_ca, v_enc, v_arec, v_nb
   FROM sales
   WHERE user_id = auth.uid()
-    AND date BETWEEN v_start AND v_end;
+    AND date BETWEEN v_start AND v_end
+    AND status != v_cancelled;  -- ← exclure les annulées
 
-  -- ── KPIs achats (1 query) ─────────────────────────────────────────────────
+  -- ── KPIs achats (hors annulés) ─────────────────────────────────────────────
   SELECT
     COALESCE(SUM(total),     0),
     COALESCE(SUM(paid),      0),
@@ -53,7 +55,8 @@ BEGIN
   INTO v_ach, v_dec, v_apay
   FROM purchases
   WHERE user_id = auth.uid()
-    AND date BETWEEN v_start AND v_end;
+    AND date BETWEEN v_start AND v_end
+    AND status != v_cancelled;  -- ← exclure les annulés
 
   -- ── Évolution des ventes ──────────────────────────────────────────────────
   IF p_month = 0 THEN
@@ -76,6 +79,7 @@ BEGIN
       SELECT EXTRACT(MONTH FROM date)::int AS mois, SUM(total) AS total
       FROM sales
       WHERE user_id = auth.uid() AND date BETWEEN v_start AND v_end
+        AND status != v_cancelled  -- ← exclure les annulées
       GROUP BY mois
     ) agg ON agg.mois = m;
   ELSE
@@ -90,6 +94,7 @@ BEGIN
       SELECT EXTRACT(DAY FROM date)::int AS jour, SUM(total) AS total
       FROM sales
       WHERE user_id = auth.uid() AND date BETWEEN v_start AND v_end
+        AND status != v_cancelled  -- ← exclure les annulées
       GROUP BY jour
     ) agg ON agg.jour = d;
   END IF;
@@ -105,6 +110,7 @@ BEGIN
     JOIN products  p ON p.id = si.product_id
     WHERE s.user_id = auth.uid()
       AND s.date BETWEEN v_start AND v_end
+      AND s.status != v_cancelled  -- ← exclure les annulées
     GROUP BY p.id, p.name
     ORDER BY total DESC
     LIMIT 8
@@ -130,6 +136,7 @@ BEGIN
     JOIN clients c ON c.id = s.client_id
     WHERE s.user_id = auth.uid()
       AND s.date BETWEEN v_start AND v_end
+      AND s.status != v_cancelled  -- ← exclure les annulées
     GROUP BY c.id, c.name
     ORDER BY total DESC
     LIMIT 5

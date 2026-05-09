@@ -1,4 +1,4 @@
--- Dernière version déployée : 20260501_02_app_optimization.sql
+-- Dernière version déployée : 20260509_02_fix_monthly_stats_cancelled.sql
 
 CREATE OR REPLACE FUNCTION get_supplier_monthly_stats(
   p_supplier_id uuid,
@@ -11,9 +11,10 @@ SECURITY INVOKER
 SET search_path = public
 AS $$
 DECLARE
-  v_start  date;
-  v_end    date;
-  v_result json;
+  v_cancelled  CONSTANT text := 'cancelled';
+  v_start      date;
+  v_end        date;
+  v_result     json;
 BEGIN
   v_start := make_date(p_year, p_month, 1);
   v_end   := (make_date(p_year, p_month, 1) + interval '1 month' - interval '1 day')::date;
@@ -27,7 +28,8 @@ BEGIN
   FROM purchases
   WHERE user_id     = auth.uid()
     AND supplier_id = p_supplier_id
-    AND date BETWEEN v_start AND v_end;
+    AND date BETWEEN v_start AND v_end
+    AND status != v_cancelled;
 
   RETURN v_result;
 END;

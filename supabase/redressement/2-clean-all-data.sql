@@ -6,6 +6,7 @@
 DO $$
 DECLARE
  -- 0171ae54-3906-4cc6-b8a7-95166f6ca98c : khadamat@gmail.com
+ -- 7af58026-049f-4cb7-96fc-32653c17a011 : laasri.sarah@gmail.com
     -- Remplacez par votre UUID si différent :
     my_user_id UUID := '0171ae54-3906-4cc6-b8a7-95166f6ca98c'; 
 BEGIN

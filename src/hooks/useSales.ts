@@ -1,4 +1,4 @@
-﻿import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query'
+import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query'
 import { toast } from 'sonner'
 import { getApiErrorMessage } from '@/lib/apiError'
 import { supabase } from '@/lib/supabase'
@@ -365,6 +365,31 @@ export const useDeleteSale = () => {
     },
     onError: (err: Error) => {
       toast.error(getApiErrorMessage(err, 'Erreur lors de la suppression'))
+    },
+  })
+}
+
+export const useCancelSale = () => {
+  const qc = useQueryClient()
+  return useMutation({
+    mutationFn: async (id: string) => {
+      const { error } = await supabase.rpc('cancel_transaction', {
+        p_id: id,
+        p_type: 'sale',
+      })
+      if (error) throw error
+    },
+    onSuccess: () => {
+      qc.invalidateQueries({ queryKey: ['sales'] })
+      qc.invalidateQueries({ queryKey: ['clients'] })
+      qc.invalidateQueries({ queryKey: ['products'] })
+      qc.invalidateQueries({ queryKey: ['stock-movements'] })
+      qc.invalidateQueries({ queryKey: ['stock-alerts'] })
+      qc.invalidateQueries({ queryKey: ['dashboard'] })
+      toast.success('Vente annulée avec succès')
+    },
+    onError: (err: Error) => {
+      toast.error(getApiErrorMessage(err, "Impossible d'annuler cette vente"))
     },
   })
 }

@@ -167,6 +167,15 @@ export const PurchaseForm = ({ id, existing, onSubmit }: PurchaseFormProps) => {
     }
   }
 
+  if (existing?.status === 'cancelled') {
+    return (
+      <div className="rounded-lg border border-gray-200 bg-gray-50 px-6 py-10 text-center text-gray-500">
+        <p className="text-base font-medium">⛔ Achat annulé</p>
+        <p className="mt-1 text-sm">Cette transaction a été annulée — aucune modification n'est possible.</p>
+      </div>
+    )
+  }
+
   return (
     <>
       <SupplierModal

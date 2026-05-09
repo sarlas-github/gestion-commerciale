@@ -145,12 +145,12 @@ Toute l'interface en **français** — labels, boutons, messages d'erreur, titre
 
 ---
 
-## 🗄️ Scripts SQL — Règle absolue
+## 🗄️ Migrations SQL — Règle absolue
 
 Tout script SQL (migration, fonction, index, colonne, etc.) DOIT être créé dans :
 
 ```
-supabase/scripts/YYYYMMDD_NN_description.sql
+supabase/migrations/YYYYMMDD_NN_description.sql
 ```
 
 - `YYYYMMDD` = date du jour
@@ -159,7 +159,7 @@ supabase/scripts/YYYYMMDD_NN_description.sql
 
 Exemples :
 ```
-supabase/scripts/20260504_01_company_rib.sql
+supabase/migrations/20260504_01_company_rib.sql
 supabase/scripts/20260504_02_products_index.sql
 ```
 

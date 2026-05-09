@@ -268,6 +268,17 @@ que ce soit
 pending
 -
 
+test
+
+Après implémentation, tester :
+
+Créer un achat → annuler → vérifier que le stock a diminué + mouvement "Annulation" créé
+Créer une vente → annuler → vérifier que le stock a augmenté
+Tenter d'annuler un achat dont le stock est insuffisant (produit revendu) → vérifier message d'erreur bloquant
+Vérifier que les KPIs du dashboard n'incluent pas les montants annulés
+Vérifier que les stats mensuelles client/fournisseur n'incluent pas les annulés
+Ouvrir un achat/vente annulé en formulaire → vérifier badge gris + formulaire non éditable
+Filtrer par "Annulé" dans la liste achats et ventes → les transactions apparaissent
 
 ---
 

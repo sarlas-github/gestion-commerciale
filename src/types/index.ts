@@ -1,6 +1,6 @@
 // ─── Types de base ────────────────────────────────────────────────────────────
 
-export type PaymentStatus = 'paid' | 'partial' | 'unpaid'
+export type PaymentStatus = 'paid' | 'partial' | 'unpaid' | 'cancelled'
 export type StockStatus = 'ok' | 'faible' | 'rupture'
 export type StockMovementType = 'IN' | 'OUT'
 export type StockMovementReference = 'purchase' | 'sale' | 'manual'
