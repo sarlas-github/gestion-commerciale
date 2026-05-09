@@ -22,6 +22,7 @@ const STATUS_LABELS: Record<string, string> = {
   paid: 'payé',
   unpaid: 'impayé',
   partial: 'partiel',
+  cancelled: 'annulé',
   ok: 'en stock',
   rupture: 'rupture',
   faible: 'faible',

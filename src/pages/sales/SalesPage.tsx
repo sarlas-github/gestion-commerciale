@@ -18,7 +18,7 @@ import type { Sale } from '@/types'
 const StatusBadge = ({ status }: { status: string }) => {
   if (status === 'paid')    return <Badge className="bg-green-100 text-green-800 hover:bg-green-100">🟢 Payé</Badge>
   if (status === 'partial') return <Badge className="bg-orange-100 text-orange-800 hover:bg-orange-100">🟡 Partiel</Badge>
-  if (status === 'cancelled') return <Badge className="bg-gray-100 text-gray-500 hover:bg-gray-100 line-through">⛔ Annulé</Badge>
+  if (status === 'cancelled') return <Badge className="bg-gray-100 text-gray-500 hover:bg-gray-100">⛔ Annulé</Badge>
   return <Badge className="bg-red-100 text-red-800 hover:bg-red-100">🔴 Impayé</Badge>
 }
 
@@ -136,7 +136,7 @@ export const SalesPage = () => {
         accessorKey: 'paid',
         header: 'Payé',
         cell: ({ row }) => (
-          <span className={cn(row.original.status === 'cancelled' && 'text-muted-foreground')}>
+          <span className={cn(row.original.status === 'cancelled' && 'text-muted-foreground line-through')}>
             {formatCurrency(row.original.paid)}
           </span>
         ),
@@ -146,10 +146,10 @@ export const SalesPage = () => {
         header: 'Reste',
         cell: ({ row }) => (
           <span className={row.original.status === 'cancelled'
-            ? 'text-muted-foreground'
+            ? 'text-muted-foreground line-through'
             : row.original.remaining > 0 ? 'text-red-600 font-medium' : 'text-muted-foreground'
           }>
-            {row.original.status === 'cancelled' ? '—' : formatCurrency(row.original.remaining)}
+            {formatCurrency(row.original.remaining)}
           </span>
         ),
       },
@@ -164,14 +164,15 @@ export const SalesPage = () => {
         enableSorting: false,
         cell: ({ row }) => {
           const isCancelled = row.original.status === 'cancelled'
-          const withInvoice = hasInvoice(row.original)
+          const hasPaid = row.original.paid > 0
+          const canCancel = !isCancelled && !hasPaid
           return (
             <div className="flex items-center gap-1">
               <Button
                 variant="ghost"
                 size="icon"
                 className="h-8 w-8"
-                title={withInvoice ? 'Voir facture' : 'Aperçu facture'}
+                title={hasInvoice(row.original) ? 'Voir facture' : 'Aperçu facture'}
                 onClick={() => navigate(`/sales/${row.original.id}/invoice`)}
               >
                 <FileText className="h-4 w-4" />
@@ -190,8 +191,12 @@ export const SalesPage = () => {
                 variant="ghost"
                 size="icon"
                 className="h-8 w-8 text-amber-600 hover:text-amber-700 hover:bg-amber-50"
-                title={isCancelled ? 'Déjà annulé' : withInvoice ? 'Annuler (facture émise — à titre informatif)' : 'Annuler cette vente'}
-                disabled={isCancelled}
+                title={
+                  isCancelled ? 'Déjà annulé'
+                  : hasPaid ? 'Annulation impossible : un paiement a été enregistré'
+                  : 'Annuler cette vente'
+                }
+                disabled={!canCancel}
                 onClick={() => setCancelTarget(row.original)}
               >
                 <Ban className="h-4 w-4" />
@@ -244,7 +249,6 @@ export const SalesPage = () => {
                   : 'border-transparent opacity-55 hover:opacity-80'
               )}
             >
-              {s.emoji}
               {s.label}
             </button>
           ))}
@@ -330,7 +334,6 @@ export const SalesPage = () => {
         title="Annuler la vente"
         description={
           `Annuler la vente ${cancelTarget?.reference ?? 'sans référence'} ?\n\n` +
-          `${cancelTarget && hasInvoice(cancelTarget) ? '⚠️ Une facture a été générée pour cette vente. Elle restera dans le système à titre d\'archive.\n\n' : ''}` +
           `Le stock sera restauré (quantités réajoutées). Cette opération est irréversible.`
         }
         onConfirm={() => {

@@ -17,7 +17,7 @@ import { usePageAction } from '@/contexts/PageContext'
 const StatusBadge = ({ status }: { status: string }) => {
   if (status === 'paid')    return <Badge className="bg-green-100 text-green-800 hover:bg-green-100">🟢 Payé</Badge>
   if (status === 'partial') return <Badge className="bg-orange-100 text-orange-800 hover:bg-orange-100">🟡 Partiel</Badge>
-  if (status === 'cancelled') return <Badge className="bg-gray-100 text-gray-500 hover:bg-gray-100 line-through">⛔ Annulé</Badge>
+  if (status === 'cancelled') return <Badge className="bg-gray-100 text-gray-500 hover:bg-gray-100">⛔ Annulé</Badge>
   return <Badge className="bg-red-100 text-red-800 hover:bg-red-100">🔴 Impayé</Badge>
 }
 
@@ -131,7 +131,7 @@ export const PurchasesPage = () => {
         accessorKey: 'paid',
         header: 'Payé',
         cell: ({ row }) => (
-          <span className={cn(row.original.status === 'cancelled' && 'text-muted-foreground')}>
+          <span className={cn(row.original.status === 'cancelled' && 'text-muted-foreground line-through')}>
             {formatCurrency(row.original.paid)}
           </span>
         ),
@@ -141,10 +141,10 @@ export const PurchasesPage = () => {
         header: 'Reste',
         cell: ({ row }) => (
           <span className={row.original.status === 'cancelled'
-            ? 'text-muted-foreground'
+            ? 'text-muted-foreground line-through'
             : row.original.remaining > 0 ? 'text-red-600 font-medium' : 'text-muted-foreground'
           }>
-            {row.original.status === 'cancelled' ? '—' : formatCurrency(row.original.remaining)}
+            {formatCurrency(row.original.remaining)}
           </span>
         ),
       },
@@ -159,6 +159,8 @@ export const PurchasesPage = () => {
         enableSorting: false,
         cell: ({ row }) => {
           const isCancelled = row.original.status === 'cancelled'
+          const hasPaid = row.original.paid > 0
+          const canCancel = !isCancelled && !hasPaid
           return (
             <div className="flex items-center gap-1">
               <Button
@@ -175,8 +177,12 @@ export const PurchasesPage = () => {
                 variant="ghost"
                 size="icon"
                 className="h-8 w-8 text-amber-600 hover:text-amber-700 hover:bg-amber-50"
-                title={isCancelled ? 'Déjà annulé' : 'Annuler cet achat'}
-                disabled={isCancelled}
+                title={
+                  isCancelled ? 'Déjà annulé'
+                  : hasPaid ? 'Annulation impossible : un paiement a été enregistré'
+                  : 'Annuler cet achat'
+                }
+                disabled={!canCancel}
                 onClick={() => setCancelTarget(row.original)}
               >
                 <Ban className="h-4 w-4" />
@@ -229,7 +235,6 @@ export const PurchasesPage = () => {
                   : 'border-transparent opacity-55 hover:opacity-80'
               )}
             >
-              {s.emoji}
               {s.label}
             </button>
           ))}
@@ -321,7 +326,7 @@ export const PurchasesPage = () => {
         description={
           `Annuler l'achat ${cancelTarget?.reference ?? 'sans référence'} ?\n\n` +
           `Le stock sera mis à jour (quantités soustraites). ` +
-          `Si le stock actuel est insuffisant (des produits ont déjà été revendus), l'annulation sera bloquée automatiquement.\n\n` +
+          `Si des produits de cet achat ont déjà été revendus, l'annulation sera bloquée automatiquement.\n\n` +
           `Cette opération est irréversible.`
         }
         onConfirm={() => {

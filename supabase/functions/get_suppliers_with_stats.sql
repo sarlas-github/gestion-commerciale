@@ -1,4 +1,4 @@
--- Dernière version déployée : 20260501_03_sort_by_created_at.sql
+-- Dernière version déployée : 20260509_04_exclude_cancelled_from_stats.sql
 
 CREATE OR REPLACE FUNCTION get_suppliers_with_stats()
 RETURNS json
@@ -7,7 +7,8 @@ SECURITY INVOKER
 SET search_path = public
 AS $$
 DECLARE
-  v_result json;
+  v_cancelled CONSTANT text := 'cancelled';
+  v_result    json;
 BEGIN
   SELECT COALESCE(json_agg(json_build_object(
     'id',            s.id,
@@ -34,6 +35,7 @@ BEGIN
       bool_or(status IN ('unpaid', 'partial')) AS has_unpaid
     FROM purchases
     WHERE user_id = auth.uid()
+      AND status != v_cancelled
     GROUP BY supplier_id
   ) agg ON agg.supplier_id = s.id
   WHERE s.user_id = auth.uid();

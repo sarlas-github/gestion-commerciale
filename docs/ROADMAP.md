@@ -272,7 +272,8 @@ test
 
 Après implémentation, tester :
 
-Créer un achat → annuler → vérifier que le stock a diminué + mouvement "Annulation" créé
+Créer un achat → annuler → vérifier que le stock a diminué + mouvement "Annulation" créé, tdb
+--
 Créer une vente → annuler → vérifier que le stock a augmenté
 Tenter d'annuler un achat dont le stock est insuffisant (produit revendu) → vérifier message d'erreur bloquant
 Vérifier que les KPIs du dashboard n'incluent pas les montants annulés

@@ -1,4 +1,4 @@
--- Dernière version déployée : 20260506_01_unpaid_counts.sql
+-- Dernière version déployée : 20260509_04_exclude_cancelled_from_stats.sql
 
 CREATE OR REPLACE FUNCTION get_unpaid_suppliers_count()
 RETURNS int
@@ -15,6 +15,7 @@ AS $$
       bool_or(status IN ('unpaid', 'partial')) AS has_unpaid
     FROM purchases
     WHERE user_id = auth.uid()
+      AND status != 'cancelled'
     GROUP BY supplier_id
   ) agg ON agg.supplier_id = s.id
   WHERE s.user_id = auth.uid()

@@ -1,11 +1,8 @@
--- Dernière version déployée : 20260509_05_cancel_requires_no_payment.sql
--- Ce fichier = source de vérité. Toute modif passe par un script dans migrations/
--- puis on met à jour ce fichier en même temps.
-
--- Annulation sécurisée et atomique d'un achat ou d'une vente.
--- Règle : annulation impossible si un paiement a déjà été enregistré (paid > 0).
--- Pour les achats : vérifie aussi que le stock est suffisant.
--- Inverse le mouvement de stock et insère un stock_movement d'annulation.
+-- ══════════════════════════════════════════════════════════════════════════════
+-- Migration : Bloquer l'annulation si un paiement a été enregistré
+-- Règle métier : annulation possible uniquement si paid = 0
+-- Également : remaining mis à 0 à l'annulation pour cohérence des stats
+-- ══════════════════════════════════════════════════════════════════════════════
 
 CREATE OR REPLACE FUNCTION cancel_transaction(
   p_id   uuid,
@@ -71,8 +68,6 @@ BEGIN
   END IF;
 
   -- ── 5. Pré-validation stock (ACHAT uniquement) ────────────────────────────
-  -- Un achat a augmenté le stock ; l'annuler va soustraire les quantités.
-  -- On vérifie que chaque produit a suffisamment de stock.
   IF p_type = 'purchase' THEN
     FOR v_item IN
       SELECT pi.product_id, pi.quantity
@@ -100,19 +95,16 @@ BEGIN
     UPDATE purchases
        SET status     = v_cancelled,
            updated_at = now()
-     WHERE id      = p_id
-       AND user_id = v_uid;
+     WHERE id = p_id AND user_id = v_uid;
   ELSE
     UPDATE sales
        SET status     = v_cancelled,
            updated_at = now()
-     WHERE id      = p_id
-       AND user_id = v_uid;
+     WHERE id = p_id AND user_id = v_uid;
   END IF;
 
-  -- ── 6. Inversion du stock + mouvement d'annulation ────────────────────────
+  -- ── 7. Inversion du stock + mouvement d'annulation ────────────────────────
   IF p_type = 'purchase' THEN
-    -- Achat annulé → soustrait du stock (inverse du +)
     FOR v_item IN
       SELECT pi.product_id, pi.quantity
         FROM purchase_items pi
@@ -126,28 +118,21 @@ BEGIN
 
       INSERT INTO stock_movements (
         user_id, product_id, type, quantity,
-        reference_type, reference_id,
-        note, date
+        reference_type, reference_id, note, date
       ) VALUES (
-        v_uid,
-        v_item.product_id,
-        'out',
-        -v_item.quantity,
-        'purchase',
-        p_id,
+        v_uid, v_item.product_id, 'out', -v_item.quantity,
+        'purchase', p_id,
         'Annulation ' || COALESCE(v_reference, 'achat'),
         COALESCE(v_date, CURRENT_DATE)
       );
     END LOOP;
 
   ELSE
-    -- Vente annulée → réajoute au stock (inverse du -)
     FOR v_item IN
       SELECT si.product_id, si.quantity
         FROM sale_items si
        WHERE si.sale_id = p_id
     LOOP
-      -- Upsert stock : si la ligne n'existe pas (vente sans stock préalable)
       INSERT INTO stock (user_id, product_id, quantity)
         VALUES (v_uid, v_item.product_id, v_item.quantity)
       ON CONFLICT (user_id, product_id)
@@ -157,15 +142,10 @@ BEGIN
 
       INSERT INTO stock_movements (
         user_id, product_id, type, quantity,
-        reference_type, reference_id,
-        note, date
+        reference_type, reference_id, note, date
       ) VALUES (
-        v_uid,
-        v_item.product_id,
-        'in',
-        v_item.quantity,
-        'sale',
-        p_id,
+        v_uid, v_item.product_id, 'in', v_item.quantity,
+        'sale', p_id,
         'Annulation ' || COALESCE(v_reference, 'vente'),
         COALESCE(v_date, CURRENT_DATE)
       );

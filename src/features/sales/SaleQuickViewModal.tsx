@@ -10,13 +10,14 @@ import {
 import { Button } from '@/components/ui/button'
 import { Separator } from '@/components/ui/separator'
 import { useSale } from '@/hooks/useSales'
-import { formatDate, formatCurrency } from '@/lib/utils'
+import { formatDate, formatCurrency, cn } from '@/lib/utils'
 import type { PaymentStatus } from '@/types'
 
 const STATUS_LABEL: Record<PaymentStatus, { label: string; className: string }> = {
-  paid:    { label: 'Payé',    className: 'text-green-600' },
-  partial: { label: 'Partiel', className: 'text-orange-500' },
-  unpaid:  { label: 'Impayé',  className: 'text-destructive' },
+  paid:      { label: 'Payé',    className: 'text-green-600' },
+  partial:   { label: 'Partiel', className: 'text-orange-500' },
+  unpaid:    { label: 'Impayé',  className: 'text-destructive' },
+  cancelled: { label: 'Annulé', className: 'text-gray-500' },
 }
 
 interface Props {
@@ -58,13 +59,21 @@ export const SaleQuickViewModal = ({ saleId, open, onOpenChange }: Props) => {
               <span className={`font-medium ${status?.className}`}>{status?.label}</span>
 
               <span className="text-muted-foreground">Total</span>
-              <span className="font-medium">{formatCurrency(sale.total)}</span>
+              <span className={cn('font-medium', sale.status === 'cancelled' && 'line-through text-muted-foreground')}>
+                {formatCurrency(sale.total)}
+              </span>
 
               <span className="text-muted-foreground">Payé</span>
-              <span className="text-green-600">{formatCurrency(sale.paid)}</span>
+              <span className={cn(sale.status === 'cancelled' ? 'line-through text-muted-foreground' : 'text-green-600')}>
+                {formatCurrency(sale.paid)}
+              </span>
 
               <span className="text-muted-foreground">Reste</span>
-              <span className={sale.remaining > 0 ? 'text-destructive font-medium' : ''}>
+              <span className={cn(
+                sale.status === 'cancelled'
+                  ? 'line-through text-muted-foreground'
+                  : sale.remaining > 0 ? 'text-destructive font-medium' : ''
+              )}>
                 {formatCurrency(sale.remaining)}
               </span>
             </div>

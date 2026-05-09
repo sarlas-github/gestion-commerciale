@@ -389,6 +389,7 @@ export const useCancelSale = () => {
       toast.success('Vente annulée avec succès')
     },
     onError: (err: Error) => {
+      console.error('[useCancelSale] raw error:', err)
       toast.error(getApiErrorMessage(err, "Impossible d'annuler cette vente"))
     },
   })

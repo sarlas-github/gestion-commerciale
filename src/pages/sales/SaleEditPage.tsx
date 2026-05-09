@@ -49,12 +49,16 @@ export const SaleEditPage = () => {
               <FileText className="mr-2 h-4 w-4" />
               {existingInvoice ? 'Voir facture' : 'Aperçu facture'}
             </Button>
-            <Button variant="outline" onClick={() => navigate(-1)} disabled={updateSale.isPending}>
-              Annuler
-            </Button>
-            <Button type="submit" form={formId} disabled={updateSale.isPending}>
-              Enregistrer
-            </Button>
+            {sale.status !== 'cancelled' && (
+              <>
+                <Button variant="outline" onClick={() => navigate(-1)} disabled={updateSale.isPending}>
+                  Annuler
+                </Button>
+                <Button type="submit" form={formId} disabled={updateSale.isPending}>
+                  Enregistrer
+                </Button>
+              </>
+            )}
           </div>
         }
       />
@@ -73,12 +77,16 @@ export const SaleEditPage = () => {
           <FileText className="mr-1.5 h-4 w-4" />
           {existingInvoice ? 'Facture' : 'Aperçu'}
         </Button>
-        <Button variant="outline" className="bg-card" onClick={() => navigate(-1)} disabled={updateSale.isPending}>
-          Annuler
-        </Button>
-        <Button type="submit" form={formId} disabled={updateSale.isPending}>
-          Enregistrer
-        </Button>
+        {sale.status !== 'cancelled' && (
+          <>
+            <Button variant="outline" className="bg-card" onClick={() => navigate(-1)} disabled={updateSale.isPending}>
+              Annuler
+            </Button>
+            <Button type="submit" form={formId} disabled={updateSale.isPending}>
+              Enregistrer
+            </Button>
+          </>
+        )}
       </div>
     </div>
   )

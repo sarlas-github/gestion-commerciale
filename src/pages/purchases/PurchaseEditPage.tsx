@@ -43,14 +43,16 @@ export const PurchaseEditPage = () => {
           </Button>
         }
         actions={
-          <div className="hidden md:flex items-center gap-3">
-            <Button variant="outline" onClick={() => navigate(-1)} disabled={updatePurchase.isPending}>
-              Annuler
-            </Button>
-            <Button type="submit" form={formId} disabled={updatePurchase.isPending}>
-              Enregistrer
-            </Button>
-          </div>
+          purchase.status !== 'cancelled' ? (
+            <div className="hidden md:flex items-center gap-3">
+              <Button variant="outline" onClick={() => navigate(-1)} disabled={updatePurchase.isPending}>
+                Annuler
+              </Button>
+              <Button type="submit" form={formId} disabled={updatePurchase.isPending}>
+                Enregistrer
+              </Button>
+            </div>
+          ) : undefined
         }
       />
       <PurchaseForm
@@ -61,14 +63,16 @@ export const PurchaseEditPage = () => {
       />
 
       {/* Mobile Sticky Bar */}
-      <div className="fixed bottom-0 left-0 right-0 h-16 px-4 bg-card border-t md:hidden flex items-center justify-end gap-3 z-50 shadow-[0_-4px_6px_-1px_rgba(0,0,0,0.05)]">
-        <Button variant="outline" className="bg-card" onClick={() => navigate('/purchases')} disabled={updatePurchase.isPending}>
-          Annuler
-        </Button>
-        <Button type="submit" form={formId} disabled={updatePurchase.isPending}>
-          Enregistrer
-        </Button>
-      </div>
+      {purchase.status !== 'cancelled' && (
+        <div className="fixed bottom-0 left-0 right-0 h-16 px-4 bg-card border-t md:hidden flex items-center justify-end gap-3 z-50 shadow-[0_-4px_6px_-1px_rgba(0,0,0,0.05)]">
+          <Button variant="outline" className="bg-card" onClick={() => navigate('/purchases')} disabled={updatePurchase.isPending}>
+            Annuler
+          </Button>
+          <Button type="submit" form={formId} disabled={updatePurchase.isPending}>
+            Enregistrer
+          </Button>
+        </div>
+      )}
     </div>
   )
 }

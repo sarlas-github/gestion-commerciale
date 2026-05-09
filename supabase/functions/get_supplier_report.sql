@@ -1,4 +1,4 @@
--- Dernière version déployée : 20260501_02_app_optimization.sql
+-- Dernière version déployée : 20260509_04_exclude_cancelled_from_stats.sql
 
 CREATE OR REPLACE FUNCTION get_supplier_report(p_year int, p_month int)
 RETURNS json
@@ -7,6 +7,7 @@ SECURITY INVOKER
 SET search_path = public
 AS $$
 DECLARE
+  v_cancelled CONSTANT text := 'cancelled';
   v_start  date;
   v_end    date;
   v_rows   json;
@@ -39,6 +40,7 @@ BEGIN
     JOIN suppliers su ON su.id = p.supplier_id
     WHERE p.user_id = auth.uid()
       AND p.date BETWEEN v_start AND v_end
+      AND p.status != v_cancelled
     GROUP BY su.id, su.name
   ) t;
 

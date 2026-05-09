@@ -31,11 +31,12 @@ BEGIN
     -- On réinitialise les compteurs de référence (ex: ACH-2026-001)
     DELETE FROM document_sequences WHERE user_id = my_user_id;
 
+/*
     -- Nettoyage du Catalogue
     DELETE FROM products WHERE user_id = my_user_id;
     DELETE FROM clients WHERE user_id = my_user_id;
     DELETE FROM suppliers WHERE user_id = my_user_id;
-    
+    */
     -- NOTE : la table companies n'est pas touchée.
 
 END $$;

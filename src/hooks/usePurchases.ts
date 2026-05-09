@@ -398,6 +398,7 @@ export const useCancelPurchase = () => {
       toast.success('Achat annulé avec succès')
     },
     onError: (err: Error) => {
+      console.error('[useCancelPurchase] raw error:', err)
       toast.error(getApiErrorMessage(err, "Impossible d'annuler cet achat"))
     },
   })

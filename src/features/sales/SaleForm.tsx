@@ -50,6 +50,7 @@ export type SaleFormValues = z.infer<typeof saleSchema>
 const StatusBadge = ({ status }: { status: string }) => {
   if (status === 'paid') return <Badge className="bg-green-100 text-green-800 hover:bg-green-100">🟢 Payé</Badge>
   if (status === 'partial') return <Badge className="bg-orange-100 text-orange-800 hover:bg-orange-100">🟡 Partiel</Badge>
+  if (status === 'cancelled') return <Badge className="bg-gray-100 text-gray-500 hover:bg-gray-100">⛔ Annulé</Badge>
   return <Badge className="bg-red-100 text-red-800 hover:bg-red-100">🔴 Impayé</Badge>
 }
 
@@ -170,14 +171,7 @@ export const SaleForm = ({ id, existing, onSubmit, hasInvoice = false, savedPaym
     }
   }
 
-  if (existing?.status === 'cancelled') {
-    return (
-      <div className="rounded-lg border border-gray-200 bg-gray-50 px-6 py-10 text-center text-gray-500">
-        <p className="text-base font-medium">⛔ Vente annulée</p>
-        <p className="mt-1 text-sm">Cette transaction a été annulée — aucune modification n'est possible.</p>
-      </div>
-    )
-  }
+  const isCancelled = existing?.status === 'cancelled'
 
   return (
     <>
@@ -195,7 +189,14 @@ export const SaleForm = ({ id, existing, onSubmit, hasInvoice = false, savedPaym
         onSuccess={handleQuickProductSuccess}
       />
 
-      <form id={id} onSubmit={handleSubmit(onSubmit)} noValidate className="space-y-8">
+      <form id={id} onSubmit={isCancelled ? e => e.preventDefault() : handleSubmit(onSubmit)} noValidate className="space-y-8">
+        {isCancelled && (
+          <div className="rounded-lg border border-gray-200 bg-gray-50 px-4 py-3 text-sm text-gray-600 flex items-center gap-2">
+            <span>⛔</span>
+            <span>Vente annulée — consultation uniquement, aucune modification possible.</span>
+          </div>
+        )}
+        <fieldset disabled={isCancelled} className="contents">
         {hasInvoice && (
           <div className="rounded-lg border border-amber-200 bg-amber-50 px-4 py-3 text-sm text-amber-700">
             <span className="font-semibold">Facture générée</span> — Seule la section Paiements reste modifiable.
@@ -716,6 +717,7 @@ export const SaleForm = ({ id, existing, onSubmit, hasInvoice = false, savedPaym
           </div>
           )}
         </div>
+        </fieldset>
       </form>
     </>
   )

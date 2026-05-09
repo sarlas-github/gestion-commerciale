@@ -10,13 +10,14 @@ import {
 import { Button } from '@/components/ui/button'
 import { Separator } from '@/components/ui/separator'
 import { usePurchase } from '@/hooks/usePurchases'
-import { formatDate, formatCurrency } from '@/lib/utils'
+import { formatDate, formatCurrency, cn } from '@/lib/utils'
 import type { PaymentStatus } from '@/types'
 
 const STATUS_LABEL: Record<PaymentStatus, { label: string; className: string }> = {
-  paid:    { label: 'Payé',    className: 'text-green-600' },
-  partial: { label: 'Partiel', className: 'text-orange-500' },
-  unpaid:  { label: 'Impayé',  className: 'text-destructive' },
+  paid:      { label: 'Payé',    className: 'text-green-600' },
+  partial:   { label: 'Partiel', className: 'text-orange-500' },
+  unpaid:    { label: 'Impayé',  className: 'text-destructive' },
+  cancelled: { label: 'Annulé', className: 'text-gray-500' },
 }
 
 interface Props {
@@ -58,13 +59,21 @@ export const PurchaseQuickViewModal = ({ purchaseId, open, onOpenChange }: Props
               <span className={`font-medium ${status?.className}`}>{status?.label}</span>
 
               <span className="text-muted-foreground">Total</span>
-              <span className="font-medium">{formatCurrency(purchase.total)}</span>
+              <span className={cn('font-medium', purchase.status === 'cancelled' && 'line-through text-muted-foreground')}>
+                {formatCurrency(purchase.total)}
+              </span>
 
               <span className="text-muted-foreground">Payé</span>
-              <span className="text-green-600">{formatCurrency(purchase.paid)}</span>
+              <span className={cn(purchase.status === 'cancelled' ? 'line-through text-muted-foreground' : 'text-green-600')}>
+                {formatCurrency(purchase.paid)}
+              </span>
 
               <span className="text-muted-foreground">Reste</span>
-              <span className={purchase.remaining > 0 ? 'text-destructive font-medium' : ''}>
+              <span className={cn(
+                purchase.status === 'cancelled'
+                  ? 'line-through text-muted-foreground'
+                  : purchase.remaining > 0 ? 'text-destructive font-medium' : ''
+              )}>
                 {formatCurrency(purchase.remaining)}
               </span>
             </div>
