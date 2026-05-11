@@ -1,73 +1,105 @@
-# Workflow des Environnements & Migrations (Supabase)
+# 🚀 Guide Master : Du Setup Initial au Déploiement Pro
 
-Puisque vous rédigez vos scripts de base de données (SQL) directement et manuellement dans le dossier `supabase/migrations`, vous avez adopté **la meilleure pratique** (Migration-First). 
-
-Supabase est conçu *exactement* pour fonctionner comme cela. Il lit les fichiers de ce dossier dans l'ordre chronologique (grâce au nommage obligatoire `YYYYMMDDHHMMSS_nom.sql`) pour recréer la base de données.
-
-Voici le workflow complet pour gérer vos 3 environnements (DEV, TEST, PROD) sans accroc.
+Ce document retrace toutes les étapes pour configurer un projet Supabase de zéro, comme nous l'avons fait le 11/05/2026. Utilise ce guide pour tes futurs SaaS.
 
 ---
 
-## 🛠️ 1. Environnement de DEV (Local)
-Cet environnement tourne sur votre propre machine (via Docker) avec l'outil gratuit `Supabase CLI`. Vous n'avez pas besoin de connexion internet pour que la DB fonctionne.
+## 🛠️ Étape 0 : Configuration Initiale (À faire une fois par projet)
 
-### Initialisation (à faire une fois)
+C'est ce que nous avons fait pour nettoyer et lier ton projet actuel.
+
+### 1. Installation des outils
+- **Docker Desktop** : Télécharger et installer (indispensable pour le local). Activer **WSL 2**.
+- **Supabase CLI** : Pas besoin d'installation globale, on utilise `npx supabase`.
+
+### 2. Connexion et Liaison
 ```bash
-# 1. Démarrez le moteur Supabase localement (Docker doit être allumé)
+# Se connecter à son compte Supabase (une seule fois par PC)
+npx supabase login
+
+# Initialiser le dossier du projet
+npx supabase init
+
+# Lier le dossier local au projet Cloud (récupérer la Ref dans le Dashboard Supabase)
+npx supabase link --project-ref yirxzhazygrvymtfikap
+```
+
+### 3. Créer la "Baseline" (L'état de départ)
+Si tu as déjà des tables en ligne et que tu veux les ramener sur ton PC :
+```bash
+# 1. Créer le fichier de structure (YYYYMMDDHHMMSS_baseline.sql)
+npx supabase db dump --linked -f supabase/migrations/20260511000000_v1_baseline.sql
+
+# 2. (Optionnel) Récupérer les données existantes pour les tests
+npx supabase db dump --linked --data-only -f supabase/seed.sql
+```
+
+---
+
+## 💻 Étape 1 : Environnement de DEV Local
+
+Une fois le setup fini, voici comment travailler au quotidien sur ton PC.
+
+### Démarrage
+```bash
+# Lancer les serveurs locaux (Docker)
 npx supabase start
-```
-*À ce moment, Supabase local va lire TOUT votre dossier `supabase/migrations` et créer une base de données locale parfaitement identique à votre base en ligne.*
 
-### Travail au quotidien (Créer une nouveauté)
-1. Vous avez besoin d'une nouvelle table ou fonction.
-2. Créez un fichier manuel : `supabase/migrations/20260601000000_nouvelle_table.sql`.
-3. Rédigez votre SQL dedans.
-4. Appliquez-le à votre environnement local pour le tester :
-```bash
-npx supabase db reset
-# OU
-npx supabase migration up
+# Dashboard Studio Local : http://127.0.0.1:54323
 ```
-*Vous pouvez maintenant coder votre frontend React, tester, casser des choses, sans impacter personne.*
+
+### Configuration des environnements (.env)
+- `.env.development` : `VITE_SUPABASE_URL=http://127.0.0.1:54321`
+- `.env.production` : Tes clés Cloud réelles.
 
 ---
 
-## 🧪 2. Environnement de TEST (Cloud - Projet Actuel)
-C'est le projet Supabase que vous avez déjà en ligne en ce moment. Il sert pour vos démos clients et vos tests en conditions réelles.
+## 🔄 Étape 2 : Flow de Développement Quotidien
 
-### Le déploiement (Push)
-Une fois que votre code React et vos nouvelles migrations SQL locales fonctionnent parfaitement, vous devez envoyer les modifications SQL sur le projet de TEST.
+C'est ta routine pour ajouter des fonctionnalités sans rien casser.
 
-```bash
-# 1. Liez votre terminal au projet de TEST (à faire une fois)
-npx supabase link --project-ref <REFERENCE_PROJET_TEST>
-
-# 2. Poussez vos nouveaux fichiers de migrations vers le cloud
-npx supabase db push
-```
-*Magie : Supabase regarde les fichiers dans `supabase/migrations`, repère les nouveaux (ceux qui n'ont jamais été exécutés sur le serveur TEST), et les exécute. Votre base de TEST est maintenant à jour !*
+1. **Migration SQL** : Crée un fichier dans `supabase/migrations/` avec le bon format de date.
+2. **Test Local** : Applique tes changements sur ton PC avec `npx supabase db reset`.
+3. **Code React** : Développe ton interface en pointant sur le local.
+4. **Déploiement SQL** : Envoie tes scripts sur le Cloud TEST :
+   ```bash
+   npx supabase db push
+   ```
+5. **Déploiement Code** : Merge ta branche sur `main` pour déclencher le build (Vercel/Cloudflare).
 
 ---
 
-## 🚀 3. Environnement de PROD (Cloud - Nouveau Projet)
-C'est le projet "sacré" utilisé par vos vrais clients.
+## 🚀 Étape 3 : Création du projet de PROD (Futur)
 
-### Le déploiement (Push)
-Le workflow est rigoureusement identique au projet TEST. Quand le client a validé la démo sur la TEST, vous envoyez les scripts sur la PROD.
+Quand tu lanceras ton SaaS officiellement :
 
-```bash
-# 1. Liez votre terminal au projet de PROD
-npx supabase link --project-ref <REFERENCE_PROJET_PROD>
-
-# 2. Poussez vos migrations vers la PROD
-npx supabase db push
-```
+1. Crée un nouveau projet vide sur Supabase.
+2. Lie ton terminal à ce nouveau projet : `npx supabase link --project-ref <REF_PROD>`.
+npx supabase link --project-ref yirxzhazygrvymtfikap
+3. Lance `npx supabase db push` : toutes tes tables et fonctions seront créées en 10 secondes.
+4. Configure ton domaine final pour pointer sur ce nouveau projet.
+tjrs linker sur le projet et pusher
 
 ---
 
-## 📏 Règles d'Or du Versionning
+## 📱 4. Tester sur Mobile (Mode Local Pro)
 
-1. **La Règle de l'Immuabilité** : Une fois qu'un fichier SQL dans `supabase/migrations` a été poussé (push) sur TEST ou PROD, **VOUS NE DEVEZ PLUS JAMAIS LE MODIFIER**. 
-   *Si vous avez fait une erreur dans `20260601000000_table.sql`, ne le modifiez pas. Créez un nouveau fichier `20260601000001_correction.sql`.*
-2. **Le Code suit la DB** : Poussez toujours vos migrations Supabase (`db push`) **AVANT** de déployer votre code React (Vite/Vercel/Cloudflare). Le frontend plantera s'il cherche une table qui n'existe pas encore.
-3. **Github est la source de vérité** : Vos fichiers `supabase/migrations` vivent dans Git. Ils garantissent que n'importe quel développeur qui rejoint votre projet aura la base de données exacte en tapant simplement `supabase start`.
+Pour tester ton code local et ta base locale sur ton mobile sans passer par le Cloud.
+
+### Setup (À faire une fois)
+1. Installe **Tailscale** sur ton PC et sur ton Mobile. Connecte-les au même compte.
+2. Note l'IP Tailscale de ton PC (ex: `100.98.128.42`).
+
+### Au quotidien pour le test mobile
+1. **Config** : Dans `.env.development`, utilise ton IP Tailscale :
+   `VITE_SUPABASE_URL=http://100.x.y.z:54321`
+2. **Lancer** : `npm run dev -- --host`
+3. **Mobile** : Ouvre `http://100.x.y.z:5173` sur ton téléphone (avec Tailscale **ON**).
+
+---
+
+## 📏 Règles d'Or
+- **Zéro modification manuelle** : Ne change jamais une table directement via l'interface Cloud. Passe toujours par un fichier de migration.
+- **Immuabilité** : Un fichier dans `migrations/` ne se modifie jamais. On en crée un nouveau pour corriger.
+
+*Guide rédigé par ton copilote Antigravity.*
