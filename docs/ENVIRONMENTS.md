@@ -8,7 +8,7 @@ supabase/
 ├── functions/          ← source de vérité des fonctions PostgreSQL
 │   └── nom_fonction.sql    (toujours à jour avec la version déployée)
 ├── migrations/         ← historique des évolutions, une par fonctionnalité
-│   └── YYYYMMDD_NN_description.sql
+│   └── YYYYMMDDHHMMSS_description.sql
 └── redressement/       ← corrections one-shot (données), jamais exécutées sur prod
 ```
 
@@ -28,7 +28,7 @@ supabase link --project-ref <project-ref-dev>
 ```bash
 npm run db:dump
 # ou directement :
-supabase db dump --schema-only -f supabase/baseline.sql
+supabase db dump --linked -f supabase/migrations/YYYYMMDDHHMMSS_v1_baseline.sql
 ```
 
 **Quand le faire :** avant de pousser une nouvelle version en prod, ou quand on veut figer l'état actuel pour initialiser une nouvelle BD.
@@ -68,7 +68,7 @@ npm run build                        # build final prod → .env.production (CI/
 ## Workflow pour chaque nouvelle fonctionnalité
 
 ```
-1. Écrire le script     →  supabase/migrations/YYYYMMDD_NN_feature.sql
+1. Écrire le script     →  supabase/migrations/YYYYMMDDHHMMSS_feature.sql
 2. Appliquer sur DEV    →  Supabase dashboard dev › SQL editor
 3. Tester avec npm run dev
 4. Valider ✅
