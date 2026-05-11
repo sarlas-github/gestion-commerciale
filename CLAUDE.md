@@ -93,28 +93,6 @@ VITE_SUPABASE_ANON_KEY=sb_publishable_YDEUU5wmwnsfBkMQvTlldA_DAvndiIG
 
 ---
 
-## 🗺️ Phases de développement
-
-### Phase 1A — Core métier (priorité absolue)
-1. Auth (login, register, protection routes)
-2. Paramètres entreprise (companies)
-3. Produits + Stock + Mouvements
-4. Fournisseurs + Achats + Paiements fournisseurs
-5. Clients + Ventes + Paiements clients
-   → invoice généré automatiquement à chaque vente
-   → receipt généré automatiquement à chaque paiement
-
-### Phase 1B — Présentation données
-6. Grilles Paiements (clients + fournisseurs)
-7. États mensuels (clients + fournisseurs)
-8. Dashboard (KPIs + alertes + graphiques)
-
-### Phase 2 — Documents manuels (après validation client)
-9. Devis, Bon de commande, Bon de livraison
-10. Téléchargement PDF
-
----
-
 ## 📐 Conventions de code
 
 ### Nommage
@@ -150,17 +128,17 @@ Toute l'interface en **français** — labels, boutons, messages d'erreur, titre
 Tout script SQL (migration, fonction, index, colonne, etc.) DOIT être créé dans :
 
 ```
-supabase/migrations/YYYYMMDD_NN_description.sql
+supabase/migrations/DD-MM-YYYY_NN_description.sql
 ```
 
-- `YYYYMMDD` = date du jour
+- `DD-MM-YYYY` = date du jour (Jour-Mois-Année)
 - `NN` = numéro d'ordre sur 2 chiffres si plusieurs scripts le même jour (`01`, `02`…)
 - `description` = nom court en minuscules avec underscores
 
 Exemples :
 ```
-supabase/migrations/20260504_01_company_rib.sql
-supabase/scripts/20260504_02_products_index.sql
+supabase/migrations/04-05-2026_01_company_rib.sql
+supabase/scripts/04-05-2026_02_products_index.sql
 ```
 
 Ne jamais écrire de SQL directement dans le chat sans créer le fichier correspondant.
@@ -286,3 +264,4 @@ Voir `docs/` :
 - `ROADMAP.md` — Ordre d'implémentation (prompts Phase 1A → 1B → 2)
 - `GOTCHAS.md` — Pièges techniques validés en dev (⚠️ lire avant tout formulaire ou hook)
 - `testing.md` — Credentials de test
+- `SUPABASE_LIMITS.md` — Estimations de montée en charge (Scaling & Limites)
