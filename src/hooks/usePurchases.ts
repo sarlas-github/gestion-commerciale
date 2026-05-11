@@ -45,18 +45,60 @@ async function getCurrentUser() {
 
 // ── Queries ───────────────────────────────────────────────────────────────────
 
-export const usePurchases = () =>
+export const usePurchases = (month?: string, year?: string) =>
   useQuery({
-    queryKey: ['purchases'],
+    queryKey: ['purchases', month, year],
     queryFn: async () => {
-      const { data, error } = await supabase
+      let query = supabase
         .from('purchases')
         .select('*, suppliers(id, name)')
+
+      if (year && year !== '') {
+        if (month && month !== '') {
+          const m = parseInt(month)
+          const y = parseInt(year)
+          const startDate = `${y}-${String(m).padStart(2, '0')}-01`
+          const endDateObj = new Date(y, m, 0)
+          const endDate = `${y}-${String(m).padStart(2, '0')}-${String(endDateObj.getDate()).padStart(2, '0')}`
+          query = query.gte('date', startDate).lte('date', endDate)
+        } else {
+          const startDate = `${year}-01-01`
+          const endDate = `${year}-12-31`
+          query = query.gte('date', startDate).lte('date', endDate)
+        }
+      }
+
+      const { data, error } = await query
         .order('date', { ascending: false })
         .order('created_at', { ascending: false })
 
       if (error) throw error
       return (data ?? []) as Purchase[]
+    },
+  })
+
+export const usePurchaseYears = () =>
+  useQuery({
+    queryKey: ['purchases-years'],
+    queryFn: async () => {
+      const { data, error } = await supabase
+        .from('purchases')
+        .select('date')
+        .order('date', { ascending: true })
+        .limit(1)
+        .maybeSingle()
+
+      if (error) throw error
+      
+      const currentYear = new Date().getFullYear()
+      if (!data) return [currentYear]
+      
+      const firstYear = new Date(data.date).getFullYear()
+      const years = []
+      for (let y = currentYear; y >= firstYear; y--) {
+        years.push(y)
+      }
+      return years
     },
   })
 

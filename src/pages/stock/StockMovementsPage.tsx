@@ -12,6 +12,8 @@ import {
 import { PurchaseQuickViewModal } from '@/features/purchases/PurchaseQuickViewModal'
 import { SaleQuickViewModal } from '@/features/sales/SaleQuickViewModal'
 import { useStockMovements, type StockMovementRow } from '@/hooks/useStockMovements'
+import { useAvailableYears } from '@/hooks/useAvailableYears'
+import { PeriodSelector } from '@/components/shared/PeriodSelector'
 import { formatDate } from '@/lib/utils'
 
 const TYPE_CONFIG = {
@@ -19,34 +21,25 @@ const TYPE_CONFIG = {
   out:    { label: 'OUT',    className: 'bg-red-100 text-red-700 dark:bg-red-900/30 dark:text-red-400' },
 } as const
 
-const MONTHS = [
-  'Janvier', 'Février', 'Mars', 'Avril', 'Mai', 'Juin',
-  'Juillet', 'Août', 'Septembre', 'Octobre', 'Novembre', 'Décembre',
-]
-
 export const StockMovementsPage = () => {
-  const { data: movements = [], isLoading } = useStockMovements()
-
   const now = new Date()
   const [typeFilter, setTypeFilter] = useState('all')
   const [month, setMonth] = useState(String(now.getMonth() + 1))
   const [year, setYear] = useState(String(now.getFullYear()))
 
+  const { data: movements = [], isLoading } = useStockMovements(month, year)
+  const { data: years = [now.getFullYear()] } = useAvailableYears('stock_movements')
+
   const [purchaseModalId, setPurchaseModalId] = useState<string | null>(null)
   const [saleModalId, setSaleModalId] = useState<string | null>(null)
-
-  const years = Array.from({ length: 3 }, (_, i) => String(now.getFullYear() - i))
 
   const filtered = useMemo(
     () =>
       movements.filter(m => {
         if (typeFilter !== 'all' && m.type !== typeFilter) return false
-        const d = new Date(m.date)
-        if (month !== '0' && String(d.getMonth() + 1) !== month) return false
-        if (String(d.getFullYear()) !== year) return false
         return true
       }),
-    [movements, typeFilter, month, year]
+    [movements, typeFilter]
   )
 
   const columns: ColumnDef<StockMovementRow>[] = [
@@ -137,36 +130,13 @@ export const StockMovementsPage = () => {
 
       {/* Sélecteurs période + filtre type */}
       <div className="mb-4 flex flex-wrap items-center gap-3">
-        {/* Année */}
-        <Select value={year} onValueChange={v => setYear(v ?? year)}>
-          <SelectTrigger size="sm" className="w-24">
-            <span className="flex-1 text-left">{year}</span>
-          </SelectTrigger>
-          <SelectContent>
-            {years.map(y => (
-              <SelectItem key={y} value={y}>
-                {y}
-              </SelectItem>
-            ))}
-          </SelectContent>
-        </Select>
-
-        {/* Mois */}
-        <Select value={month} onValueChange={v => setMonth(v ?? month)}>
-          <SelectTrigger size="sm" className="w-40">
-            <span className="flex-1 text-left">
-              {month === '0' ? 'Tous les mois' : MONTHS[Number(month) - 1]}
-            </span>
-          </SelectTrigger>
-          <SelectContent>
-            <SelectItem value="0">Tous les mois</SelectItem>
-            {MONTHS.map((m, i) => (
-              <SelectItem key={i + 1} value={String(i + 1)}>
-                {m}
-              </SelectItem>
-            ))}
-          </SelectContent>
-        </Select>
+        <PeriodSelector
+          month={month}
+          year={year}
+          availableYears={years}
+          onMonthChange={setMonth}
+          onYearChange={setYear}
+        />
 
         {/* Filtre Type */}
         <div className="sm:ml-auto flex items-center gap-2">

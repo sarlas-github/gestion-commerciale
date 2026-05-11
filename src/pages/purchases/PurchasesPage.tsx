@@ -9,6 +9,8 @@ import { Button } from '@/components/ui/button'
 import { Badge } from '@/components/ui/badge'
 import { Popover, PopoverContent, PopoverTrigger } from '@/components/ui/popover'
 import { usePurchases, useCancelPurchase } from '@/hooks/usePurchases'
+import { useAvailableYears } from '@/hooks/useAvailableYears'
+import { PeriodSelector } from '@/components/shared/PeriodSelector'
 import { PurchaseQuickViewModal } from '@/features/purchases/PurchaseQuickViewModal'
 import { formatCurrency, formatDate, cn } from '@/lib/utils'
 import type { Purchase } from '@/types'
@@ -28,14 +30,15 @@ const STATUS_OPTIONS = [
   { value: 'cancelled',  label: 'Annulé',  emoji: '⛔', badge: 'bg-gray-100 text-gray-500'   },
 ] as const
 
-const MONTHS_FR = [
-  'Janvier', 'Février', 'Mars', 'Avril', 'Mai', 'Juin',
-  'Juillet', 'Août', 'Septembre', 'Octobre', 'Novembre', 'Décembre',
-]
-
 export const PurchasesPage = () => {
   const navigate = useNavigate()
-  const { data: purchases = [], isLoading } = usePurchases()
+  const now = new Date()
+  const [filterMonth, setFilterMonth] = useState<string>(String(now.getMonth() + 1))
+  const [filterYear, setFilterYear] = useState<string>(String(now.getFullYear()))
+  const [filterStatuses, setFilterStatuses] = useState<string[]>([])
+
+  const { data: purchases = [], isLoading } = usePurchases(filterMonth, filterYear)
+  const { data: years = [now.getFullYear()] } = useAvailableYears('purchases')
   const cancelPurchase = useCancelPurchase()
   const [cancelTarget, setCancelTarget] = useState<Purchase | null>(null)
   const [selectedPurchaseId, setSelectedPurchaseId] = useState<string | null>(null)
@@ -53,29 +56,15 @@ export const PurchasesPage = () => {
     setSelectedPurchaseId(id)
     setIsModalOpen(true)
   }
-
-  const now = new Date()
-  const [filterMonth, setFilterMonth] = useState<string>(String(now.getMonth() + 1))
-  const [filterYear, setFilterYear] = useState<string>(String(now.getFullYear()))
-  const [filterStatuses, setFilterStatuses] = useState<string[]>([])
   const toggleStatus = (v: string) =>
     setFilterStatuses(prev => prev.includes(v) ? prev.filter(s => s !== v) : [...prev, v])
 
-  const years = useMemo(() => {
-    const set = new Set(purchases.map(p => new Date(p.date).getFullYear()))
-    set.add(now.getFullYear())
-    return Array.from(set).sort((a, b) => b - a)
-  }, [purchases])
-
   const filtered = useMemo(() => {
     return purchases.filter(p => {
-      const d = new Date(p.date)
-      if (filterYear && d.getFullYear() !== Number(filterYear)) return false
-      if (filterMonth && d.getMonth() + 1 !== Number(filterMonth)) return false
       if (filterStatuses.length > 0 && !filterStatuses.includes(p.status)) return false
       return true
     })
-  }, [purchases, filterYear, filterMonth, filterStatuses])
+  }, [purchases, filterStatuses])
 
   const columns = useMemo<ColumnDef<Purchase>[]>(
     () => [
@@ -201,25 +190,13 @@ export const PurchasesPage = () => {
 
       {/* Filtres */}
       <div className="flex flex-wrap gap-3">
-        <select
-          className="h-9 rounded-md border border-input bg-card pl-3 pr-8 py-1.5 text-sm focus-visible:outline-none focus-visible:ring-1 focus-visible:ring-ring cursor-pointer shadow-sm appearance-none"
-          value={filterYear}
-          onChange={e => setFilterYear(e.target.value)}
-        >
-          {years.map(y => (
-            <option key={y} value={y}>{y}</option>
-          ))}
-        </select>
-        <select
-          className="h-9 rounded-md border border-input bg-card pl-3 pr-8 py-1.5 text-sm focus-visible:outline-none focus-visible:ring-1 focus-visible:ring-ring cursor-pointer shadow-sm appearance-none"
-          value={filterMonth}
-          onChange={e => setFilterMonth(e.target.value)}
-        >
-          <option value="">Tous les mois</option>
-          {MONTHS_FR.map((m, i) => (
-            <option key={i + 1} value={i + 1}>{m}</option>
-          ))}
-        </select>
+        <PeriodSelector
+          month={filterMonth}
+          year={filterYear}
+          availableYears={years}
+          onMonthChange={setFilterMonth}
+          onYearChange={setFilterYear}
+        />
         {/* Mobile — Filter Chips */}
         <div className="flex sm:hidden items-center gap-2 overflow-x-auto pb-1 [scrollbar-width:none] [&::-webkit-scrollbar]:hidden">
           <span className="text-sm text-muted-foreground shrink-0 hidden sm:inline">Statut :</span>

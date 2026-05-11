@@ -5,17 +5,22 @@ import { Link2 } from 'lucide-react'
 import { DataTable } from '@/components/shared/DataTable'
 import { PageHeader } from '@/components/shared/PageHeader'
 import { useAllSupplierPayments, type SupplierPaymentRow } from '@/hooks/useSupplierPayments'
+import { useAvailableYears } from '@/hooks/useAvailableYears'
+import { PeriodSelector } from '@/components/shared/PeriodSelector'
 import { PurchaseQuickViewModal } from '@/features/purchases/PurchaseQuickViewModal'
 import { formatCurrency, formatDate } from '@/lib/utils'
 
-const MONTHS_FR = [
-  'Janvier', 'Février', 'Mars', 'Avril', 'Mai', 'Juin',
-  'Juillet', 'Août', 'Septembre', 'Octobre', 'Novembre', 'Décembre',
-]
+
 
 export const SupplierPaymentsPage = () => {
   const navigate = useNavigate()
-  const { data: payments = [], isLoading } = useAllSupplierPayments()
+  const now = new Date()
+  const [filterMonth, setFilterMonth] = useState<string>(String(now.getMonth() + 1))
+  const [filterYear, setFilterYear] = useState<string>(String(now.getFullYear()))
+
+  const { data: payments = [], isLoading } = useAllSupplierPayments(filterMonth, filterYear)
+  const { data: years = [now.getFullYear()] } = useAvailableYears('supplier_payments')
+
   const [selectedPurchaseId, setSelectedPurchaseId] = useState<string | null>(null)
   const [isModalOpen, setIsModalOpen] = useState(false)
 
@@ -24,24 +29,7 @@ export const SupplierPaymentsPage = () => {
     setIsModalOpen(true)
   }
 
-  const now = new Date()
-  const [filterMonth, setFilterMonth] = useState<string>(String(now.getMonth() + 1))
-  const [filterYear, setFilterYear] = useState<string>(String(now.getFullYear()))
-
-  const years = useMemo(() => {
-    const set = new Set(payments.map(p => new Date(p.date).getFullYear()))
-    set.add(now.getFullYear())
-    return Array.from(set).sort((a, b) => b - a)
-  }, [payments])
-
-  const filtered = useMemo(() => {
-    return payments.filter(p => {
-      const d = new Date(p.date)
-      if (filterYear && d.getFullYear() !== Number(filterYear)) return false
-      if (filterMonth && d.getMonth() + 1 !== Number(filterMonth)) return false
-      return true
-    })
-  }, [payments, filterYear, filterMonth])
+  const filtered = payments
 
   const total = filtered.reduce((s, p) => s + p.amount, 0)
 
@@ -100,25 +88,13 @@ export const SupplierPaymentsPage = () => {
 
       {/* Filtres */}
       <div className="flex flex-wrap gap-3">
-        <select
-          className="h-9 rounded-md border border-input bg-white pl-3 pr-8 py-1.5 text-sm focus-visible:outline-none focus-visible:ring-1 focus-visible:ring-ring cursor-pointer shadow-sm appearance-none"
-          value={filterYear}
-          onChange={e => setFilterYear(e.target.value)}
-        >
-          {years.map(y => (
-            <option key={y} value={y}>{y}</option>
-          ))}
-        </select>
-        <select
-          className="h-9 rounded-md border border-input bg-white pl-3 pr-8 py-1.5 text-sm focus-visible:outline-none focus-visible:ring-1 focus-visible:ring-ring cursor-pointer shadow-sm appearance-none"
-          value={filterMonth}
-          onChange={e => setFilterMonth(e.target.value)}
-        >
-          <option value="">Tous les mois</option>
-          {MONTHS_FR.map((m, i) => (
-            <option key={i + 1} value={i + 1}>{m}</option>
-          ))}
-        </select>
+        <PeriodSelector
+          month={filterMonth}
+          year={filterYear}
+          availableYears={years}
+          onMonthChange={setFilterMonth}
+          onYearChange={setFilterYear}
+        />
       </div>
 
       <DataTable

@@ -14,14 +14,30 @@ export interface ClientPaymentRow {
   sale_reference: string | null
 }
 
-export const useAllClientPayments = () =>
+export const useAllClientPayments = (month?: string, year?: string) =>
   useQuery({
-    queryKey: ['client-payments-all'],
+    queryKey: ['client-payments-all', month, year],
     queryFn: async () => {
-      const { data, error } = await supabase
+      let query = supabase
         .from('client_payments')
         .select('*, sales!sale_id(id, reference, clients!client_id(id, name))')
-        .order('date', { ascending: false })
+
+      if (year && year !== '') {
+        if (month && month !== '0' && month !== '') {
+          const m = parseInt(month)
+          const y = parseInt(year)
+          const startDate = `${y}-${String(m).padStart(2, '0')}-01`
+          const endDateObj = new Date(y, m, 0)
+          const endDate = `${y}-${String(m).padStart(2, '0')}-${String(endDateObj.getDate()).padStart(2, '0')}`
+          query = query.gte('date', startDate).lte('date', endDate)
+        } else {
+          const startDate = `${year}-01-01`
+          const endDate = `${year}-12-31`
+          query = query.gte('date', startDate).lte('date', endDate)
+        }
+      }
+
+      const { data, error } = await query.order('date', { ascending: false })
 
       if (error) throw error
       const payments = data ?? []

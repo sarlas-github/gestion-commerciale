@@ -8,6 +8,7 @@ import {
   SelectItem,
   SelectTrigger,
 } from '@/components/ui/select'
+import { PeriodSelector } from '@/components/shared/PeriodSelector'
 import { TableCell, TableRow } from '@/components/ui/table'
 import { PageHeader } from '@/components/shared/PageHeader'
 import { DataTable } from '@/components/shared/DataTable'
@@ -15,10 +16,7 @@ import { useClientReport } from '@/hooks/useClientReport'
 import { useAvailableYears } from '@/hooks/useAvailableYears'
 import { formatCurrency } from '@/lib/utils'
 
-const MONTHS_FR = [
-  'Janvier', 'Février', 'Mars', 'Avril', 'Mai', 'Juin',
-  'Juillet', 'Août', 'Septembre', 'Octobre', 'Novembre', 'Décembre',
-]
+
 
 type DebtFilter = 'all' | 'with_debt' | 'paid'
 
@@ -39,13 +37,13 @@ type ClientReportRow = {
 export const ClientReportsPage = () => {
   const navigate = useNavigate()
   const now = new Date()
-  const [year, setYear] = useState(now.getFullYear())
-  const [month, setMonth] = useState(now.getMonth() + 1) // 0 = tous les mois
+  const [year, setYear] = useState(String(now.getFullYear()))
+  const [month, setMonth] = useState(String(now.getMonth() + 1)) // '0' = tous les mois
   const [debtFilter, setDebtFilter] = useState<DebtFilter>('all')
   const tableRef = useRef<HTMLDivElement>(null)
 
   const { data: availableYears = [now.getFullYear()] } = useAvailableYears('sales')
-  const { data, isLoading } = useClientReport(year, month)
+  const { data, isLoading } = useClientReport(Number(year), Number(month))
   const rows = (data?.rows ?? []) as ClientReportRow[]
 
   const filteredRows = useMemo(() => {
@@ -67,7 +65,7 @@ export const ClientReportsPage = () => {
     [filteredRows]
   )
 
-  const periodSlug = month === 0 ? `${year}` : `${MONTHS_FR[month - 1]}-${year}`
+  const periodSlug = month === '0' || month === '' ? `${year}` : `M${month}-${year}`
 
   const columns = useMemo<ColumnDef<ClientReportRow>[]>(
     () => [
@@ -127,32 +125,14 @@ export const ClientReportsPage = () => {
 
       {/* Sélecteurs période + filtre dettes */}
       <div className="flex flex-wrap items-center gap-3">
-        {/* Année */}
-        <Select value={String(year)} onValueChange={(v) => v && setYear(Number(v))}>
-          <SelectTrigger size="sm" className="w-24">
-            <span className="flex-1 text-left">{year}</span>
-          </SelectTrigger>
-          <SelectContent>
-            {availableYears.map((y) => (
-              <SelectItem key={y} value={String(y)}>{y}</SelectItem>
-            ))}
-          </SelectContent>
-        </Select>
-
-        {/* Mois */}
-        <Select value={String(month)} onValueChange={(v) => v !== null && setMonth(Number(v))}>
-          <SelectTrigger size="sm" className="w-40">
-            <span className="flex-1 text-left">
-              {month === 0 ? 'Tous les mois' : MONTHS_FR[month - 1]}
-            </span>
-          </SelectTrigger>
-          <SelectContent>
-            <SelectItem value="0">Tous les mois</SelectItem>
-            {MONTHS_FR.map((label, i) => (
-              <SelectItem key={i + 1} value={String(i + 1)}>{label}</SelectItem>
-            ))}
-          </SelectContent>
-        </Select>
+        <PeriodSelector
+          month={month}
+          year={year}
+          availableYears={availableYears}
+          onMonthChange={setMonth}
+          onYearChange={setYear}
+          allowAllMonths={true}
+        />
 
         {/* Filtre dettes */}
         <div className="flex items-center gap-2 sm:ml-auto">

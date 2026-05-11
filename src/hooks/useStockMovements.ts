@@ -18,13 +18,30 @@ export interface StockMovementRow {
   refLabel: string | null // référence lisible ex. "ACH-001" pour les achats
 }
 
-export const useStockMovements = () =>
+export const useStockMovements = (month?: string, year?: string) =>
   useQuery({
-    queryKey: ['stock-movements'],
+    queryKey: ['stock-movements', month, year],
     queryFn: async () => {
-      const { data, error } = await supabase
+      let query = supabase
         .from('stock_movements')
         .select('*, products(id, name)')
+
+      if (year && year !== '') {
+        if (month && month !== '0' && month !== '') {
+          const m = parseInt(month)
+          const y = parseInt(year)
+          const startDate = `${y}-${String(m).padStart(2, '0')}-01`
+          const endDateObj = new Date(y, m, 0)
+          const endDate = `${y}-${String(m).padStart(2, '0')}-${String(endDateObj.getDate()).padStart(2, '0')}`
+          query = query.gte('date', startDate).lte('date', endDate)
+        } else {
+          const startDate = `${year}-01-01`
+          const endDate = `${year}-12-31`
+          query = query.gte('date', startDate).lte('date', endDate)
+        }
+      }
+
+      const { data, error } = await query
         .order('date', { ascending: false })
         .order('created_at', { ascending: false })
 

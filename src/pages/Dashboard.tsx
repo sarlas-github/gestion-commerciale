@@ -12,12 +12,8 @@ import {
   PieChart, Pie, Cell, Legend,
   Tooltip,
 } from 'recharts'
-import {
-  Select,
-  SelectContent,
-  SelectItem,
-  SelectTrigger,
-} from '@/components/ui/select'
+
+import { PeriodSelector } from '@/components/shared/PeriodSelector'
 import { useDashboard } from '@/hooks/useDashboard'
 import { useAvailableYears } from '@/hooks/useAvailableYears'
 import { useChartColors } from '@/hooks/useChartColors'
@@ -25,10 +21,7 @@ import { formatCurrency, cn } from '@/lib/utils'
 
 // ── Constantes ────────────────────────────────────────────────────────────────
 
-const MONTHS_FR = [
-  'Janvier', 'Février', 'Mars', 'Avril', 'Mai', 'Juin',
-  'Juillet', 'Août', 'Septembre', 'Octobre', 'Novembre', 'Décembre',
-]
+
 
 const PIE_COLORS = ['#3b82f6', '#22c55e', '#f59e0b', '#ef4444', '#8b5cf6', '#ec4899', '#14b8a6', '#f97316']
 
@@ -127,15 +120,15 @@ const TooltipMAD = ({
 
 export const Dashboard = () => {
   const now = new Date()
-  const [year, setYear] = useState(now.getFullYear())
-  const [month, setMonth] = useState(now.getMonth() + 1) // 0 = toute l'année
+  const [year, setYear] = useState(String(now.getFullYear()))
+  const [month, setMonth] = useState(String(now.getMonth() + 1)) // '0' = toute l'année
   const [showDetails, setShowDetails] = useState(false)
   const chartColors = useChartColors()
 
   const { data: availableYears = [now.getFullYear()] } = useAvailableYears('sales')
-  const { data, isLoading } = useDashboard(year, month)
+  const { data, isLoading } = useDashboard(Number(year), Number(month))
 
-  const isYearView = month === 0
+  const isYearView = month === '0' || month === ''
   const periodSub = isYearView ? "cette année" : "ce mois"
 
   return (
@@ -145,32 +138,14 @@ export const Dashboard = () => {
         <h1 className="text-xl font-semibold">Dashboard</h1>
 
         <div className="flex items-center gap-2">
-          {/* Année */}
-          <Select value={String(year)} onValueChange={(v) => v && setYear(Number(v))}>
-            <SelectTrigger size="sm" className="w-24">
-              <span className="flex-1 text-left">{year}</span>
-            </SelectTrigger>
-            <SelectContent>
-              {availableYears.map((y) => (
-                <SelectItem key={y} value={String(y)}>{y}</SelectItem>
-              ))}
-            </SelectContent>
-          </Select>
-
-          {/* Mois */}
-          <Select value={String(month)} onValueChange={(v) => v !== null && setMonth(Number(v))}>
-            <SelectTrigger size="sm" className="w-40">
-              <span className="flex-1 text-left">
-                {isYearView ? 'Tous les mois' : MONTHS_FR[month - 1]}
-              </span>
-            </SelectTrigger>
-            <SelectContent>
-              <SelectItem value="0">Tous les mois</SelectItem>
-              {MONTHS_FR.map((label, i) => (
-                <SelectItem key={i + 1} value={String(i + 1)}>{label}</SelectItem>
-              ))}
-            </SelectContent>
-          </Select>
+          <PeriodSelector
+            month={month}
+            year={year}
+            availableYears={availableYears}
+            onMonthChange={setMonth}
+            onYearChange={setYear}
+            allowAllMonths={true}
+          />
         </div>
       </div>
 
