@@ -250,6 +250,22 @@ multi-tables présentes et futures.
 
 ---
 
+## 🏎️ Optimisation Egress (Filtrage par Période Serveur)
+
+Pour éviter de télécharger inutilement l'intégralité de la base de données (Egress Supabase) sur les tables volumineuses, **le filtrage par période (mois/année) doit TOUJOURS se faire côté serveur** via les requêtes Supabase.
+
+1. **Transactionnel (Ventes, Achats, Stock, Paiements)** :
+   - Initialisation par défaut : **Toujours au mois actuel** (`String(now.getMonth() + 1)`).
+   - L'option "Tous les mois" (`allowAllMonths={true}` du composant `PeriodSelector`) est **strictement interdite** pour éviter de charger des milliers de lignes dans le navigateur.
+
+2. **Rapports et Agrégations (Dashboard, État Clients, État Fournisseurs)** :
+   - Ces interfaces peuvent utiliser l'option "Tous les mois" (`allowAllMonths={true}`) car la donnée retournée est soit déjà agrégée par le serveur (fonctions RPC), soit filtrée sur un seul client/fournisseur précis.
+
+3. **Catalogues (Clients, Fournisseurs, Produits)** :
+   - Exceptions à la règle : ils n'ont pas de notion de période et sont chargés dans leur intégralité à l'ouverture de l'application pour permettre une recherche textuelle instantanée côté client.
+
+---
+
 ## ⛔ Ce qu'il ne faut PAS faire
 - Ne jamais exposer la service_role key
 - Ne jamais faire de requêtes Supabase dans les composants
