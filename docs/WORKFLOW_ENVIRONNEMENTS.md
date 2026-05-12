@@ -54,18 +54,39 @@ npx supabase start
 
 ---
 
-## 🔄 Étape 2 : Flow de Développement Quotidien
+## 🔄 Étape 2 : Le Cycle de Déploiement Sécurisé
 
-C'est ta routine pour ajouter des fonctionnalités sans rien casser.
+Suis toujours cet ordre pour protéger ta production (et tes démos clients).
 
-1. **Migration SQL** : Crée un fichier dans `supabase/migrations/` avec le bon format de date.
-2. **Test Local** : Applique tes changements sur ton PC avec `npx supabase db reset`.
-3. **Code React** : Développe ton interface en pointant sur le local.
-4. **Déploiement SQL** : Envoie tes scripts sur le Cloud TEST :
+### Phase A : Développement (Branche de feature)
+1. **Créer la Migration** : Crée ton fichier `supabase/migrations/YYYYMMDDHHMMSS_nom.sql`.
+2. **Coder & Tester en Local** : Utilise ton PC avec Tailscale pour valider sur mobile. Ta base locale peut être cassée et remise à zéro (`db reset`) sans crainte.
+
+### Phase B : Staging / Test Cloud (Validation & Démo)
+*C'est ici que tu montres ton travail à tes clients via un lien STABLE.*
+
+1. **Pousser le SQL** : `npx supabase db push` (lié au projet TEST).
+2. **Merge dans la branche `test`** : Pour mettre à jour le lien de démo client.
    ```bash
-   npx supabase db push
+   git checkout test
+   git merge feat/ma-nouveaute
+   git push origin test
    ```
-5. **Déploiement Code** : Merge ta branche sur `main` pour déclencher le build (Vercel/Cloudflare).
+3. **Lien stable** : Ton client utilise toujours la même URL (ex: `https://test.ton-projet.pages.dev`). 
+   *C'est ton "laboratoire" branché sur Supabase TEST.*
+
+### Phase C : Production (Le grand saut) 🚩
+*Une fois que le client a validé sur le lien de test.*
+
+1. **Lier la PROD** : `npx supabase link --project-ref <REF_PROD>`.
+2. **Pousser le SQL** : `npx supabase db push`.
+3. **Merge dans `main`** : 
+   ```bash
+   git checkout main
+   git merge test
+   git push origin main
+   ```
+   *Ton site officiel est à jour avec une base de données déjà prête.*
 
 ---
 
