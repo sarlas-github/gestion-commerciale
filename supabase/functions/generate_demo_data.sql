@@ -95,7 +95,8 @@ BEGIN
             v_qty := floor(random() * 5 + 2);
             v_price := v_product_base_prices[v_p_idx];
             INSERT INTO public.purchase_items (purchase_id, product_id, quantity, unit_price) VALUES (v_t_id, v_p_id, v_qty, v_price);
-            INSERT INTO public.stock_movements (user_id, product_id, type, quantity, reference_type, reference_id, date) VALUES (p_user_id, v_p_id, 'out', v_qty, 'purchase', v_t_id, v_date);
+            INSERT INTO public.stock_movements (user_id, product_id, type, quantity, reference_type, reference_id, date) VALUES (p_user_id, v_p_id, 'in', v_qty, 'purchase', v_t_id, v_date);
+            UPDATE public.stock SET quantity = quantity + v_qty WHERE product_id = v_p_id;
             v_total := v_total + (v_qty * v_price);
         END LOOP;
         

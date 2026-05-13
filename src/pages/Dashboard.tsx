@@ -18,6 +18,8 @@ import { useDashboard } from '@/hooks/useDashboard'
 import { useAvailableYears } from '@/hooks/useAvailableYears'
 import { useChartColors } from '@/hooks/useChartColors'
 import { formatCurrency, cn } from '@/lib/utils'
+import { useMediaQuery } from '@/hooks/useMediaQuery'
+
 
 // ── Constantes ────────────────────────────────────────────────────────────────
 
@@ -123,6 +125,7 @@ export const Dashboard = () => {
   const [year, setYear] = useState(String(now.getFullYear()))
   const [month, setMonth] = useState(String(now.getMonth() + 1)) // '0' = toute l'année
   const [showDetails, setShowDetails] = useState(false)
+  const isMobile = useMediaQuery('(max-width: 768px)')
   const chartColors = useChartColors()
 
   const { data: availableYears = [now.getFullYear()] } = useAvailableYears('sales')
@@ -319,15 +322,15 @@ export const Dashboard = () => {
               empty={(data?.repartitionProduits ?? []).length === 0}
               emptyText={`Aucune donnée ${periodSub}`}
             >
-              <ResponsiveContainer width="100%" height={260}>
+              <ResponsiveContainer width="100%" height={isMobile ? 320 : 260}>
                 <PieChart>
                   <Pie
                     data={data?.repartitionProduits}
                     dataKey="value"
                     nameKey="name"
-                    cx="40%"
-                    cy="45%"
-                    outerRadius={70}
+                    cx={isMobile ? "50%" : "40%"}
+                    cy={isMobile ? "35%" : "45%"}
+                    outerRadius={isMobile ? 60 : 70}
                     label={({ percent }) => `${(percent * 100).toFixed(0)}%`}
                     labelLine
                   >
@@ -337,14 +340,20 @@ export const Dashboard = () => {
                   </Pie>
                   <Tooltip formatter={(v: number) => [formatCurrency(v), 'Total']} />
                   <Legend
-                    layout="vertical"
-                    align="right"
-                    verticalAlign="middle"
+                    layout={isMobile ? "horizontal" : "vertical"}
+                    align={isMobile ? "center" : "right"}
+                    verticalAlign={isMobile ? "bottom" : "middle"}
                     iconSize={10}
-                    wrapperStyle={{ fontSize: '11px', maxWidth: '45%', lineHeight: '1.6' }}
+                    wrapperStyle={{ 
+                      fontSize: isMobile ? '10px' : '11px', 
+                      maxWidth: isMobile ? '100%' : '45%', 
+                      lineHeight: '1.6',
+                      paddingTop: isMobile ? '20px' : '0'
+                    }}
                   />
                 </PieChart>
               </ResponsiveContainer>
+
             </ChartCard>
           </div>
         </>
