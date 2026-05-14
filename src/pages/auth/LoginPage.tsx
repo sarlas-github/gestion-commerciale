@@ -1,6 +1,7 @@
 import { useState } from 'react'
 import { useNavigate } from 'react-router-dom'
 import { useAuth } from '@/hooks/useAuth'
+import { supabase } from '@/lib/supabase'
 import { Button } from '@/components/ui/button'
 import { Input } from '@/components/ui/input'
 import { Label } from '@/components/ui/label'
@@ -22,6 +23,34 @@ export const LoginPage = () => {
     setIsLoading(true)
     try {
       await signIn(email, password)
+
+      // --- Meta Pixel : détecter la toute première connexion ---
+      // En développement local (localhost) → on ignore. En production → on active.
+      // Automatique, aucune action manuelle requise.
+      if (import.meta.env.PROD) {
+        try {
+          const { data: { user } } = await supabase.auth.getUser()
+          if (user) {
+            const alreadyLoggedIn = user.user_metadata?.first_login_done === true
+            if (!alreadyLoggedIn) {
+              // Première vraie connexion client → déclencher Meta Pixel
+              if ((window as any).fbq) {
+                ;(window as any).fbq('track', 'CompleteRegistration', {
+                  content_name: 'PilotCommerce Access',
+                })
+              }
+              // Marquer comme fait pour toutes les connexions suivantes
+              await supabase.auth.updateUser({
+                data: { first_login_done: true },
+              })
+            }
+          }
+        } catch (_pixelErr) {
+          // Silencieux : on ne bloque pas la connexion si le pixel échoue
+        }
+      }
+      // ----------------------------------------------------------
+
       navigate('/dashboard')
     } catch (err) {
       setError('Email ou mot de passe incorrect.')
