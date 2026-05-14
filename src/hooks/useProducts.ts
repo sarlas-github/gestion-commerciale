@@ -1,4 +1,4 @@
-﻿import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query'
+import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query'
 import { toast } from 'sonner'
 import { getApiErrorMessage } from '@/lib/apiError'
 import { supabase } from '@/lib/supabase'
@@ -163,7 +163,7 @@ export const useDeleteProduct = () => {
 
       if (saleErr) throw saleErr
       if ((saleCount ?? 0) > 0) {
-        throw new Error('Ce produit est utilisé dans des ventes et ne peut pas être supprimé.')
+        throw new Error('Ce produit a de mouvements de stock associés et ne peut pas être supprimé.')
       }
 
       const { count: purchaseCount, error: purchaseErr } = await supabase
@@ -173,7 +173,17 @@ export const useDeleteProduct = () => {
 
       if (purchaseErr) throw purchaseErr
       if ((purchaseCount ?? 0) > 0) {
-        throw new Error('Ce produit est utilisé dans des achats et ne peut pas être supprimé.')
+        throw new Error('Ce produit a des achats associés et ne peut pas être supprimé.')
+      }
+
+      const { count: movCount, error: movErr } = await supabase
+        .from('stock_movements')
+        .select('id', { count: 'exact', head: true })
+        .eq('product_id', id)
+
+      if (movErr) throw movErr
+      if ((movCount ?? 0) > 0) {
+        throw new Error('Ce produit a des mouvements de stock associés et ne peut pas être supprimé.')
       }
 
       const { error } = await supabase.from('products').delete().eq('id', id)

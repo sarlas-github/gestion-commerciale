@@ -74,6 +74,15 @@ export function isUniqueNameError(err: unknown): boolean {
   )
 }
 
+export function isForeignKeyError(err: unknown): boolean {
+  return (
+    typeof err === 'object' &&
+    err !== null &&
+    'code' in err &&
+    (err as Record<string, unknown>).code === '23503'
+  )
+}
+
 // Convertit un montant en lettres (français, dirhams marocains)
 // Exemple : 2300.50 → "Deux mille trois cents dirhams et cinquante centimes"
 export function numberToWords(amount: number): string {
