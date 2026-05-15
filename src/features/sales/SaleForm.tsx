@@ -337,11 +337,7 @@ export const SaleForm = ({ id, existing, onSubmit, hasInvoice = false, savedPaym
           {expandedProducts && (
             <div className="p-4 sm:p-6 pt-2 sm:pt-3 space-y-3">
 
-          {hasExistingPayments && (
-            <p className="text-xs text-amber-600 bg-amber-50 rounded px-3 py-2">
-              ⚠️ Des paiements ont été enregistrés — les lignes produits ne sont plus modifiables.
-            </p>
-          )}
+
 
           {/* Produits — cartes mobile / lignes desktop */}
           <div className="space-y-2 sm:space-y-0">
