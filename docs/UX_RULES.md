@@ -42,10 +42,10 @@ Pour tout champ lié à une entité externe (Client, Fournisseur, Produit) :
 3. Grille paiements avec lignes dynamiques
 
 ### Grille produits
-- Chaque ligne : autocomplete produit + bouton [+], quantité, prix unitaire, sous-total, supprimer
+- Chaque ligne : autocomplete produit + bouton [+], quantité, nombre de pièces, prix unitaire, sous-total, supprimer
 - Bouton [+ Ajouter une ligne] en bas
 - Minimum 1 ligne
-- Sous-total recalculé en temps réel
+- Sous-total recalculé en temps réel (`quantité × pièces × prix`)
 - Total général recalculé en temps réel
 - Quantité et prix : auto-select au focus
 
@@ -55,10 +55,37 @@ Pour tout champ lié à une entité externe (Client, Fournisseur, Produit) :
 - Affichage temps réel : Payé, Reste, Statut
 - Disponible en création ET édition
 
-### Règles édition
-- Sans paiements → édition complète autorisée
-- Avec paiements → lignes produits non modifiables, message explicatif
-- Seuls Date et Note restent éditables si paiements existants
+### Snapshot `pieces_count`
+Le champ **Pièces** (nombre de pièces par unité) est snapshoted au moment de la transaction dans `purchase_items.pieces_count` et `sale_items.pieces_count`. Cela garantit que modifier ce champ sur un produit n'altère pas les calculs des transactions historiques.
+
+- Au clic sur un produit → `pieces_count` est automatiquement copié depuis le produit
+- Il est éditable dans le formulaire (avant blocage, voir règles ci-dessous)
+- Il ne peut pas être mis à 0 (minimum 1)
+
+### Règles de blocage par type de document
+
+#### Achat (`PurchaseForm`)
+Pas de document officiel généré → aucun blocage lié aux paiements.
+
+| Champ / Action | Condition de blocage |
+|---|---|
+| `pieces_count`, `unit_price` | Achat annulé uniquement (`isCancelled`) |
+| Quantité | Item déjà enregistré en BD (`original_id`) |
+| Bouton "Ajouter une ligne" | Achat annulé uniquement |
+
+> L'annulation est gérée globalement via `<fieldset disabled={isCancelled}>`.
+
+#### Vente (`SaleForm`)
+La vente génère des documents officiels (facture, reçu) → blocage dès qu'un document ou paiement existe.
+
+| Champ / Action | Condition de blocage |
+|---|---|
+| `pieces_count`, `unit_price` | Facture générée OU paiement existant OU annulé |
+| Quantité | Item déjà enregistré en BD (`original_id`) |
+| Bouton "Ajouter une ligne" | Facture générée OU paiement existant OU annulé |
+
+> L'annulation est gérée globalement via `<fieldset disabled={isCancelled}>`.  
+> Variables : `hasInvoice` (prop), `hasExistingPayments` (`client_payments.length > 0`).
 
 ---
 

@@ -89,7 +89,7 @@ export const SaleForm = ({ id, existing, onSubmit, hasInvoice = false, savedPaym
     product_id: i.product_id,
     quantity: i.quantity,
     unit_price: i.unit_price,
-    pieces_count: Number(i.products?.pieces_count || 1),
+    pieces_count: Number(i.pieces_count ?? i.products?.pieces_count ?? 1),
   })) ?? [{ product_id: '', quantity: 1, unit_price: 0, pieces_count: 1 }]
 
   const defaultPayments = existing?.client_payments?.map(p => ({
@@ -316,7 +316,7 @@ export const SaleForm = ({ id, existing, onSubmit, hasInvoice = false, savedPaym
           >
             <h2 className="text-sm font-semibold uppercase tracking-wide text-muted-foreground">Produits</h2>
             <div className="flex items-center gap-2">
-              {expandedProducts && !hasExistingPayments && !hasInvoice && (
+              {expandedProducts && !isCancelled && !hasExistingPayments && !hasInvoice && (
                 <Button
                   type="button"
                   variant="outline"
@@ -430,9 +430,22 @@ export const SaleForm = ({ id, existing, onSubmit, hasInvoice = false, savedPaym
                   <div className="grid grid-cols-[44px_1fr_1fr_1.4fr] gap-2 mt-2 sm:mt-0 sm:contents">
                     <div className="space-y-1 sm:space-y-0">
                       <span className="text-xs text-muted-foreground block sm:hidden">Pièces</span>
-                      <div className="text-sm text-center tabular-nums h-8 flex items-center justify-center">
-                        {pieces}
-                      </div>
+                      <Controller
+                        name={`items.${idx}.pieces_count`}
+                        control={control}
+                        render={({ field: f }) => (
+                          <Input
+                            type="number"
+                            min={1}
+                            className="h-8 text-center text-sm px-1"
+                            onFocus={e => e.target.select()}
+                            value={f.value ?? 1}
+                            onChange={e => f.onChange(e.target.value === '' ? 1 : Number(e.target.value))}
+                            ref={f.ref}
+                            disabled={hasInvoice || !!hasExistingPayments}
+                          />
+                        )}
+                      />
                     </div>
                     <div className="space-y-1 sm:space-y-0">
                       <span className="text-xs text-muted-foreground block sm:hidden">Quantité</span>
@@ -471,7 +484,7 @@ export const SaleForm = ({ id, existing, onSubmit, hasInvoice = false, savedPaym
                             value={f.value ?? ''}
                             onChange={e => f.onChange(e.target.value === '' ? undefined : Number(e.target.value))}
                             ref={f.ref}
-                            disabled={hasInvoice}
+                            disabled={hasInvoice || !!hasExistingPayments}
                           />
                         )}
                       />

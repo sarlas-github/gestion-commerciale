@@ -175,6 +175,7 @@ export const useCreateSale = () => {
               product_id: i.product_id,
               quantity: i.quantity,
               unit_price: i.unit_price,
+              pieces_count: i.pieces_count || 1,
             }))
           )
         if (itemErr) { await rollback(); throw itemErr }
@@ -306,11 +307,11 @@ export const useUpdateSale = () => {
       for (const item of existingItems) {
         const { error: updItemErr } = await supabase
           .from('sale_items')
-          .update({ unit_price: item.unit_price })
+          .update({ unit_price: item.unit_price, pieces_count: item.pieces_count || 1 })
           .eq('id', item.original_id)
         if (updItemErr) throw updItemErr
       }
-      
+
       if (newItems.length > 0) {
         // a. Insérer les nouveaux items
         const { error: insItemErr } = await supabase.from('sale_items').insert(
@@ -319,6 +320,7 @@ export const useUpdateSale = () => {
             product_id: i.product_id,
             quantity: i.quantity,
             unit_price: i.unit_price,
+            pieces_count: i.pieces_count || 1,
           }))
         )
         if (insItemErr) throw insItemErr

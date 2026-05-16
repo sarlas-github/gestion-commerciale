@@ -178,7 +178,7 @@ export const useCreatePurchase = () => {
               product_id: i.product_id,
               quantity: i.quantity,
               unit_price: i.unit_price,
-              // pieces_count supprimé car colonne absente en BDD
+              pieces_count: i.pieces_count || 1,
             }))
           )
         if (itemErr) { await rollback(); throw itemErr }
@@ -316,7 +316,7 @@ export const useUpdatePurchase = () => {
       for (const item of existingItems) {
         const { error: updItemErr } = await supabase
           .from('purchase_items')
-          .update({ unit_price: item.unit_price })
+          .update({ unit_price: item.unit_price, pieces_count: item.pieces_count || 1 })
           .eq('id', item.original_id)
         if (updItemErr) throw updItemErr
       }
@@ -329,7 +329,7 @@ export const useUpdatePurchase = () => {
             product_id: i.product_id,
             quantity: i.quantity,
             unit_price: i.unit_price,
-            // pieces_count supprimé car colonne absente en BDD
+            pieces_count: i.pieces_count || 1,
           }))
         )
         if (insItemErr) throw insItemErr

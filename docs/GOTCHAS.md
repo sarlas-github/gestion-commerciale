@@ -43,3 +43,23 @@ RLS filtre sur `user_id = auth.uid()` mais ne l'injecte pas. Toujours passer `us
 `remaining` dans `purchases`, `sales` et `documents` est GENERATED (`total - paid`).
 Ne jamais inclure ces champs dans un INSERT/UPDATE → erreur "cannot insert a non-DEFAULT value".
 
+---
+
+## 7. `pieces_count` — toujours snapshoter à l'insertion
+Le calcul du total HT est `quantity × pieces_count × unit_price`. `pieces_count` doit être inséré explicitement dans `purchase_items` et `sale_items` au moment de la transaction — ne pas le laisser au DEFAULT (1).
+
+```ts
+// ✅ CORRECT
+items.map(i => ({ ..., pieces_count: i.pieces_count || 1 }))
+
+// ❌ INTERDIT — le DEFAULT 1 écrase la vraie valeur du produit
+items.map(i => ({ quantity: i.quantity, unit_price: i.unit_price }))
+```
+
+En édition, lire le snapshot stocké (`i.pieces_count`) et non la donnée live du produit (`i.products?.pieces_count`).
+
+```ts
+// ✅ CORRECT — snapshot prioritaire, fallback produit live pour anciennes données
+pieces_count: Number(i.pieces_count ?? i.products?.pieces_count ?? 1)
+```
+
