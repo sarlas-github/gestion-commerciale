@@ -154,7 +154,8 @@ export const SalesPage = () => {
         cell: ({ row }) => {
           const isCancelled = row.original.status === 'cancelled'
           const hasPaid = row.original.paid > 0
-          const canCancel = !isCancelled && !hasPaid
+          const hasInv = hasInvoice(row.original)
+          const canCancel = !isCancelled && !hasPaid && !hasInv
           return (
             <div className="flex items-center gap-1">
               <Button
@@ -183,6 +184,7 @@ export const SalesPage = () => {
                 title={
                   isCancelled ? 'Déjà annulé'
                   : hasPaid ? 'Annulation impossible : un paiement a été enregistré'
+                  : hasInv ? 'Annulation impossible : une facture a été générée'
                   : 'Annuler cette vente'
                 }
                 disabled={!canCancel}

@@ -1,11 +1,5 @@
--- Dernière version déployée : 16-05-2026_04_cancel_transaction_block_invoice.sql
--- Ce fichier = source de vérité. Toute modif passe par un script dans migrations/
--- puis on met à jour ce fichier en même temps.
-
--- Annulation sécurisée et atomique d'un achat ou d'une vente.
--- Règle : annulation impossible si un paiement a déjà été enregistré (paid > 0).
--- Pour les achats : vérifie aussi que le stock est suffisant.
--- Inverse le mouvement de stock et insère un stock_movement d'annulation.
+-- Mise à jour cancel_transaction : bloque l'annulation d'une vente si une facture a été générée.
+-- Les achats ne sont pas affectés (pas de documents officiels).
 
 CREATE OR REPLACE FUNCTION cancel_transaction(
   p_id   uuid,
@@ -99,7 +93,6 @@ BEGIN
 
   -- ── 7. Inversion du stock + mouvement d'annulation ────────────────────────
   IF p_type = 'purchase' THEN
-    -- Achat annulé → soustrait du stock (inverse du +)
     FOR v_item IN
       SELECT pi.product_id, pi.quantity
         FROM purchase_items pi
@@ -135,7 +128,6 @@ BEGIN
     END LOOP;
 
   ELSE
-    -- Vente annulée → réajoute au stock (inverse du -)
     FOR v_item IN
       SELECT si.product_id, si.quantity
         FROM sale_items si
@@ -145,7 +137,6 @@ BEGIN
         FROM stock
        WHERE product_id = v_item.product_id AND user_id = v_uid;
 
-      -- Upsert stock : si la ligne n'existe pas (vente sans stock préalable)
       INSERT INTO stock (user_id, product_id, quantity)
         VALUES (v_uid, v_item.product_id, v_item.quantity)
       ON CONFLICT (user_id, product_id)
