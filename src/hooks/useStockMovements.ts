@@ -15,6 +15,8 @@ export interface StockMovementRow {
   date: string
   created_at: string
   products: Pick<Product, 'id' | 'name' | 'nature'> | null
+  stock_avant: number | null
+  stock_apres: number | null
   refLabel: string | null // référence lisible ex. "ACH-001" pour les achats
 }
 

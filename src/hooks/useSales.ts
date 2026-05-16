@@ -208,6 +208,7 @@ export const useCreateSale = () => {
           if (insStkErr) throw insStkErr
         }
 
+        const stockAvant = stockRow?.quantity ?? 0
         const { error: movErr } = await supabase
           .from('stock_movements')
           .insert({
@@ -219,6 +220,8 @@ export const useCreateSale = () => {
             reference_id: sale.id,
             note: 'Nouvelle vente',
             date: saleDate,
+            stock_avant: stockAvant,
+            stock_apres: stockAvant - newQty,
           })
         if (movErr) throw movErr
       }
@@ -344,6 +347,7 @@ export const useUpdateSale = () => {
             if (insStkErr) throw insStkErr
           }
             
+          const stockAvant = stockRow?.quantity ?? 0
           const { error: insMovErr } = await supabase.from('stock_movements').insert({
             user_id: user.id,
             product_id: item.product_id,
@@ -353,6 +357,8 @@ export const useUpdateSale = () => {
             reference_id: id,
             note: 'Ajout nouvel article à la vente',
             date: date,
+            stock_avant: stockAvant,
+            stock_apres: stockAvant - qtyToSub,
           })
           if (insMovErr) throw insMovErr
         }

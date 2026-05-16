@@ -216,6 +216,7 @@ export const useCreatePurchase = () => {
           if (insStkErr) throw insStkErr
         }
 
+        const stockAvant = stockRow?.quantity ?? 0
         const { error: moveErr } = await supabase
           .from('stock_movements')
           .insert({
@@ -227,6 +228,8 @@ export const useCreatePurchase = () => {
             reference_id: purchase.id,
             note: 'Nouvel achat',
             date: payload.date || today,
+            stock_avant: stockAvant,
+            stock_apres: stockAvant + newQty,
           })
         if (moveErr) throw moveErr
       }
@@ -354,6 +357,7 @@ export const useUpdatePurchase = () => {
             if (insStkErr) throw insStkErr
           }
             
+          const stockAvant = stockRow?.quantity ?? 0
           const { error: insMovErr } = await supabase.from('stock_movements').insert({
             user_id: user.id,
             product_id: item.product_id,
@@ -363,6 +367,8 @@ export const useUpdatePurchase = () => {
             reference_id: id,
             note: 'Ajout nouvel article à l\'achat',
             date: date || today,
+            stock_avant: stockAvant,
+            stock_apres: stockAvant + qtyToAdd,
           })
           if (insMovErr) throw insMovErr
         }

@@ -1,11 +1,5 @@
--- Dernière version déployée : 16-05-2026_03_cancel_transaction_stock_snapshot.sql
--- Ce fichier = source de vérité. Toute modif passe par un script dans migrations/
--- puis on met à jour ce fichier en même temps.
-
--- Annulation sécurisée et atomique d'un achat ou d'une vente.
--- Règle : annulation impossible si un paiement a déjà été enregistré (paid > 0).
--- Pour les achats : vérifie aussi que le stock est suffisant.
--- Inverse le mouvement de stock et insère un stock_movement d'annulation.
+-- Mise à jour cancel_transaction : ajoute stock_avant et stock_apres
+-- dans les mouvements compensatoires générés lors d'une annulation.
 
 CREATE OR REPLACE FUNCTION cancel_transaction(
   p_id   uuid,
@@ -93,6 +87,7 @@ BEGIN
         FROM purchase_items pi
        WHERE pi.purchase_id = p_id
     LOOP
+      -- Snapshot stock avant
       SELECT COALESCE(quantity, 0) INTO v_stock_avant
         FROM stock
        WHERE product_id = v_item.product_id AND user_id = v_uid;
@@ -129,6 +124,7 @@ BEGIN
         FROM sale_items si
        WHERE si.sale_id = p_id
     LOOP
+      -- Snapshot stock avant (0 si pas de ligne stock existante)
       SELECT COALESCE(quantity, 0) INTO v_stock_avant
         FROM stock
        WHERE product_id = v_item.product_id AND user_id = v_uid;

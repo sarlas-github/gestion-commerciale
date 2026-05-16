@@ -225,6 +225,8 @@ export const useAdjustStock = () => {
         reference_type: 'manual',
         note: input.note,
         date: new Date().toISOString().split('T')[0],
+        stock_avant: input.currentQuantity,
+        stock_apres: newQty,
       })
 
       if (movErr) throw movErr

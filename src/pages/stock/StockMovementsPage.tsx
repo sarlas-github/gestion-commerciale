@@ -90,6 +90,22 @@ export const StockMovementsPage = () => {
       },
     },
     {
+      accessorKey: 'stock_avant',
+      header: 'Stock avant',
+      cell: ({ row }) => {
+        const v = row.original.stock_avant
+        return <span className="tabular-nums text-sm text-muted-foreground">{v ?? '—'}</span>
+      },
+    },
+    {
+      accessorKey: 'stock_apres',
+      header: 'Stock après',
+      cell: ({ row }) => {
+        const v = row.original.stock_apres
+        return <span className="tabular-nums text-sm font-medium">{v ?? '—'}</span>
+      },
+    },
+    {
       id: 'reference',
       header: 'Référence',
       accessorFn: row => row.refLabel ?? row.reference_type,
@@ -228,6 +244,8 @@ export const StockMovementsPage = () => {
           Produit: row.products?.name ?? '',
           Type: row.type.toUpperCase(),
           Quantité: row.quantity,
+          'Stock avant': row.stock_avant ?? '',
+          'Stock après': row.stock_apres ?? '',
           Référence:
             row.reference_type === 'manual'
               ? 'Manuel'
