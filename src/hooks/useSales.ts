@@ -216,7 +216,7 @@ export const useCreateSale = () => {
             quantity: -newQty,
             reference_type: 'sale',
             reference_id: sale.id,
-            note: null,
+            note: 'Nouvelle vente',
             date: saleDate,
           })
         if (movErr) throw movErr

@@ -1,4 +1,5 @@
 import { useRef, useState } from 'react'
+import { toast } from 'sonner'
 import { Controller, useForm } from 'react-hook-form'
 import { zodResolver } from '@hookform/resolvers/zod'
 import { z } from 'zod'
@@ -52,6 +53,11 @@ const PRESET_COLORS = [
 
 // ── Composant ─────────────────────────────────────────────────────────────────
 
+export const onErrorHandler = (errors: any) => {
+  console.error("Form validation errors:", errors)
+  toast.error("Veuillez vérifier les champs du formulaire en rouge")
+}
+
 export const SettingsPage = () => {
   const { data: company, isLoading } = useCompany()
   const upsert = useUpsertCompany()
@@ -60,7 +66,7 @@ export const SettingsPage = () => {
   const [logoFile, setLogoFile] = useState<File | null>(null)
   const [logoPreview, setLogoPreview] = useState<string | null>(null)
   const [logoError, setLogoError] = useState<string | null>(null)
-  const [activeTab, setActiveTab] = useState<'brand' | 'general' | 'legal' | 'billing'>('brand')
+  const [activeTab, setActiveTab] = useState<'general' | 'brand' | 'legal' | 'billing'>('general')
 
   const { control, handleSubmit, watch, setValue, formState: { errors } } = useForm<FormValues>({
     resolver: zodResolver(schema),
@@ -139,23 +145,23 @@ export const SettingsPage = () => {
         }
       />
 
-      <form id="settings-form" onSubmit={handleSubmit(onSubmit)} noValidate className="space-y-6">
+      <form id="settings-form" onSubmit={handleSubmit(onSubmit, onErrorHandler)} noValidate className="space-y-6">
 
         {/* ── Onglets ── */}
         <div className="flex border-b mb-6 overflow-x-auto scrollbar-hide">
-          <button
-            type="button"
-            className={cn("py-2 px-4 border-b-2 text-sm font-medium whitespace-nowrap", activeTab === 'brand' ? "border-primary text-primary" : "border-transparent text-muted-foreground hover:text-foreground")}
-            onClick={() => setActiveTab('brand')}
-          >
-            Marque
-          </button>
           <button
             type="button"
             className={cn("py-2 px-4 border-b-2 text-sm font-medium whitespace-nowrap", activeTab === 'general' ? "border-primary text-primary" : "border-transparent text-muted-foreground hover:text-foreground")}
             onClick={() => setActiveTab('general')}
           >
             Général
+          </button>
+          <button
+            type="button"
+            className={cn("py-2 px-4 border-b-2 text-sm font-medium whitespace-nowrap", activeTab === 'brand' ? "border-primary text-primary" : "border-transparent text-muted-foreground hover:text-foreground")}
+            onClick={() => setActiveTab('brand')}
+          >
+            Marque
           </button>
           <button
             type="button"

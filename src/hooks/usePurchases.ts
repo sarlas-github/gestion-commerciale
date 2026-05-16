@@ -225,7 +225,7 @@ export const useCreatePurchase = () => {
             quantity: newQty,
             reference_type: 'purchase',
             reference_id: purchase.id,
-            note: null,
+            note: 'Nouvel achat',
             date: payload.date || today,
           })
         if (moveErr) throw moveErr

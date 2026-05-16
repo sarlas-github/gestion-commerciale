@@ -68,18 +68,11 @@ export const StockMovementsPage = () => {
       header: 'Type',
       cell: ({ row }) => {
         const type = row.original.type as 'in' | 'out'
-        const nature = row.original.products?.nature
         const cfg = TYPE_CONFIG[type]
-        
-        let label: string = cfg?.label ?? type.toUpperCase()
-        if (isProduction) {
-          if (nature === 'matiere_premiere' && type === 'out') label = 'CONSOMMATION'
-          if (nature === 'produit_fini' && type === 'in') label = 'PRODUCTION'
-        }
 
         return (
           <span className={`inline-flex rounded-full px-2 py-0.5 text-xs font-medium ${cfg?.className ?? 'bg-muted text-muted-foreground'}`}>
-            {label}
+            {cfg?.label ?? type.toUpperCase()}
           </span>
         )
       },
