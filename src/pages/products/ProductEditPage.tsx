@@ -4,6 +4,7 @@ import { Button } from '@/components/ui/button'
 import { PageHeader } from '@/components/shared/PageHeader'
 import { ProductForm, type ProductFormData } from '@/features/products/ProductForm'
 import { useProduct, useUpdateProduct } from '@/hooks/useProducts'
+import { useProfile } from '@/hooks/useProfile'
 import { isUniqueNameError } from '@/lib/utils'
 import type { UseFormSetError } from 'react-hook-form'
 
@@ -11,6 +12,8 @@ export const ProductEditPage = () => {
   const { id } = useParams<{ id: string }>()
   const navigate = useNavigate()
   const { data: product, isLoading } = useProduct(id!)
+  const { data: profile } = useProfile()
+  const isProduction = profile?.business_mode === 'production'
   const updateProduct = useUpdateProduct()
 
   const handleSubmit = async (data: ProductFormData, setError: UseFormSetError<ProductFormData>) => {
@@ -55,6 +58,7 @@ export const ProductEditPage = () => {
         onSubmit={handleSubmit}
         onCancel={() => navigate('/products')}
         isLoading={updateProduct.isPending}
+        isProduction={isProduction}
       />
 
       {/* Mobile Sticky Bar */}

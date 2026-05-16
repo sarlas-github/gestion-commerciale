@@ -10,9 +10,11 @@ interface ProductModalProps {
   open: boolean
   onOpenChange: (open: boolean) => void
   onSuccess?: (product: Product) => void
+  defaultNature?: 'revente' | 'matiere_premiere' | 'produit_fini'
+  isProduction?: boolean
 }
 
-export const ProductModal = ({ product, open, onOpenChange, onSuccess }: ProductModalProps) => {
+export const ProductModal = ({ product, open, onOpenChange, onSuccess, defaultNature, isProduction }: ProductModalProps) => {
   const createProduct = useCreateProduct()
   const updateProduct = useUpdateProduct()
 
@@ -48,6 +50,8 @@ export const ProductModal = ({ product, open, onOpenChange, onSuccess }: Product
         onCancel={() => onOpenChange(false)}
         isLoading={isPending}
         isModal={true}
+        initialNature={defaultNature}
+        isProduction={isProduction}
       />
     </ResponsiveModal>
   )

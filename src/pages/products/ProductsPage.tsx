@@ -1,7 +1,7 @@
-import { useMemo, useState } from 'react'
-import { useNavigate } from 'react-router-dom'
+import { useMemo, useState, useEffect } from 'react'
+import { useNavigate, useLocation } from 'react-router-dom'
 import { type ColumnDef } from '@tanstack/react-table'
-import { Pencil, Package2, Trash2, Plus, ChevronDown, Check, AlertTriangle } from 'lucide-react'
+import { Pencil, Package2, Trash2, Plus, ChevronDown, Check, AlertTriangle, Loader2, Sparkles } from 'lucide-react'
 import { Button } from '@/components/ui/button'
 import { Badge } from '@/components/ui/badge'
 import { Popover, PopoverContent, PopoverTrigger } from '@/components/ui/popover'
@@ -10,6 +10,7 @@ import { PageHeader } from '@/components/shared/PageHeader'
 import { ConfirmDialog } from '@/components/shared/ConfirmDialog'
 import { StockAdjustModal } from '@/features/products/StockAdjustModal'
 import { useProducts, useDeleteProduct, useStockAlertCount } from '@/hooks/useProducts'
+import { useProfile } from '@/hooks/useProfile'
 import type { ProductWithStock } from '@/types'
 import { cn, formatDate } from '@/lib/utils'
 import { usePageAction } from '@/contexts/PageContext'
@@ -39,13 +40,30 @@ const TYPE_LABELS: Record<string, string> = {
 
 export const ProductsPage = () => {
   const navigate = useNavigate()
+  const location = useLocation()
   const { data: products = [], isLoading } = useProducts()
   const deleteProduct = useDeleteProduct()
   const { data: alertCount = 0 } = useStockAlertCount()
 
+  const { data: profile, isLoading: isProfileLoading } = useProfile()
+  const isProduction = profile?.business_mode === 'production'
+
   const [adjustProduct, setAdjustProduct] = useState<ProductWithStock | null>(null)
   const [deleteId, setDeleteId] = useState<string | null>(null)
   const [filterStatuses, setFilterStatuses] = useState<string[]>([])
+  
+  // Initialiser l'onglet : soit depuis l'état (après création), soit par défaut
+  const [natureTab, setNatureTab] = useState<'matiere_premiere' | 'produit_fini'>(
+    location.state?.nature || 'matiere_premiere'
+  )
+ 
+  // Effet pour mettre à jour l'onglet si on arrive avec une nature spécifique
+  useEffect(() => {
+    if (location.state?.nature) {
+      setNatureTab(location.state.nature)
+    }
+  }, [location.state])
+
 
   const toggleStatus = (v: string) =>
     setFilterStatuses(prev => prev.includes(v) ? prev.filter(s => s !== v) : [...prev, v])
@@ -60,19 +78,28 @@ export const ProductsPage = () => {
   const deleteTarget = products.find(p => p.id === deleteId)
 
   const filtered = useMemo(
-    () => filterStatuses.length === 0
-      ? products
-      : products.filter(p => filterStatuses.includes(p.stockStatus)),
-    [products, filterStatuses]
+    () => {
+      let result = products
+      if (isProduction) {
+        result = result.filter(p => p.nature === natureTab)
+      }
+      if (filterStatuses.length > 0) {
+        result = result.filter(p => filterStatuses.includes(p.stockStatus))
+      }
+      return result
+    },
+    [products, filterStatuses, isProduction, natureTab]
   )
 
-  usePageAction(
-    <Button onClick={() => navigate('/products/new')}>
+  const pageAction = useMemo(() => (
+    <Button onClick={() => navigate('/products/new', { state: { defaultNature: natureTab } })}>
       <Plus className="mr-1.5 h-4 w-4" />
       <span className="sm:hidden">Produit</span>
       <span className="hidden sm:inline">Nouveau produit</span>
     </Button>
-  )
+  ), [navigate, natureTab])
+
+  usePageAction(pageAction)
 
   const columns: ColumnDef<ProductWithStock>[] = [
     {
@@ -84,6 +111,16 @@ export const ProductsPage = () => {
       header: 'Type',
       cell: ({ row }) => TYPE_LABELS[row.original.type] ?? row.original.type,
     },
+    ...(isProduction ? [{
+      accessorKey: 'nature',
+      header: 'Nature',
+      cell: ({ row }: { row: any }) => {
+        const n = row.original.nature
+        if (n === 'matiere_premiere') return <Badge variant="outline" className="bg-amber-50 text-amber-700 border-amber-200">Mat. Première</Badge>
+        if (n === 'produit_fini') return <Badge variant="outline" className="bg-indigo-50 text-indigo-700 border-indigo-200">Produit Fini</Badge>
+        return <Badge variant="outline" className="bg-slate-50 text-slate-600 border-slate-200">Revente</Badge>
+      }
+    }] : []),
     {
       accessorKey: 'pieces_count',
       header: 'Pièces',
@@ -157,10 +194,46 @@ export const ProductsPage = () => {
     await deleteProduct.mutateAsync(deleteId)
     setDeleteId(null)
   }
+ 
+  if (isLoading || isProfileLoading) {
+    return (
+      <div className="flex h-[400px] items-center justify-center">
+        <Loader2 className="h-8 w-8 animate-spin text-primary" />
+      </div>
+    )
+  }
 
   return (
     <div className="space-y-4">
       <PageHeader title="Produits" subtitle={`${products.length} produit${products.length !== 1 ? 's' : ''}`} />
+
+      {/* Tabs Production */}
+      {isProduction && (
+        <div className="flex border-b mb-2 overflow-x-auto scrollbar-hide">
+          <button
+            type="button"
+            className={cn(
+              "py-2.5 px-4 border-b-2 text-sm font-semibold whitespace-nowrap transition-colors flex items-center",
+              natureTab === 'matiere_premiere' ? "border-primary text-primary" : "border-transparent text-muted-foreground hover:text-foreground"
+            )}
+            onClick={() => setNatureTab('matiere_premiere')}
+          >
+            <Package2 className="mr-2 h-4 w-4" />
+            Matières Premières
+          </button>
+          <button
+            type="button"
+            className={cn(
+              "py-2.5 px-4 border-b-2 text-sm font-semibold whitespace-nowrap transition-colors flex items-center",
+              natureTab === 'produit_fini' ? "border-primary text-primary" : "border-transparent text-muted-foreground hover:text-foreground"
+            )}
+            onClick={() => setNatureTab('produit_fini')}
+          >
+            <Sparkles className="mr-2 h-4 w-4" />
+            Produits Finis
+          </button>
+        </div>
+      )}
 
       {alertCount > 0 && (
         <button

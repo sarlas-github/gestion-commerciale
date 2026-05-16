@@ -11,6 +11,7 @@ import { Label } from '@/components/ui/label'
 import { Badge } from '@/components/ui/badge'
 import { useClients } from '@/hooks/useClients'
 import { useProducts } from '@/hooks/useProducts'
+import { useProfile } from '@/hooks/useProfile'
 import { useCompany } from '@/hooks/useCompany'
 import { ClientModal } from '@/features/clients/ClientModal'
 import { ProductModal } from '@/features/products/ProductModal'
@@ -155,6 +156,14 @@ export const SaleForm = ({ id, existing, onSubmit, hasInvoice = false, savedPaym
     },
     [setValue]
   )
+ 
+  const { data: profile } = useProfile()
+  const isProduction = profile?.business_mode === 'production'
+
+  const filteredProducts = products.filter(p => {
+    if (!isProduction) return true
+    return p.nature === 'produit_fini'
+  })
 
   const handleQuickProductSuccess = useCallback((product: any) => {
     if (showNewProductIdx !== null) {
@@ -187,6 +196,8 @@ export const SaleForm = ({ id, existing, onSubmit, hasInvoice = false, savedPaym
         open={showNewProductIdx !== null}
         onOpenChange={(open) => !open && setShowNewProductIdx(null)}
         onSuccess={handleQuickProductSuccess}
+        defaultNature={isProduction ? 'produit_fini' : 'revente'}
+        isProduction={isProduction}
       />
 
       <form id={id} onSubmit={isCancelled ? e => e.preventDefault() : handleSubmit(onSubmit)} noValidate className="space-y-8">
@@ -384,7 +395,7 @@ export const SaleForm = ({ id, existing, onSubmit, hasInvoice = false, savedPaym
                                   f.onChange(id)
                                   handleProductChange(idx, id)
                                 }}
-                                options={products.map(p => ({ id: p.id, label: p.name }))}
+                                options={filteredProducts.map(p => ({ id: p.id, label: p.name }))}
                                 placeholder="Rechercher un produit..."
                                 onAddNew={() => setShowNewProductIdx(idx)}
 

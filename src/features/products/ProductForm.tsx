@@ -6,11 +6,14 @@ import { Loader2 } from 'lucide-react'
 import { Button } from '@/components/ui/button'
 import { Input } from '@/components/ui/input'
 import { Label } from '@/components/ui/label'
+import { useProfile } from '@/hooks/useProfile'
 import type { ProductWithStock } from '@/types'
+import { cn } from '@/lib/utils'
 
 const schema = z.object({
   name: z.string().min(1, 'Ce champ est obligatoire'),
   type: z.enum(['individual', 'pack']),
+  nature: z.enum(['revente', 'matiere_premiere', 'produit_fini']).default('revente'),
   pieces_count: z
     .number({ invalid_type_error: 'Veuillez entrer un nombre valide' })
     .min(1, 'La valeur doit être supérieure à 0'),
@@ -26,6 +29,8 @@ interface ProductFormProps {
   onCancel: () => void
   isLoading?: boolean
   isModal?: boolean
+  initialNature?: 'revente' | 'matiere_premiere' | 'produit_fini'
+  isProduction?: boolean
 }
 
 export const ProductForm = ({
@@ -35,7 +40,17 @@ export const ProductForm = ({
   onCancel,
   isLoading = false,
   isModal = false,
+  initialNature,
+  isProduction: isProductionProp,
 }: ProductFormProps) => {
+  const { data: profile } = useProfile()
+  
+  // On fait confiance à la prop du parent si elle est fournie (instantané)
+  // Sinon on attend le profil (fallback)
+  const isProduction = isProductionProp !== undefined 
+    ? isProductionProp 
+    : (profile?.business_mode === 'production')
+
   const {
     register,
     handleSubmit,
@@ -49,6 +64,7 @@ export const ProductForm = ({
     defaultValues: {
       name: initial?.name ?? '',
       type: initial?.type ?? 'individual',
+      nature: initial?.nature ?? initialNature ?? 'revente',
       pieces_count: initial?.pieces_count ?? 1,
       stock_alert: initial?.stock_alert ?? 0,
     },
@@ -59,6 +75,15 @@ export const ProductForm = ({
   useEffect(() => {
     if (type === 'individual') setValue('pieces_count', 1)
   }, [type, setValue])
+
+  // Synchroniser la nature initiale (utile pour les modals et redirections)
+  useEffect(() => {
+    if (initial?.nature) {
+      setValue('nature', initial.nature)
+    } else if (initialNature) {
+      setValue('nature', initialNature)
+    }
+  }, [initial?.nature, initialNature, setValue])
 
   const formContent = (
     <>
@@ -111,7 +136,7 @@ export const ProductForm = ({
           </label>
         </div>
       </div>
-
+ 
       {/* Nombre de pièces (pack seulement) */}
       {type === 'pack' && (
         <div className="space-y-1.5">
@@ -145,6 +170,38 @@ export const ProductForm = ({
           )}
         </div>
       )}
+
+      {/* Nature (Mode Production Uniquement) */}
+      {isProduction && (
+        <div className="space-y-1.5">
+          <Label className={cn(isModal && initialNature && "opacity-70")}>
+            Nature du produit {isModal && initialNature && <span className="text-[10px] ml-2 italic">(Fixé par le contexte)</span>}
+          </Label>
+          <div className="flex flex-wrap gap-4">
+            <label className={cn("flex items-center gap-2 cursor-pointer text-sm", isModal && initialNature && initialNature !== 'matiere_premiere' && "opacity-50 cursor-not-allowed")}>
+              <input
+                type="radio"
+                value="matiere_premiere"
+                {...register('nature')}
+                disabled={Boolean(isModal && initialNature)}
+                className="accent-primary"
+              />
+              Matière Première
+            </label>
+            <label className={cn("flex items-center gap-2 cursor-pointer text-sm", isModal && initialNature && initialNature !== 'produit_fini' && "opacity-50 cursor-not-allowed")}>
+              <input
+                type="radio"
+                value="produit_fini"
+                {...register('nature')}
+                disabled={Boolean(isModal && initialNature)}
+                className="accent-primary"
+              />
+              Produit Fini
+            </label>
+          </div>
+        </div>
+      )}
+
 
       {/* Seuil alerte stock */}
       <div className="space-y-1.5">

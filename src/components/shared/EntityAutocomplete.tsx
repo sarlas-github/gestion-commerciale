@@ -174,9 +174,10 @@ export function EntityAutocomplete({
             value={inputValue}
             onChange={handleInputChange}
             onFocus={() => {
-              setIsOpen(true)
+              // On n'ouvre plus automatiquement pour éviter l'effet au chargement de la modal
               setHighlightedIdx(-1)
             }}
+            onClick={() => setIsOpen(true)}
             onKeyDown={handleKeyDown}
             placeholder={placeholder}
             autoComplete="off"

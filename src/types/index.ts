@@ -1,12 +1,23 @@
 // ─── Types de base ────────────────────────────────────────────────────────────
 
 export type PaymentStatus = 'paid' | 'partial' | 'unpaid' | 'cancelled'
+export type ProductNature = 'revente' | 'matiere_premiere' | 'produit_fini'
+export type BusinessMode = 'revente' | 'production'
 export type StockStatus = 'ok' | 'faible' | 'rupture'
 export type StockMovementType = 'IN' | 'OUT'
 export type StockMovementReference = 'purchase' | 'sale' | 'manual'
 export type ProductType = 'individual' | 'pack'
 export type DocumentType = 'invoice' | 'receipt' | 'quote' | 'order' | 'delivery'
 export type DocumentStatus = 'draft' | 'confirmed' | 'cancelled'
+
+// ─── profiles ─────────────────────────────────────────────────────────────────
+ 
+export interface Profile {
+  id: string
+  business_mode: BusinessMode
+  created_at: string
+  updated_at: string
+}
 
 // ─── companies ────────────────────────────────────────────────────────────────
 
@@ -42,6 +53,7 @@ export interface Product {
   user_id: string
   name: string
   type: ProductType
+  nature: ProductNature
   pieces_count: number
   stock_alert: number
   created_at: string

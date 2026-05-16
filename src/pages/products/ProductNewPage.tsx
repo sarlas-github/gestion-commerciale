@@ -1,20 +1,27 @@
-import { useNavigate } from 'react-router-dom'
+import { useNavigate, useLocation } from 'react-router-dom'
 import { ArrowLeft } from 'lucide-react'
 import { Button } from '@/components/ui/button'
 import { PageHeader } from '@/components/shared/PageHeader'
 import { ProductForm, type ProductFormData } from '@/features/products/ProductForm'
 import { useCreateProduct } from '@/hooks/useProducts'
+import { useProfile } from '@/hooks/useProfile'
 import { isUniqueNameError } from '@/lib/utils'
 import type { UseFormSetError } from 'react-hook-form'
 
 export const ProductNewPage = () => {
   const navigate = useNavigate()
+  const location = useLocation()
+  const { data: profile } = useProfile()
+  const isProduction = profile?.business_mode === 'production'
   const createProduct = useCreateProduct()
+
+  const defaultNature = location.state?.defaultNature
 
   const handleSubmit = async (data: ProductFormData, setError: UseFormSetError<ProductFormData>) => {
     try {
       await createProduct.mutateAsync(data)
-      navigate('/products')
+      // Retourner à la liste en forçant l'onglet correspondant
+      navigate('/products', { state: { nature: data.nature } })
     } catch (err) {
       if (isUniqueNameError(err)) {
         setError('name', { message: 'Un produit avec ce nom existe déjà' })
@@ -49,6 +56,8 @@ export const ProductNewPage = () => {
         onSubmit={handleSubmit}
         onCancel={() => navigate('/products')}
         isLoading={createProduct.isPending}
+        initialNature={defaultNature}
+        isProduction={isProduction}
       />
 
       {/* Mobile Sticky Bar */}

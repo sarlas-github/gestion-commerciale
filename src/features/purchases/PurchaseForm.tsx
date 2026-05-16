@@ -11,6 +11,7 @@ import { Label } from '@/components/ui/label'
 import { Badge } from '@/components/ui/badge'
 import { useSuppliers } from '@/hooks/useSuppliers'
 import { useProducts } from '@/hooks/useProducts'
+import { useProfile } from '@/hooks/useProfile'
 import { useCompany } from '@/hooks/useCompany'
 import { SupplierModal } from '@/features/suppliers/SupplierModal'
 import { ProductModal } from '@/features/products/ProductModal'
@@ -152,6 +153,14 @@ export const PurchaseForm = ({ id, existing, onSubmit }: PurchaseFormProps) => {
     },
     [setValue]
   )
+ 
+  const { data: profile } = useProfile()
+  const isProduction = profile?.business_mode === 'production'
+
+  const filteredProducts = products.filter(p => {
+    if (!isProduction) return true
+    return p.nature === 'matiere_premiere'
+  })
 
   const handleQuickProductSuccess = useCallback((product: any) => {
     if (showNewProductIdx !== null) {
@@ -184,6 +193,8 @@ export const PurchaseForm = ({ id, existing, onSubmit }: PurchaseFormProps) => {
         open={showNewProductIdx !== null}
         onOpenChange={(open) => !open && setShowNewProductIdx(null)}
         onSuccess={handleQuickProductSuccess}
+        defaultNature={isProduction ? 'matiere_premiere' : 'revente'}
+        isProduction={isProduction}
       />
 
       <form id={id} onSubmit={isCancelled ? e => e.preventDefault() : handleSubmit(onSubmit)} noValidate className="space-y-8">
@@ -371,10 +382,9 @@ export const PurchaseForm = ({ id, existing, onSubmit }: PurchaseFormProps) => {
                                 f.onChange(id)
                                 handleProductChange(idx, id)
                               }}
-                              options={products.map(p => ({ id: p.id, label: p.name }))}
+                              options={filteredProducts.map(p => ({ id: p.id, label: p.name }))}
                               placeholder="Rechercher un produit..."
                               onAddNew={() => setShowNewProductIdx(idx)}
-
                               size="sm"
                               errorMessage="Sélectionnez un produit ou utilisez + pour en créer un"
                             />

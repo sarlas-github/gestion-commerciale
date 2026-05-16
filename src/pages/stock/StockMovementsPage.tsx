@@ -1,7 +1,8 @@
 import { useState, useMemo } from 'react'
 import { type ColumnDef } from '@tanstack/react-table'
-import { Link2 } from 'lucide-react'
+import { Link2, Package2, Sparkles, Plus } from 'lucide-react'
 import { PageHeader } from '@/components/shared/PageHeader'
+import { Button } from '@/components/ui/button'
 import { DataTable } from '@/components/shared/DataTable'
 import {
   Select,
@@ -13,8 +14,10 @@ import { PurchaseQuickViewModal } from '@/features/purchases/PurchaseQuickViewMo
 import { SaleQuickViewModal } from '@/features/sales/SaleQuickViewModal'
 import { useStockMovements, type StockMovementRow } from '@/hooks/useStockMovements'
 import { useAvailableYears } from '@/hooks/useAvailableYears'
+import { useProfile } from '@/hooks/useProfile'
 import { PeriodSelector } from '@/components/shared/PeriodSelector'
-import { formatDate } from '@/lib/utils'
+import { ProductionDeclarationModal } from '@/features/stock/ProductionDeclarationModal'
+import { cn, formatDate } from '@/lib/utils'
 
 const TYPE_CONFIG = {
   in:     { label: 'IN',     className: 'bg-green-100 text-green-700 dark:bg-green-900/30 dark:text-green-400' },
@@ -23,7 +26,11 @@ const TYPE_CONFIG = {
 
 export const StockMovementsPage = () => {
   const now = new Date()
+  const { data: profile } = useProfile()
+  const isProduction = profile?.business_mode === 'production'
+
   const [typeFilter, setTypeFilter] = useState('all')
+  const [natureTab, setNatureTab] = useState<'matiere_premiere' | 'produit_fini'>(isProduction ? 'matiere_premiere' : 'matiere_premiere')
   const [month, setMonth] = useState(String(now.getMonth() + 1))
   const [year, setYear] = useState(String(now.getFullYear()))
 
@@ -32,14 +39,16 @@ export const StockMovementsPage = () => {
 
   const [purchaseModalId, setPurchaseModalId] = useState<string | null>(null)
   const [saleModalId, setSaleModalId] = useState<string | null>(null)
+  const [showManualModal, setShowManualModal] = useState(false)
 
   const filtered = useMemo(
     () =>
       movements.filter(m => {
         if (typeFilter !== 'all' && m.type !== typeFilter) return false
+        if (isProduction && m.products?.nature !== natureTab) return false
         return true
       }),
-    [movements, typeFilter]
+    [movements, typeFilter, isProduction, natureTab]
   )
 
   const columns: ColumnDef<StockMovementRow>[] = [
@@ -59,10 +68,18 @@ export const StockMovementsPage = () => {
       header: 'Type',
       cell: ({ row }) => {
         const type = row.original.type as 'in' | 'out'
+        const nature = row.original.products?.nature
         const cfg = TYPE_CONFIG[type]
+        
+        let label: string = cfg?.label ?? type.toUpperCase()
+        if (isProduction) {
+          if (nature === 'matiere_premiere' && type === 'out') label = 'CONSOMMATION'
+          if (nature === 'produit_fini' && type === 'in') label = 'PRODUCTION'
+        }
+
         return (
           <span className={`inline-flex rounded-full px-2 py-0.5 text-xs font-medium ${cfg?.className ?? 'bg-muted text-muted-foreground'}`}>
-            {cfg?.label ?? type.toUpperCase()}
+            {label}
           </span>
         )
       },
@@ -125,8 +142,60 @@ export const StockMovementsPage = () => {
   ]
 
   return (
-    <div>
+    <div className="pb-20 md:pb-0">
       <PageHeader title="Mouvements stock" />
+
+      {/* Mobile Sticky Bar */}
+      {isProduction && (
+        <div className="fixed bottom-0 left-0 right-0 h-16 px-4 bg-card border-t md:hidden flex items-center justify-end gap-3 z-50 shadow-[0_-4px_6px_-1px_rgba(0,0,0,0.05)]">
+          <Button 
+            size="sm" 
+            onClick={() => setShowManualModal(true)}
+          >
+            <Plus className="mr-1.5 h-4 w-4" />
+            {natureTab === 'matiere_premiere' ? 'Déclarer Consommation' : 'Déclarer Production'}
+          </Button>
+        </div>
+      )}
+
+      {/* Tabs Production */}
+      {isProduction && (
+        <div className="flex items-center justify-between border-b mb-4">
+          <div className="flex overflow-x-auto scrollbar-hide">
+            <button
+              type="button"
+              className={cn(
+                "py-2.5 px-4 border-b-2 text-sm font-semibold whitespace-nowrap transition-colors flex items-center",
+                natureTab === 'matiere_premiere' ? "border-primary text-primary" : "border-transparent text-muted-foreground hover:text-foreground"
+              )}
+              onClick={() => setNatureTab('matiere_premiere')}
+            >
+              <Package2 className="mr-2 h-4 w-4" />
+              Matières Premières
+            </button>
+            <button
+              type="button"
+              className={cn(
+                "py-2.5 px-4 border-b-2 text-sm font-semibold whitespace-nowrap transition-colors flex items-center",
+                natureTab === 'produit_fini' ? "border-primary text-primary" : "border-transparent text-muted-foreground hover:text-foreground"
+              )}
+              onClick={() => setNatureTab('produit_fini')}
+            >
+              <Sparkles className="mr-2 h-4 w-4" />
+              Produits Finis
+            </button>
+          </div>
+
+          <Button 
+            size="sm" 
+            className="mb-1 hidden md:flex"
+            onClick={() => setShowManualModal(true)}
+          >
+            <Plus className="mr-1.5 h-4 w-4" />
+            {natureTab === 'matiere_premiere' ? 'Déclarer Consommation' : 'Déclarer Production'}
+          </Button>
+        </div>
+      )}
 
       {/* Sélecteurs période + filtre type */}
       <div className="mb-4 flex flex-wrap items-center gap-3">
@@ -185,6 +254,12 @@ export const StockMovementsPage = () => {
         saleId={saleModalId}
         open={saleModalId !== null}
         onOpenChange={open => { if (!open) setSaleModalId(null) }}
+      />
+
+      <ProductionDeclarationModal
+        open={showManualModal}
+        onOpenChange={setShowManualModal}
+        defaultNature={natureTab}
       />
     </div>
   )

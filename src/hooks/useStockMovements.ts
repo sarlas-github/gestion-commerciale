@@ -14,7 +14,7 @@ export interface StockMovementRow {
   note: string | null
   date: string
   created_at: string
-  products: Pick<Product, 'id' | 'name'> | null
+  products: Pick<Product, 'id' | 'name' | 'nature'> | null
   refLabel: string | null // référence lisible ex. "ACH-001" pour les achats
 }
 
@@ -24,7 +24,7 @@ export const useStockMovements = (month?: string, year?: string) =>
     queryFn: async () => {
       let query = supabase
         .from('stock_movements')
-        .select('*, products(id, name)')
+        .select('*, products(id, name, nature)')
 
       if (year && year !== '') {
         if (month && month !== '0' && month !== '') {

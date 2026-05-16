@@ -33,6 +33,7 @@ export const StockAdjustModal = ({
 }: StockAdjustModalProps) => {
   const adjustStock = useAdjustStock()
   const currentQty = product?.stock?.quantity ?? 0
+  const nature = product?.nature
 
   const {
     handleSubmit,
@@ -105,7 +106,7 @@ export const StockAdjustModal = ({
                   : 'bg-transparent text-muted-foreground hover:bg-muted'
               }`}
             >
-              IN — Entrée
+              ENTRÉE (IN)
             </button>
             <div className="w-px bg-border" />
             <button
@@ -117,7 +118,7 @@ export const StockAdjustModal = ({
                   : 'bg-transparent text-muted-foreground hover:bg-muted'
               }`}
             >
-              OUT — Sortie
+              SORTIE (OUT)
             </button>
           </div>
         </div>
