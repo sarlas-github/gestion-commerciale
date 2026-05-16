@@ -33,7 +33,6 @@ export const StockAdjustModal = ({
 }: StockAdjustModalProps) => {
   const adjustStock = useAdjustStock()
   const currentQty = product?.stock?.quantity ?? 0
-  const nature = product?.nature
 
   const {
     handleSubmit,
@@ -100,11 +99,10 @@ export const StockAdjustModal = ({
             <button
               type="button"
               onClick={() => setValue('type', 'in')}
-              className={`flex-1 py-2 text-sm font-semibold transition-colors ${
-                opType === 'in'
+              className={`flex-1 py-2 text-sm font-semibold transition-colors ${opType === 'in'
                   ? 'bg-green-600 text-white'
                   : 'bg-transparent text-muted-foreground hover:bg-muted'
-              }`}
+                }`}
             >
               ENTRÉE (IN)
             </button>
@@ -112,11 +110,10 @@ export const StockAdjustModal = ({
             <button
               type="button"
               onClick={() => setValue('type', 'out')}
-              className={`flex-1 py-2 text-sm font-semibold transition-colors ${
-                opType === 'out'
+              className={`flex-1 py-2 text-sm font-semibold transition-colors ${opType === 'out'
                   ? 'bg-red-600 text-white'
                   : 'bg-transparent text-muted-foreground hover:bg-muted'
-              }`}
+                }`}
             >
               SORTIE (OUT)
             </button>
