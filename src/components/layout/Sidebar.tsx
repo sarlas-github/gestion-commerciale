@@ -363,7 +363,7 @@ export const Sidebar = ({ onClose, collapsed = false, onToggleCollapse }: Sideba
           <Link
             to="/aide"
             onClick={onClose}
-            title={collapsed ? 'Aide' : undefined}
+            title={collapsed ? 'Guide' : undefined}
             className={cn(
               'relative flex items-center gap-3 rounded-md py-2 text-sm font-medium transition-all duration-150',
               collapsed ? 'justify-center px-2' : 'px-3',
@@ -376,7 +376,7 @@ export const Sidebar = ({ onClose, collapsed = false, onToggleCollapse }: Sideba
               <span className="absolute left-0 top-1/2 -translate-y-1/2 w-[3px] h-5 bg-primary rounded-r-full" />
             )}
             <HelpCircle className="h-4 w-4 shrink-0" />
-            {!collapsed && <span>Aide</span>}
+            {!collapsed && <span>Guide</span>}
           </Link>
         </div>
       </nav>

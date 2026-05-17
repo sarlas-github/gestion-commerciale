@@ -237,7 +237,7 @@ const GuideRevente = () => (
         ]}
       />
       <p className="text-sm text-muted-foreground">Les paiements partiels sont supportés. Le statut se met à jour automatiquement à chaque règlement.</p>
-      <p className="text-sm text-muted-foreground">Depuis la fiche d'un fournisseur, consultez l'historique complet de vos échanges : achats, paiements versés et solde restant dû.</p>
+      <p className="text-sm text-muted-foreground">Depuis la fiche d'un fournisseur, consultez l'historique complet de vos échanges : achats, paiements versés et solde restant dû. Un bouton <strong className="text-foreground">WhatsApp</strong> vous permet de le contacter directement depuis sa fiche, sans quitter l'application.</p>
     </Section>
 
     <Section icon={TrendingUp} title="Clients et ventes" n={4}>
@@ -257,7 +257,7 @@ const GuideRevente = () => (
           [<StatusBadge type="cancelled" />, 'Vente annulée, stock remis en état'],
         ]}
       />
-      <p className="text-sm text-muted-foreground">Depuis la fiche d'un client, consultez toutes ses ventes, ses paiements, et le total qu'il vous doit encore.</p>
+      <p className="text-sm text-muted-foreground">Depuis la fiche d'un client, consultez toutes ses ventes, ses paiements, et le total qu'il vous doit encore. Un bouton <strong className="text-foreground">WhatsApp</strong> vous permet de le contacter directement depuis sa fiche, sans quitter l'application.</p>
     </Section>
 
     <Section icon={FileText} title="Factures et paiements" n={5}>
@@ -271,6 +271,8 @@ const GuideRevente = () => (
       />
       <Note type="ok">Documents fiables et immuables. Une facture conserve toujours les informations exactes du moment de sa génération — coordonnées de votre entreprise, données du client, montants — même si ces informations sont modifiées par la suite.</Note>
       <Note type="info">Vos documents sont personnalisables : logo et couleur de marque de votre entreprise apparaissent sur chaque facture et reçu. Pensez à configurer votre entreprise dans <strong>Paramètres</strong> avant de générer vos premiers documents.</Note>
+      <p className="text-sm font-medium text-foreground">Téléchargement, impression et partage</p>
+      <p className="text-sm text-muted-foreground">Depuis l'aperçu d'une facture ou d'un reçu, vous pouvez <strong className="text-foreground">télécharger le PDF</strong>, l'<strong className="text-foreground">imprimer</strong> directement, ou l'<strong className="text-foreground">envoyer via WhatsApp</strong> en un clic — le message est pré-rempli avec le document joint.</p>
       <p className="text-sm text-muted-foreground">Les paiements partiels sont supportés : enregistrez plusieurs règlements sur une même vente ou un même achat. Le statut se met à jour à chaque fois.</p>
     </Section>
 
@@ -423,7 +425,7 @@ const GuideProduction = () => (
         ]}
       />
       <p className="text-sm text-muted-foreground">Les paiements partiels sont supportés. Le statut se met à jour automatiquement à chaque règlement.</p>
-      <p className="text-sm text-muted-foreground">Depuis la fiche d'un fournisseur, consultez l'historique complet de vos échanges : achats, paiements versés et solde restant dû.</p>
+      <p className="text-sm text-muted-foreground">Depuis la fiche d'un fournisseur, consultez l'historique complet de vos échanges : achats, paiements versés et solde restant dû. Un bouton <strong className="text-foreground">WhatsApp</strong> vous permet de le contacter directement depuis sa fiche, sans quitter l'application.</p>
     </Section>
 
     <Section icon={Cog} title="Déclarer votre production" n={4}>
@@ -484,7 +486,7 @@ const GuideProduction = () => (
           [<StatusBadge type="cancelled" />, 'Vente annulée, stock remis en état'],
         ]}
       />
-      <p className="text-sm text-muted-foreground">Depuis la fiche d'un client, consultez toutes ses ventes, ses paiements, et le total qu'il vous doit encore.</p>
+      <p className="text-sm text-muted-foreground">Depuis la fiche d'un client, consultez toutes ses ventes, ses paiements, et le total qu'il vous doit encore. Un bouton <strong className="text-foreground">WhatsApp</strong> vous permet de le contacter directement depuis sa fiche, sans quitter l'application.</p>
     </Section>
 
     <Section icon={FileText} title="Factures et paiements" n={6}>
@@ -498,6 +500,8 @@ const GuideProduction = () => (
       />
       <Note type="ok">Documents fiables et immuables. Une facture conserve toujours les informations exactes du moment de sa génération, même si vos coordonnées ou celles du client changent par la suite.</Note>
       <Note type="info">Vos documents sont personnalisables : logo et couleur de marque de votre entreprise apparaissent sur chaque facture et reçu. Pensez à configurer votre entreprise dans <strong>Paramètres</strong> avant de générer vos premiers documents.</Note>
+      <p className="text-sm font-medium text-foreground">Téléchargement, impression et partage</p>
+      <p className="text-sm text-muted-foreground">Depuis l'aperçu d'une facture ou d'un reçu, vous pouvez <strong className="text-foreground">télécharger le PDF</strong>, l'<strong className="text-foreground">imprimer</strong> directement, ou l'<strong className="text-foreground">envoyer via WhatsApp</strong> en un clic — le message est pré-rempli avec le document joint.</p>
       <p className="text-sm text-muted-foreground">Les paiements partiels sont supportés. Le statut se met à jour automatiquement à chaque règlement.</p>
     </Section>
 
@@ -563,7 +567,7 @@ export const AidePage = () => {
 
   return (
     <div className="max-w-3xl space-y-6">
-      <PageHeader title="Aide" />
+      <PageHeader title="Guide" />
       {isProduction ? <GuideProduction /> : <GuideRevente />}
     </div>
   )
