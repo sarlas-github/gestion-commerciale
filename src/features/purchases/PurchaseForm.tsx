@@ -144,7 +144,7 @@ export const PurchaseForm = ({ id, existing, onSubmit }: PurchaseFormProps) => {
   const status = getPaymentStatus(paid, totalTTC)
 
   const handleQuickSupplierSuccess = useCallback(
-    (supplier: any) => {
+    (supplier: { id: string }) => {
       setValue('supplier_id', supplier.id)
       setShowNewSupplier(false)
     },
@@ -159,7 +159,7 @@ export const PurchaseForm = ({ id, existing, onSubmit }: PurchaseFormProps) => {
     return p.nature === 'matiere_premiere'
   })
 
-  const handleQuickProductSuccess = useCallback((product: any) => {
+  const handleQuickProductSuccess = useCallback((product: { id: string; pieces_count: number }) => {
     if (showNewProductIdx !== null) {
       setValue(`items.${showNewProductIdx}.product_id`, product.id)
       setValue(`items.${showNewProductIdx}.pieces_count`, product.pieces_count)

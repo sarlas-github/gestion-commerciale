@@ -150,7 +150,7 @@ export const SaleForm = ({ id, existing, onSubmit, hasInvoice = false, savedPaym
   const status = getPaymentStatus(paid, totalTTC)
 
   const handleQuickClientSuccess = useCallback(
-    (client: any) => {
+    (client: { id: string }) => {
       setValue('client_id', client.id)
       setShowNewClient(false)
     },
@@ -165,7 +165,7 @@ export const SaleForm = ({ id, existing, onSubmit, hasInvoice = false, savedPaym
     return p.nature === 'produit_fini'
   })
 
-  const handleQuickProductSuccess = useCallback((product: any) => {
+  const handleQuickProductSuccess = useCallback((product: { id: string; pieces_count: number }) => {
     if (showNewProductIdx !== null) {
       setValue(`items.${showNewProductIdx}.product_id`, product.id)
       setValue(`items.${showNewProductIdx}.pieces_count`, product.pieces_count)

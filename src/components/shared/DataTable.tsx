@@ -10,7 +10,7 @@ import {
   type FilterFn,
   flexRender,
 } from '@tanstack/react-table'
-import * as XLSX from 'xlsx'
+import ExcelJS from 'exceljs'
 import { ArrowUp, ArrowDown, ArrowUpDown, ChevronLeft, ChevronRight, Download, FileDown } from 'lucide-react'
 import { Button } from '@/components/ui/button'
 import { Input } from '@/components/ui/input'
@@ -86,15 +86,26 @@ export function DataTable<TData>({
     enableSortingRemoval: true,
   })
 
-  const handleExport = () => {
+  const handleExport = async () => {
     const rows = table.getFilteredRowModel().rows
     const exportData = exportMapper
       ? rows.map(r => exportMapper(r.original))
       : rows.map(r => r.original as Record<string, unknown>)
-    const ws = XLSX.utils.json_to_sheet(exportData)
-    const wb = XLSX.utils.book_new()
-    XLSX.utils.book_append_sheet(wb, ws, 'Données')
-    XLSX.writeFile(wb, `${exportFileName}.xlsx`)
+
+    const workbook = new ExcelJS.Workbook()
+    const worksheet = workbook.addWorksheet('Données')
+    if (exportData.length > 0) {
+      worksheet.columns = Object.keys(exportData[0]).map(key => ({ header: key, key }))
+      exportData.forEach(row => worksheet.addRow(row))
+    }
+    const buffer = await workbook.xlsx.writeBuffer()
+    const blob = new Blob([buffer], { type: 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet' })
+    const url = URL.createObjectURL(blob)
+    const a = document.createElement('a')
+    a.href = url
+    a.download = `${exportFileName}.xlsx`
+    a.click()
+    URL.revokeObjectURL(url)
   }
 
   const { pageIndex, pageSize } = table.getState().pagination

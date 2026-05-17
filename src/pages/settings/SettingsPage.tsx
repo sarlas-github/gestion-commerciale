@@ -53,8 +53,7 @@ const PRESET_COLORS = [
 
 // ── Composant ─────────────────────────────────────────────────────────────────
 
-export const onErrorHandler = (errors: any) => {
-  console.error("Form validation errors:", errors)
+export const onErrorHandler = () => {
   toast.error("Veuillez vérifier les champs du formulaire en rouge")
 }
 
