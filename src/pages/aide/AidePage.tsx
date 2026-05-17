@@ -242,7 +242,7 @@ const GuideRevente = () => (
       <Note type="info">Deux façons d'ajouter un fournisseur : depuis la page <strong>Fournisseurs</strong>, ou via le bouton <strong>+</strong> directement dans un formulaire d'achat. Dans les formulaires, tapez quelques lettres pour retrouver un fournisseur grâce à l'autocomplétion.</Note>
       <Steps items={[
         { title: 'Choisissez le fournisseur', desc: 'Sélectionnez dans la liste, ou créez-en un nouveau directement depuis le formulaire.' },
-        { title: 'Ajoutez les produits achetés', desc: 'Quantité et prix d\'achat pour chaque article. Le montant se calcule automatiquement : quantité × pièces × prix unitaire. La TVA s\'applique sur ce total — le taux par défaut vient des Paramètres mais reste modifiable ligne par ligne.' },
+        { title: 'Ajoutez les produits achetés', desc: 'Quantité et prix d\'achat pour chaque article. Le montant se calcule automatiquement : quantité × pièces × prix unitaire. La TVA s\'applique sur ce total — le taux par défaut vient des Paramètres, mais reste modifiable dans le formulaire.' },
         { title: 'Indiquez ce que vous avez déjà payé (optionnel)', desc: 'Si vous avez versé un acompte, saisissez le montant.' },
         { title: 'Validez', desc: 'Le stock est mis à jour instantanément.' },
       ]} />
@@ -264,7 +264,7 @@ const GuideRevente = () => (
       <Note type="info">Deux façons d'ajouter un client : depuis la page <strong>Clients</strong>, ou via le bouton <strong>+</strong> directement dans un formulaire de vente. Dans les formulaires, tapez quelques lettres pour retrouver un client grâce à l'autocomplétion.</Note>
       <Steps items={[
         { title: 'Choisissez le client', desc: 'Sélectionnez dans la liste, ou créez-en un nouveau directement depuis le formulaire.' },
-        { title: 'Ajoutez les produits vendus', desc: 'Le prix de vente habituel est pré-rempli. Le montant se calcule automatiquement : quantité × pièces × prix unitaire. La TVA s\'applique sur ce total — le taux par défaut vient des Paramètres mais reste modifiable ligne par ligne.' },
+        { title: 'Ajoutez les produits vendus', desc: 'Le prix de vente habituel est pré-rempli. Le montant se calcule automatiquement : quantité × pièces × prix unitaire. La TVA s\'applique sur ce total — le taux par défaut vient des Paramètres, mais reste modifiable dans le formulaire.' },
         { title: 'Indiquez ce que le client a déjà payé (optionnel)', desc: 'Si un acompte a été versé, saisissez le montant.' },
         { title: 'Validez', desc: 'La vente est enregistrée, le stock mis à jour, et la facture générée automatiquement.' },
       ]} />
@@ -281,12 +281,22 @@ const GuideRevente = () => (
     </Section>
 
     <Section icon={FileText} title="Factures et paiements" n={5}>
-      <p className="text-sm text-muted-foreground">Chaque vente génère automatiquement une facture numérotée. Chaque paiement reçu génère automatiquement un reçu. Vous n'avez rien à faire manuellement.</p>
+      <p className="text-sm text-muted-foreground">Vos documents existent en deux états distincts :</p>
+      <div className="grid sm:grid-cols-2 gap-3">
+        <div className="rounded-lg border bg-muted/40 p-4 space-y-1">
+          <p className="text-sm font-semibold text-foreground">Aperçu</p>
+          <p className="text-xs text-muted-foreground leading-relaxed">Depuis la page d'une vente, consultez la facture ou le reçu à tout moment. Le document est visible mais sans numéro officiel attribué — pratique pour vérifier avant de finaliser.</p>
+        </div>
+        <div className="rounded-lg border bg-muted/40 p-4 space-y-1">
+          <p className="text-sm font-semibold text-foreground">Génération</p>
+          <p className="text-xs text-muted-foreground leading-relaxed">Le bouton <strong>Générer</strong> attribue un numéro officiel définitif (FAC-2026-001… ou REC-2026-001…) et archive le document dans la section <strong>Documents</strong>. À partir de ce moment, il est immuable.</p>
+        </div>
+      </div>
       <RulesTable
         headers={['Document', 'Numérotation', 'Généré quand ?']}
         rows={[
-          ['Facture', 'FAC-2026-001', 'Automatiquement à chaque vente'],
-          ['Reçu de paiement', 'REC-2026-001', 'Automatiquement à chaque règlement client'],
+          ['Facture', 'FAC-2026-001', 'À la demande depuis la page vente'],
+          ['Reçu de paiement', 'REC-2026-001', 'À la demande depuis la page paiement'],
         ]}
       />
       <Note type="ok">Documents fiables et immuables. Une facture conserve toujours les informations exactes du moment de sa génération — coordonnées de votre entreprise, données du client, montants — même si ces informations sont modifiées par la suite.</Note>
@@ -464,7 +474,7 @@ const GuideProduction = () => (
       <Note type="info">Deux façons d'ajouter un fournisseur : depuis la page <strong>Fournisseurs</strong>, ou via le bouton <strong>+</strong> directement dans un formulaire d'achat. Dans les formulaires, tapez quelques lettres pour retrouver un fournisseur grâce à l'autocomplétion.</Note>
       <Steps items={[
         { title: 'Choisissez le fournisseur', desc: 'Sélectionnez dans la liste, ou créez-en un nouveau directement depuis le formulaire.' },
-        { title: 'Ajoutez les matières premières achetées', desc: 'Quantité et prix d\'achat pour chaque article. Le montant se calcule automatiquement : quantité × pièces × prix unitaire. La TVA s\'applique sur ce total — le taux par défaut vient des Paramètres mais reste modifiable ligne par ligne.' },
+        { title: 'Ajoutez les matières premières achetées', desc: 'Quantité et prix d\'achat pour chaque article. Le montant se calcule automatiquement : quantité × pièces × prix unitaire. La TVA s\'applique sur ce total — le taux par défaut vient des Paramètres, mais reste modifiable dans le formulaire.' },
         { title: 'Indiquez ce que vous avez déjà payé (optionnel)', desc: 'Si un acompte a été versé, saisissez le montant.' },
         { title: 'Validez', desc: 'Le stock des matières premières est mis à jour instantanément.' },
       ]} />
@@ -527,7 +537,7 @@ const GuideProduction = () => (
       <Note type="info">Deux façons d'ajouter un client : depuis la page <strong>Clients</strong>, ou via le bouton <strong>+</strong> directement dans un formulaire de vente. Dans les formulaires, tapez quelques lettres pour retrouver un client grâce à l'autocomplétion.</Note>
       <Steps items={[
         { title: 'Choisissez le client', desc: 'Sélectionnez dans la liste, ou créez-en un nouveau directement depuis le formulaire.' },
-        { title: 'Ajoutez les produits vendus', desc: 'Le prix de vente habituel est pré-rempli. Le montant se calcule automatiquement : quantité × pièces × prix unitaire. La TVA s\'applique sur ce total — le taux par défaut vient des Paramètres mais reste modifiable ligne par ligne.' },
+        { title: 'Ajoutez les produits vendus', desc: 'Le prix de vente habituel est pré-rempli. Le montant se calcule automatiquement : quantité × pièces × prix unitaire. La TVA s\'applique sur ce total — le taux par défaut vient des Paramètres, mais reste modifiable dans le formulaire.' },
         { title: 'Indiquez ce que le client a déjà payé (optionnel)', desc: 'Si un acompte a été versé, saisissez le montant.' },
         { title: 'Validez', desc: 'Vente enregistrée, stock déduit, facture générée automatiquement.' },
       ]} />
@@ -544,12 +554,22 @@ const GuideProduction = () => (
     </Section>
 
     <Section icon={FileText} title="Factures et paiements" n={6}>
-      <p className="text-sm text-muted-foreground">Chaque vente génère automatiquement une facture numérotée. Chaque paiement reçu génère automatiquement un reçu. Vous n'avez rien à faire manuellement.</p>
+      <p className="text-sm text-muted-foreground">Vos documents existent en deux états distincts :</p>
+      <div className="grid sm:grid-cols-2 gap-3">
+        <div className="rounded-lg border bg-muted/40 p-4 space-y-1">
+          <p className="text-sm font-semibold text-foreground">Aperçu</p>
+          <p className="text-xs text-muted-foreground leading-relaxed">Depuis la page d'une vente, consultez la facture ou le reçu à tout moment. Le document est visible mais sans numéro officiel attribué — pratique pour vérifier avant de finaliser.</p>
+        </div>
+        <div className="rounded-lg border bg-muted/40 p-4 space-y-1">
+          <p className="text-sm font-semibold text-foreground">Génération</p>
+          <p className="text-xs text-muted-foreground leading-relaxed">Le bouton <strong>Générer</strong> attribue un numéro officiel définitif (FAC-2026-001… ou REC-2026-001…) et archive le document dans la section <strong>Documents</strong>. À partir de ce moment, il est immuable.</p>
+        </div>
+      </div>
       <RulesTable
         headers={['Document', 'Numérotation', 'Généré quand ?']}
         rows={[
-          ['Facture', 'FAC-2026-001', 'Automatiquement à chaque vente'],
-          ['Reçu de paiement', 'REC-2026-001', 'Automatiquement à chaque règlement client'],
+          ['Facture', 'FAC-2026-001', 'À la demande depuis la page vente'],
+          ['Reçu de paiement', 'REC-2026-001', 'À la demande depuis la page paiement'],
         ]}
       />
       <Note type="ok">Documents fiables et immuables. Une facture conserve toujours les informations exactes du moment de sa génération, même si vos coordonnées ou celles du client changent par la suite.</Note>
