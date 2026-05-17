@@ -59,6 +59,9 @@ import { SupplierReportsPage } from '@/pages/reports/SupplierReportsPage'
 // Settings
 import { SettingsPage } from '@/pages/settings/SettingsPage'
 
+// Aide
+import { AidePage } from '@/pages/aide/AidePage'
+
 export const App = () => {
   return (
     <>
@@ -126,6 +129,9 @@ export const App = () => {
 
           {/* Paramètres */}
           <Route path="/settings" element={<SettingsPage />} />
+
+          {/* Aide */}
+          <Route path="/aide" element={<AidePage />} />
         </Route>
 
         {/* 404 → redirect dashboard */}

@@ -1,0 +1,404 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Guide d'utilisation</title>
+  <style>
+    *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+
+    body {
+      font-family: 'Segoe UI', Arial, sans-serif;
+      font-size: 15px;
+      line-height: 1.7;
+      color: #1e293b;
+      background: #f8fafc;
+    }
+
+    .page {
+      max-width: 860px;
+      margin: 0 auto;
+      background: #fff;
+      box-shadow: 0 2px 16px rgba(0,0,0,0.07);
+    }
+
+    .hero {
+      background: linear-gradient(135deg, #1e40af 0%, #2563eb 100%);
+      color: #fff;
+      padding: 48px 48px 40px;
+    }
+    .hero h1 { font-size: 30px; font-weight: 700; margin-bottom: 10px; }
+    .hero p  { font-size: 16px; opacity: 0.85; max-width: 580px; }
+
+    .toc {
+      background: #eff6ff;
+      border-left: 4px solid #2563eb;
+      padding: 20px 32px;
+      margin: 32px 48px;
+      border-radius: 0 8px 8px 0;
+    }
+    .toc h2 { font-size: 12px; text-transform: uppercase; letter-spacing: 0.08em; color: #2563eb; margin-bottom: 10px; }
+    .toc ol { padding-left: 18px; }
+    .toc li { margin-bottom: 3px; font-size: 14px; }
+    .toc a  { color: #1e40af; text-decoration: none; }
+    .toc a:hover { text-decoration: underline; }
+
+    .content { padding: 0 48px 56px; }
+
+    section { margin-top: 52px; }
+
+    .section-header {
+      display: flex;
+      align-items: center;
+      gap: 14px;
+      margin-bottom: 20px;
+      padding-bottom: 12px;
+      border-bottom: 2px solid #e2e8f0;
+    }
+    .section-icon {
+      width: 38px; height: 38px;
+      border-radius: 10px;
+      background: #eff6ff;
+      display: flex; align-items: center; justify-content: center;
+      font-size: 18px;
+      flex-shrink: 0;
+    }
+    h2 { font-size: 19px; font-weight: 700; color: #1e293b; }
+    h3 { font-size: 15px; font-weight: 600; color: #334155; margin: 20px 0 8px; }
+
+    p { margin-bottom: 12px; color: #475569; }
+    ul, ol { padding-left: 22px; margin-bottom: 12px; color: #475569; }
+    li { margin-bottom: 5px; }
+    strong { color: #1e293b; }
+
+    /* KPI cards */
+    .kpi-grid {
+      display: grid;
+      grid-template-columns: repeat(auto-fit, minmax(180px, 1fr));
+      gap: 12px;
+      margin: 16px 0;
+    }
+    .kpi {
+      border: 1px solid #e2e8f0;
+      border-radius: 10px;
+      padding: 16px;
+      background: #f8fafc;
+    }
+    .kpi .kpi-icon { font-size: 22px; margin-bottom: 6px; }
+    .kpi .kpi-label { font-size: 13px; font-weight: 600; color: #1e293b; margin-bottom: 3px; }
+    .kpi .kpi-desc  { font-size: 12px; color: #64748b; line-height: 1.4; }
+
+    /* Steps */
+    .steps { margin: 14px 0; }
+    .step {
+      display: flex;
+      gap: 14px;
+      margin-bottom: 10px;
+      padding: 14px;
+      border: 1px solid #e2e8f0;
+      border-radius: 10px;
+      background: #f8fafc;
+    }
+    .step-num {
+      width: 28px; height: 28px;
+      border-radius: 50%;
+      background: #2563eb;
+      color: #fff;
+      font-weight: 700;
+      font-size: 13px;
+      display: flex; align-items: center; justify-content: center;
+      flex-shrink: 0;
+      margin-top: 2px;
+    }
+    .step-title { font-weight: 600; color: #1e293b; margin-bottom: 2px; font-size: 14px; }
+    .step p { margin: 0; font-size: 13px; color: #64748b; }
+
+    /* Table */
+    table { width: 100%; border-collapse: collapse; margin: 14px 0; font-size: 14px; }
+    th { background: #1e40af; color: #fff; padding: 9px 14px; text-align: left; font-weight: 600; }
+    td { padding: 9px 14px; border-bottom: 1px solid #e2e8f0; color: #475569; }
+    tr:last-child td { border-bottom: none; }
+    tr:nth-child(even) td { background: #f8fafc; }
+
+    /* Notes */
+    .note {
+      border-radius: 8px;
+      padding: 12px 16px;
+      margin: 14px 0;
+      font-size: 14px;
+      display: flex;
+      gap: 10px;
+    }
+    .note-icon { font-size: 16px; flex-shrink: 0; margin-top: 2px; }
+    .note-info  { background: #eff6ff; border: 1px solid #bfdbfe; color: #1e40af; }
+    .note-warn  { background: #fffbeb; border: 1px solid #fde68a; color: #92400e; }
+    .note-ok    { background: #f0fdf4; border: 1px solid #bbf7d0; color: #166534; }
+
+    /* Status badges */
+    .s { display: inline-block; border-radius: 12px; padding: 2px 10px; font-size: 13px; font-weight: 500; }
+    .s-paid    { background: #dcfce7; color: #166534; }
+    .s-partial { background: #ffedd5; color: #9a3412; }
+    .s-unpaid  { background: #fee2e2; color: #991b1b; }
+    .s-cancel  { background: #f1f5f9; color: #64748b; }
+
+    .footer {
+      background: #f1f5f9;
+      border-top: 1px solid #e2e8f0;
+      padding: 20px 48px;
+      font-size: 13px;
+      color: #64748b;
+      text-align: center;
+    }
+
+    @media print { body { background: #fff; } .page { box-shadow: none; } }
+  </style>
+</head>
+<body>
+<div class="page">
+
+  <div class="hero">
+    <h1>Guide d'utilisation</h1>
+    <p>Tout ce dont vous avez besoin pour gérer votre activité commerciale : produits, achats, ventes, factures, paiements et rapports.</p>
+  </div>
+
+  <div class="toc">
+    <h2>Sommaire</h2>
+    <ol>
+      <li><a href="#dashboard">Votre tableau de bord</a></li>
+      <li><a href="#produits">Produits et stock</a></li>
+      <li><a href="#fournisseurs">Fournisseurs et achats</a></li>
+      <li><a href="#clients">Clients et ventes</a></li>
+      <li><a href="#factures">Factures et paiements</a></li>
+      <li><a href="#rapports">Rapports et états</a></li>
+      <li><a href="#stock">Historique des mouvements de stock</a></li>
+      <li><a href="#regles">Règles à connaître</a></li>
+    </ol>
+  </div>
+
+  <div class="content">
+
+    <section id="dashboard">
+      <div class="section-header">
+        <div class="section-icon">📊</div>
+        <h2>1. Votre tableau de bord</h2>
+      </div>
+      <p>Dès la connexion, le tableau de bord vous donne une vue complète de votre activité. En un coup d'œil, vous savez exactement où en est votre entreprise.</p>
+
+      <div class="kpi-grid">
+        <div class="kpi">
+          <div class="kpi-icon">💰</div>
+          <div class="kpi-label">Chiffre d'affaires</div>
+          <div class="kpi-desc">Ventes du mois, comparées au mois précédent.</div>
+        </div>
+        <div class="kpi">
+          <div class="kpi-icon">🛒</div>
+          <div class="kpi-label">Achats du mois</div>
+          <div class="kpi-desc">Total des approvisionnements fournisseurs.</div>
+        </div>
+        <div class="kpi">
+          <div class="kpi-icon">⏳</div>
+          <div class="kpi-label">Impayés clients</div>
+          <div class="kpi-desc">Montant total dû par vos clients.</div>
+        </div>
+        <div class="kpi">
+          <div class="kpi-icon">📦</div>
+          <div class="kpi-label">Alertes stock</div>
+          <div class="kpi-desc">Produits en rupture ou sous le seuil critique.</div>
+        </div>
+        <div class="kpi">
+          <div class="kpi-icon">👥</div>
+          <div class="kpi-label">Fournisseurs impayés</div>
+          <div class="kpi-desc">Nombre de fournisseurs avec un solde dû.</div>
+        </div>
+      </div>
+
+      <p>Changez le mois en haut de l'écran pour consulter n'importe quelle période passée.</p>
+    </section>
+
+    <section id="produits">
+      <div class="section-header">
+        <div class="section-icon">📦</div>
+        <h2>2. Produits et stock</h2>
+      </div>
+      <p>Votre catalogue centralise tous vos produits avec leur stock en temps réel. À chaque achat ou vente, le stock se met à jour automatiquement — sans saisie manuelle de votre part.</p>
+
+      <h3>Informations d'un produit</h3>
+      <table>
+        <tr><th>Champ</th><th>Description</th></tr>
+        <tr><td>Nom</td><td>Nom du produit tel qu'il apparaît sur les factures</td></tr>
+        <tr><td>Prix d'achat</td><td>Coût fournisseur habituel</td></tr>
+        <tr><td>Prix de vente</td><td>Prix client, pré-rempli automatiquement lors des ventes</td></tr>
+        <tr><td>Seuil d'alerte</td><td>En dessous de ce niveau, le produit est signalé</td></tr>
+        <tr><td>Stock actuel</td><td>Quantité disponible en temps réel</td></tr>
+      </table>
+
+      <h3>Indicateurs de stock</h3>
+      <ul>
+        <li><strong>🟢 OK</strong> — stock suffisant</li>
+        <li><strong>🟠 Faible</strong> — stock au niveau ou en dessous du seuil d'alerte</li>
+        <li><strong>🔴 Rupture</strong> — stock à zéro</li>
+      </ul>
+      <p>Les produits en alerte sont visibles directement depuis le menu de navigation, pour ne jamais être pris de court.</p>
+
+      <h3>Correction manuelle du stock</h3>
+      <p>Après un inventaire ou en cas de perte, vous pouvez ajuster le stock d'un produit depuis sa fiche. Chaque correction est enregistrée dans l'historique.</p>
+    </section>
+
+    <section id="fournisseurs">
+      <div class="section-header">
+        <div class="section-icon">🏭</div>
+        <h2>3. Fournisseurs et achats</h2>
+      </div>
+      <p>Gérez vos fournisseurs et enregistrez vos approvisionnements. Chaque achat met à jour le stock et suit automatiquement ce que vous devez encore payer.</p>
+
+      <h3>Créer un achat</h3>
+      <div class="steps">
+        <div class="step"><div class="step-num">1</div><div><div class="step-title">Choisissez le fournisseur</div><p>Sélectionnez dans la liste, ou créez-en un nouveau directement depuis le formulaire.</p></div></div>
+        <div class="step"><div class="step-num">2</div><div><div class="step-title">Ajoutez les produits achetés</div><p>Quantité et prix d'achat pour chaque article. Le total se calcule automatiquement.</p></div></div>
+        <div class="step"><div class="step-num">3</div><div><div class="step-title">Indiquez ce que vous avez déjà payé (optionnel)</div><p>Si vous avez versé un acompte, saisissez le montant.</p></div></div>
+        <div class="step"><div class="step-num">4</div><div><div class="step-title">Validez</div><p>Le stock est mis à jour instantanément.</p></div></div>
+      </div>
+
+      <h3>Statuts d'un achat</h3>
+      <table>
+        <tr><th>Statut</th><th>Signification</th></tr>
+        <tr><td><span class="s s-unpaid">🔴 Impayé</span></td><td>Aucun paiement enregistré</td></tr>
+        <tr><td><span class="s s-partial">🟡 Partiel</span></td><td>Paiement partiel effectué</td></tr>
+        <tr><td><span class="s s-paid">🟢 Payé</span></td><td>Achat intégralement réglé</td></tr>
+        <tr><td><span class="s s-cancel">⛔ Annulé</span></td><td>Achat annulé, stock remis en état</td></tr>
+      </table>
+
+      <h3>Relevé fournisseur</h3>
+      <p>Depuis la fiche d'un fournisseur, consultez l'intégralité de vos échanges avec lui : historique des achats, paiements versés et solde restant dû.</p>
+    </section>
+
+    <section id="clients">
+      <div class="section-header">
+        <div class="section-icon">🧾</div>
+        <h2>4. Clients et ventes</h2>
+      </div>
+      <p>Enregistrez vos ventes en quelques secondes. L'application génère automatiquement la facture, déduit le stock, et garde une trace de tout ce que vos clients vous doivent.</p>
+
+      <h3>Créer une vente</h3>
+      <div class="steps">
+        <div class="step"><div class="step-num">1</div><div><div class="step-title">Choisissez le client</div><p>Sélectionnez dans la liste, ou créez-en un nouveau directement depuis le formulaire.</p></div></div>
+        <div class="step"><div class="step-num">2</div><div><div class="step-title">Ajoutez les produits vendus</div><p>Le prix de vente habituel est pré-rempli. Ajustez si besoin.</p></div></div>
+        <div class="step"><div class="step-num">3</div><div><div class="step-title">Indiquez ce que le client a déjà payé (optionnel)</div><p>Si un acompte a été versé, saisissez le montant.</p></div></div>
+        <div class="step"><div class="step-num">4</div><div><div class="step-title">Validez</div><p>La vente est enregistrée, le stock mis à jour, et la facture générée automatiquement.</p></div></div>
+      </div>
+
+      <h3>Statuts d'une vente</h3>
+      <table>
+        <tr><th>Statut</th><th>Signification</th></tr>
+        <tr><td><span class="s s-unpaid">🔴 Impayé</span></td><td>Aucun paiement reçu</td></tr>
+        <tr><td><span class="s s-partial">🟡 Partiel</span></td><td>Paiement partiel reçu</td></tr>
+        <tr><td><span class="s s-paid">🟢 Payé</span></td><td>Vente intégralement réglée</td></tr>
+        <tr><td><span class="s s-cancel">⛔ Annulé</span></td><td>Vente annulée, stock remis en état</td></tr>
+      </table>
+
+      <h3>Relevé client</h3>
+      <p>Depuis la fiche d'un client, consultez l'intégralité de vos échanges avec lui : toutes ses ventes, ses paiements, et le total qu'il vous doit encore.</p>
+    </section>
+
+    <section id="factures">
+      <div class="section-header">
+        <div class="section-icon">📄</div>
+        <h2>5. Factures et paiements</h2>
+      </div>
+      <p>Chaque vente génère automatiquement une facture numérotée. Chaque paiement reçu génère automatiquement un reçu. Vous n'avez rien à faire manuellement.</p>
+
+      <table>
+        <tr><th>Document</th><th>Numérotation</th><th>Généré quand ?</th></tr>
+        <tr><td><strong>Facture</strong></td><td>FAC-2026-001</td><td>Automatiquement à chaque vente</td></tr>
+        <tr><td><strong>Reçu de paiement</strong></td><td>REC-2026-001</td><td>Automatiquement à chaque règlement client</td></tr>
+      </table>
+
+      <div class="note note-ok">
+        <div class="note-icon">✅</div>
+        <div><strong>Documents immuables et fiables.</strong> Une facture conserve toujours les informations exactes du moment de sa génération — coordonnées de votre entreprise, données du client, montants — même si ces informations sont modifiées par la suite.</div>
+      </div>
+
+      <h3>Enregistrer un paiement client</h3>
+      <p>Depuis la fiche d'une vente ou la page Paiements, enregistrez le règlement d'un client. Le statut de la vente se met à jour automatiquement, et un reçu est généré. Les paiements partiels sont supportés.</p>
+
+      <h3>Enregistrer un paiement fournisseur</h3>
+      <p>Même principe pour vos achats fournisseurs. Le solde restant dû est mis à jour à chaque règlement.</p>
+    </section>
+
+    <section id="rapports">
+      <div class="section-header">
+        <div class="section-icon">📈</div>
+        <h2>6. Rapports et états</h2>
+      </div>
+      <p>Les rapports vous donnent une vision claire de votre situation financière sur n'importe quelle période.</p>
+
+      <h3>État clients</h3>
+      <p>Consultez la liste de tous vos clients avec, pour chacun, le total des ventes, le montant encaissé et le reste à encaisser. Identifiez en un coup d'œil qui vous doit quoi et depuis combien de temps.</p>
+
+      <h3>État fournisseurs</h3>
+      <p>Même logique pour vos fournisseurs : total des achats, montant réglé, et ce que vous devez encore payer. Gérez vos engagements fournisseurs sans risquer d'oublier un règlement.</p>
+
+      <div class="note note-info">
+        <div class="note-icon">💡</div>
+        <div>Ces états peuvent couvrir une période longue (plusieurs mois ou toute l'année) pour une vue complète de vos relations commerciales.</div>
+      </div>
+    </section>
+
+    <section id="stock">
+      <div class="section-header">
+        <div class="section-icon">📋</div>
+        <h2>7. Historique des mouvements de stock</h2>
+      </div>
+      <p>Chaque entrée et sortie de stock est enregistrée automatiquement. Retrouvez, pour chaque produit, l'historique complet de son stock : quelle vente a consommé quoi, quel achat a réapprovisionné quoi.</p>
+      <p>Chaque ligne affiche le <strong>stock avant</strong> et le <strong>stock après</strong> le mouvement, pour une traçabilité totale.</p>
+
+      <div class="note note-info">
+        <div class="note-icon">💡</div>
+        <div>Le stock actuel d'un produit correspond toujours au <strong>stock après</strong> de son dernier mouvement enregistré.</div>
+      </div>
+    </section>
+
+    <section id="regles">
+      <div class="section-header">
+        <div class="section-icon">📌</div>
+        <h2>8. Règles à connaître</h2>
+      </div>
+
+      <h3>Modification et annulation d'une vente</h3>
+      <table>
+        <tr><th>Situation</th><th>Modifier</th><th>Annuler</th></tr>
+        <tr><td>Vente créée, sans facture ni paiement</td><td>✅ Oui</td><td>✅ Oui</td></tr>
+        <tr><td>Facture générée</td><td>❌ Non</td><td>❌ Non</td></tr>
+        <tr><td>Paiement enregistré</td><td>❌ Non</td><td>❌ Non</td></tr>
+        <tr><td>Vente annulée</td><td>❌ Non</td><td>—</td></tr>
+      </table>
+      <p style="font-size:13px;margin-top:6px;">Ces restrictions protègent la cohérence de vos documents comptables.</p>
+
+      <h3>Modification et annulation d'un achat</h3>
+      <table>
+        <tr><th>Situation</th><th>Modifier</th><th>Annuler</th></tr>
+        <tr><td>Achat créé, sans paiement</td><td>✅ Oui</td><td>✅ Oui</td></tr>
+        <tr><td>Paiement enregistré</td><td>✅ Oui</td><td>❌ Non</td></tr>
+        <tr><td>Achat annulé</td><td>❌ Non</td><td>—</td></tr>
+      </table>
+
+      <h3>Numérotation des documents</h3>
+      <p>Les numéros de factures et de reçus sont attribués automatiquement et ne sont jamais réutilisés — même si une vente est annulée. Cela garantit une numérotation continue et conforme.</p>
+
+      <h3>Le stock</h3>
+      <ul>
+        <li>Mis à jour <strong>automatiquement</strong> à chaque achat, vente ou annulation</li>
+        <li>Corrigeable manuellement depuis la fiche produit (inventaire, perte)</li>
+        <li>Chaque modification laisse une trace dans l'historique</li>
+      </ul>
+    </section>
+
+  </div>
+
+  <div class="footer">
+    Guide d'utilisation &nbsp;|&nbsp; Gestion Commerciale
+  </div>
+
+</div>
+</body>
+</html>

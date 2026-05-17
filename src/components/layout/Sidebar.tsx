@@ -11,6 +11,7 @@ import {
   CreditCard,
   BarChart3,
   Settings,
+  HelpCircle,
   ChevronDown,
   ChevronRight,
   ChevronLeft,
@@ -332,11 +333,11 @@ export const Sidebar = ({ onClose, collapsed = false, onToggleCollapse }: Sideba
           </div>
         </div>
 
-        {/* ADMIN */}
+        {/* CONFIGURATION */}
         <div className="pt-3">
           {!collapsed ? (
             <p className="mb-1 px-3 text-[10px] font-semibold uppercase tracking-widest text-muted-foreground/50">
-              ADMIN
+              CONFIGURATION
             </p>
           ) : (
             <div className="mb-1 mx-1 h-px bg-border" />
@@ -358,6 +359,24 @@ export const Sidebar = ({ onClose, collapsed = false, onToggleCollapse }: Sideba
             )}
             <Settings className="h-4 w-4 shrink-0" />
             {!collapsed && <span>Paramètres</span>}
+          </Link>
+          <Link
+            to="/aide"
+            onClick={onClose}
+            title={collapsed ? 'Aide' : undefined}
+            className={cn(
+              'relative flex items-center gap-3 rounded-md py-2 text-sm font-medium transition-all duration-150',
+              collapsed ? 'justify-center px-2' : 'px-3',
+              isActive('/aide')
+                ? 'bg-primary/10 text-primary'
+                : 'text-muted-foreground hover:bg-muted hover:text-foreground'
+            )}
+          >
+            {isActive('/aide') && !collapsed && (
+              <span className="absolute left-0 top-1/2 -translate-y-1/2 w-[3px] h-5 bg-primary rounded-r-full" />
+            )}
+            <HelpCircle className="h-4 w-4 shrink-0" />
+            {!collapsed && <span>Aide</span>}
           </Link>
         </div>
       </nav>
