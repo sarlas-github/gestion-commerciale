@@ -15,10 +15,8 @@ import {
   ChevronDown,
   CheckCircle2,
   XCircle,
-  Download,
 } from 'lucide-react'
 import { PageHeader } from '@/components/shared/PageHeader'
-import { Button } from '@/components/ui/button'
 import { useProfile } from '@/hooks/useProfile'
 import { cn } from '@/lib/utils'
 
@@ -563,18 +561,7 @@ const GuideProduction = () => (
 export const AidePage = () => {
   const { data: profile } = useProfile()
   const isProduction = profile?.business_mode === 'production'
-  const [printAll, setPrintAll] = useState(false)
-
-  const handleDownload = () => {
-    setPrintAll(true)
-    const prevTitle = document.title
-    document.title = 'Guide utilisateur'
-    setTimeout(() => {
-      window.print()
-      document.title = prevTitle
-      setTimeout(() => setPrintAll(false), 500)
-    }, 200)
-  }
+  const [printAll] = useState(false)
 
   return (
     <PrintContext.Provider value={printAll}>
