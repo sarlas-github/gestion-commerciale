@@ -131,7 +131,7 @@ export const App = () => {
           <Route path="/settings" element={<SettingsPage />} />
 
           {/* Aide */}
-          <Route path="/aide" element={<AidePage />} />
+          <Route path="/guide" element={<AidePage />} />
         </Route>
 
         {/* 404 → redirect dashboard */}

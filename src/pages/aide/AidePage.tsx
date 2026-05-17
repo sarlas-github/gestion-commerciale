@@ -1,4 +1,4 @@
-import { useState } from 'react'
+import { useState, createContext, useContext } from 'react'
 import {
   LayoutDashboard,
   Package,
@@ -9,18 +9,20 @@ import {
   Activity,
   BookOpen,
   Truck,
-  Clock,
-  AlertTriangle,
   Users,
   Layers,
   Cog,
   ChevronDown,
   CheckCircle2,
   XCircle,
+  Download,
 } from 'lucide-react'
 import { PageHeader } from '@/components/shared/PageHeader'
+import { Button } from '@/components/ui/button'
 import { useProfile } from '@/hooks/useProfile'
 import { cn } from '@/lib/utils'
+
+const PrintContext = createContext(false)
 
 // ─── Primitives ────────────────────────────────────────────────────────────────
 
@@ -35,7 +37,9 @@ const Section = ({
   n: number
   children: React.ReactNode
 }) => {
+  const printAll = useContext(PrintContext)
   const [open, setOpen] = useState(true)
+  const visible = printAll || open
   return (
     <div className="rounded-xl border bg-card shadow-sm overflow-hidden">
       <button
@@ -48,9 +52,9 @@ const Section = ({
         <h2 className="flex-1 text-base font-semibold text-foreground">
           <span className="text-muted-foreground font-normal mr-1.5">{n}.</span>{title}
         </h2>
-        <ChevronDown className={cn('h-4 w-4 text-muted-foreground shrink-0 transition-transform duration-200', !open && '-rotate-90')} />
+        <ChevronDown className={cn('h-4 w-4 text-muted-foreground shrink-0 transition-transform duration-200', !visible && '-rotate-90')} />
       </button>
-      {open && (
+      {visible && (
         <div className="px-5 pb-5 space-y-3 border-t pt-4">
           {children}
         </div>
@@ -107,34 +111,17 @@ const RulesTable = ({ headers, rows }: { headers: string[]; rows: (string | Reac
 
 const StatusBadge = ({ type }: { type: 'paid' | 'partial' | 'unpaid' | 'cancelled' | 'instock' | 'low' | 'outofstock' }) => {
   const map = {
-    paid:      { label: '🟢 Payé',      cls: 'bg-green-100 text-green-800 dark:bg-green-900/30 dark:text-green-400' },
-    partial:   { label: '🟡 Partiel',   cls: 'bg-orange-100 text-orange-800 dark:bg-orange-900/30 dark:text-orange-400' },
-    unpaid:    { label: '🔴 Impayé',    cls: 'bg-red-100 text-red-800 dark:bg-red-900/30 dark:text-red-400' },
-    cancelled: { label: '⛔ Annulé',    cls: 'bg-gray-100 text-gray-500 dark:bg-gray-800 dark:text-gray-400' },
-    instock:   { label: '🟢 En stock',  cls: 'bg-green-100 text-green-800 dark:bg-green-900/30 dark:text-green-400' },
-    low:       { label: '🟡 Faible',    cls: 'bg-orange-100 text-orange-800 dark:bg-orange-900/30 dark:text-orange-400' },
-    outofstock:{ label: '🔴 Rupture',   cls: 'bg-red-100 text-red-800 dark:bg-red-900/30 dark:text-red-400' },
+    paid: { label: '🟢 Payé', cls: 'bg-green-100 text-green-800 dark:bg-green-900/30 dark:text-green-400' },
+    partial: { label: '🟡 Partiel', cls: 'bg-orange-100 text-orange-800 dark:bg-orange-900/30 dark:text-orange-400' },
+    unpaid: { label: '🔴 Impayé', cls: 'bg-red-100 text-red-800 dark:bg-red-900/30 dark:text-red-400' },
+    cancelled: { label: '⛔ Annulé', cls: 'bg-gray-100 text-gray-500 dark:bg-gray-800 dark:text-gray-400' },
+    instock: { label: '🟢 En stock', cls: 'bg-green-100 text-green-800 dark:bg-green-900/30 dark:text-green-400' },
+    low: { label: '🟡 Faible', cls: 'bg-orange-100 text-orange-800 dark:bg-orange-900/30 dark:text-orange-400' },
+    outofstock: { label: '🔴 Rupture', cls: 'bg-red-100 text-red-800 dark:bg-red-900/30 dark:text-red-400' },
   }
   return <span className={cn('inline-flex rounded-full px-2.5 py-0.5 text-xs font-medium', map[type].cls)}>{map[type].label}</span>
 }
 
-const KpiGrid = ({
-  items,
-}: {
-  items: { icon: React.ElementType; label: string; desc: string }[]
-}) => (
-  <div className="grid grid-cols-2 sm:grid-cols-3 gap-3">
-    {items.map((kpi, i) => (
-      <div key={i} className="rounded-lg border bg-muted/40 p-4 space-y-2">
-        <div className="flex h-8 w-8 items-center justify-center rounded-md bg-primary/10">
-          <kpi.icon className="h-4 w-4 text-primary" />
-        </div>
-        <p className="font-semibold text-foreground text-sm">{kpi.label}</p>
-        <p className="text-xs text-muted-foreground leading-snug">{kpi.desc}</p>
-      </div>
-    ))}
-  </div>
-)
 
 const IntroCard = ({ lines }: { lines: { before: string; after: string }[] }) => (
   <div className="rounded-xl border bg-primary/5 border-primary/20 p-6 space-y-5">
@@ -206,7 +193,8 @@ const GuideRevente = () => (
     </Section>
 
     <Section icon={Package} title="Produits et stock" n={2}>
-      <p className="text-sm text-muted-foreground">Votre catalogue centralise tous vos produits avec leur stock en temps réel. À chaque achat ou vente, le stock se met à jour automatiquement — sans saisie manuelle de votre part.</p>
+      <p className="text-sm text-muted-foreground">Votre catalogue de produits est votre base de référence : chaque produit que vous achetez ou vendez doit y être enregistré. Le stock se met à jour automatiquement à chaque achat ou vente — sans saisie manuelle.</p>
+      <Note type="info">Deux façons d'ajouter un produit : depuis la page <strong>Produits</strong>, ou via le bouton <strong>+</strong> directement dans un formulaire d'achat ou de vente sans interrompre votre saisie. Dans les formulaires, tapez quelques lettres pour retrouver instantanément un produit grâce à l'autocomplétion.</Note>
       <RulesTable
         headers={['Statut', 'Signification']}
         rows={[
@@ -217,13 +205,17 @@ const GuideRevente = () => (
       />
       <Note type="info">Le seuil d'alerte se définit sur chaque fiche produit. Dès que le stock descend en dessous de ce seuil, le badge d'alerte apparaît dans le menu de navigation. Pensez à le configurer pour chaque produit que vous souhaitez surveiller.</Note>
       <p className="text-sm text-muted-foreground">Vous pouvez corriger un stock manuellement depuis la fiche produit (inventaire, perte) — chaque correction est tracée.</p>
+      <p className="text-sm font-medium text-foreground">Individuel ou Pack</p>
+      <p className="text-sm text-muted-foreground">Un produit peut être de type <strong className="text-foreground">Individuel</strong> (vendu à l'unité) ou <strong className="text-foreground">Pack</strong> (lot contenant plusieurs pièces). Pour un pack, vous définissez le nombre de pièces — utile si vous vendez par boîtes, cartons ou lots.</p>
+      <Note type="info">Le nombre de pièces défini sur la fiche produit est une valeur par défaut. Vous pouvez le modifier directement au moment de chaque achat ou vente si le nombre de pièces par pack change pour cette transaction.</Note>
     </Section>
 
     <Section icon={ShoppingCart} title="Fournisseurs et achats" n={3}>
-      <p className="text-sm text-muted-foreground">Gérez vos fournisseurs et enregistrez vos approvisionnements. Chaque achat met à jour le stock et suit automatiquement ce que vous devez encore payer.</p>
+      <p className="text-sm text-muted-foreground">Votre liste de fournisseurs est votre carnet d'adresses : une base de référence que vous enrichissez au fil du temps. Chaque achat met à jour le stock et suit automatiquement ce que vous devez encore payer.</p>
+      <Note type="info">Deux façons d'ajouter un fournisseur : depuis la page <strong>Fournisseurs</strong>, ou via le bouton <strong>+</strong> directement dans un formulaire d'achat. Dans les formulaires, tapez quelques lettres pour retrouver un fournisseur grâce à l'autocomplétion.</Note>
       <Steps items={[
         { title: 'Choisissez le fournisseur', desc: 'Sélectionnez dans la liste, ou créez-en un nouveau directement depuis le formulaire.' },
-        { title: 'Ajoutez les produits achetés', desc: 'Quantité et prix d\'achat pour chaque article. Le total se calcule automatiquement.' },
+        { title: 'Ajoutez les produits achetés', desc: 'Quantité et prix d\'achat pour chaque article. Le montant se calcule automatiquement : quantité × pièces × prix unitaire. La TVA s\'applique sur ce total — le taux par défaut vient des Paramètres mais reste modifiable ligne par ligne.' },
         { title: 'Indiquez ce que vous avez déjà payé (optionnel)', desc: 'Si vous avez versé un acompte, saisissez le montant.' },
         { title: 'Validez', desc: 'Le stock est mis à jour instantanément.' },
       ]} />
@@ -241,10 +233,11 @@ const GuideRevente = () => (
     </Section>
 
     <Section icon={TrendingUp} title="Clients et ventes" n={4}>
-      <p className="text-sm text-muted-foreground">Enregistrez vos ventes en quelques secondes. L'application génère automatiquement la facture, déduit le stock, et garde une trace de tout ce que vos clients vous doivent.</p>
+      <p className="text-sm text-muted-foreground">Votre liste de clients est votre carnet d'adresses : une base de référence centrale pour toutes vos ventes. L'application génère automatiquement la facture, déduit le stock, et garde une trace de tout ce que vos clients vous doivent.</p>
+      <Note type="info">Deux façons d'ajouter un client : depuis la page <strong>Clients</strong>, ou via le bouton <strong>+</strong> directement dans un formulaire de vente. Dans les formulaires, tapez quelques lettres pour retrouver un client grâce à l'autocomplétion.</Note>
       <Steps items={[
         { title: 'Choisissez le client', desc: 'Sélectionnez dans la liste, ou créez-en un nouveau directement depuis le formulaire.' },
-        { title: 'Ajoutez les produits vendus', desc: 'Le prix de vente habituel est pré-rempli. Ajustez si besoin.' },
+        { title: 'Ajoutez les produits vendus', desc: 'Le prix de vente habituel est pré-rempli. Le montant se calcule automatiquement : quantité × pièces × prix unitaire. La TVA s\'applique sur ce total — le taux par défaut vient des Paramètres mais reste modifiable ligne par ligne.' },
         { title: 'Indiquez ce que le client a déjà payé (optionnel)', desc: 'Si un acompte a été versé, saisissez le montant.' },
         { title: 'Validez', desc: 'La vente est enregistrée, le stock mis à jour, et la facture générée automatiquement.' },
       ]} />
@@ -376,7 +369,8 @@ const GuideProduction = () => (
     </Section>
 
     <Section icon={Package} title="Votre catalogue de produits" n={2}>
-      <p className="text-sm text-muted-foreground">Votre catalogue distingue deux types de produits, chacun avec son propre stock suivi en temps réel.</p>
+      <p className="text-sm text-muted-foreground">Votre catalogue est votre base de référence : tous les produits que vous achetez ou fabriquez doivent y être enregistrés. Il distingue deux types, chacun avec son propre stock suivi en temps réel.</p>
+      <Note type="info">Deux façons d'ajouter un produit : depuis la page <strong>Produits</strong>, ou via le bouton <strong>+</strong> directement dans un formulaire sans interrompre votre saisie. Dans les formulaires, tapez quelques lettres pour retrouver instantanément un produit grâce à l'autocomplétion.</Note>
       <div className="grid sm:grid-cols-2 gap-3">
         <div className="rounded-lg border border-amber-200 bg-amber-50 dark:bg-amber-950/20 dark:border-amber-800 p-4 space-y-1">
           <div className="flex items-center gap-2">
@@ -396,6 +390,9 @@ const GuideProduction = () => (
         </div>
       </div>
       <p className="text-sm text-muted-foreground">Les stocks se mettent à jour automatiquement à chaque achat, vente ou déclaration de production.</p>
+      <p className="text-sm font-medium text-foreground">Individuel ou Pack</p>
+      <p className="text-sm text-muted-foreground">Un produit peut être de type <strong className="text-foreground">Individuel</strong> (à l'unité) ou <strong className="text-foreground">Pack</strong> (lot contenant plusieurs pièces). Pour un pack, vous définissez le nombre de pièces — utile si vous achetez ou vendez par cartons, boîtes ou lots.</p>
+      <Note type="info">Le nombre de pièces défini sur la fiche produit est une valeur par défaut. Vous pouvez le modifier directement au moment de chaque achat ou vente si le nombre de pièces par pack change pour cette transaction.</Note>
       <RulesTable
         headers={['Statut', 'Signification']}
         rows={[
@@ -408,10 +405,11 @@ const GuideProduction = () => (
     </Section>
 
     <Section icon={ShoppingCart} title="Achats de matières premières" n={3}>
-      <p className="text-sm text-muted-foreground">Enregistrez vos approvisionnements. Chaque achat augmente automatiquement le stock des matières premières concernées.</p>
+      <p className="text-sm text-muted-foreground">Votre liste de fournisseurs est votre carnet d'adresses fournisseurs. Chaque achat enregistré augmente automatiquement le stock des matières premières concernées.</p>
+      <Note type="info">Deux façons d'ajouter un fournisseur : depuis la page <strong>Fournisseurs</strong>, ou via le bouton <strong>+</strong> directement dans un formulaire d'achat. Dans les formulaires, tapez quelques lettres pour retrouver un fournisseur grâce à l'autocomplétion.</Note>
       <Steps items={[
         { title: 'Choisissez le fournisseur', desc: 'Sélectionnez dans la liste, ou créez-en un nouveau directement depuis le formulaire.' },
-        { title: 'Ajoutez les matières premières achetées', desc: 'Quantité et prix d\'achat pour chaque article.' },
+        { title: 'Ajoutez les matières premières achetées', desc: 'Quantité et prix d\'achat pour chaque article. Le montant se calcule automatiquement : quantité × pièces × prix unitaire. La TVA s\'applique sur ce total — le taux par défaut vient des Paramètres mais reste modifiable ligne par ligne.' },
         { title: 'Indiquez ce que vous avez déjà payé (optionnel)', desc: 'Si un acompte a été versé, saisissez le montant.' },
         { title: 'Validez', desc: 'Le stock des matières premières est mis à jour instantanément.' },
       ]} />
@@ -470,10 +468,11 @@ const GuideProduction = () => (
     </Section>
 
     <Section icon={TrendingUp} title="Ventes" n={5}>
-      <p className="text-sm text-muted-foreground">Enregistrez vos ventes de produits finis. L'application génère automatiquement la facture, déduit le stock et garde une trace de tout ce que vos clients vous doivent.</p>
+      <p className="text-sm text-muted-foreground">Votre liste de clients est votre carnet d'adresses clients. L'application génère automatiquement la facture, déduit le stock et garde une trace de tout ce que vos clients vous doivent.</p>
+      <Note type="info">Deux façons d'ajouter un client : depuis la page <strong>Clients</strong>, ou via le bouton <strong>+</strong> directement dans un formulaire de vente. Dans les formulaires, tapez quelques lettres pour retrouver un client grâce à l'autocomplétion.</Note>
       <Steps items={[
         { title: 'Choisissez le client', desc: 'Sélectionnez dans la liste, ou créez-en un nouveau directement depuis le formulaire.' },
-        { title: 'Ajoutez les produits vendus', desc: 'Le prix de vente habituel est pré-rempli. Ajustez si besoin.' },
+        { title: 'Ajoutez les produits vendus', desc: 'Le prix de vente habituel est pré-rempli. Le montant se calcule automatiquement : quantité × pièces × prix unitaire. La TVA s\'applique sur ce total — le taux par défaut vient des Paramètres mais reste modifiable ligne par ligne.' },
         { title: 'Indiquez ce que le client a déjà payé (optionnel)', desc: 'Si un acompte a été versé, saisissez le montant.' },
         { title: 'Validez', desc: 'Vente enregistrée, stock déduit, facture générée automatiquement.' },
       ]} />
@@ -564,11 +563,50 @@ const GuideProduction = () => (
 export const AidePage = () => {
   const { data: profile } = useProfile()
   const isProduction = profile?.business_mode === 'production'
+  const [printAll, setPrintAll] = useState(false)
+
+  const handleDownload = () => {
+    setPrintAll(true)
+    const prevTitle = document.title
+    document.title = 'Guide utilisateur'
+    setTimeout(() => {
+      window.print()
+      document.title = prevTitle
+      setTimeout(() => setPrintAll(false), 500)
+    }, 200)
+  }
 
   return (
-    <div className="max-w-3xl space-y-6">
-      <PageHeader title="Guide" />
-      {isProduction ? <GuideProduction /> : <GuideRevente />}
-    </div>
+    <PrintContext.Provider value={printAll}>
+      <style>{`
+        @media print {
+          aside, header { display: none !important; }
+          body, html { overflow: visible !important; height: auto !important; padding: 12mm !important; }
+          #main-scroll { overflow: visible !important; height: auto !important; padding: 0 !important; }
+          .flex.h-screen { height: auto !important; overflow: visible !important; }
+          .flex-1.overflow-hidden { overflow: visible !important; }
+          @page { margin: 0; size: A4; }
+        }
+      `}</style>
+      <div className="max-w-3xl space-y-6">
+        <div className="flex items-start justify-between gap-4">
+          <PageHeader title="Guide utilisateur" />
+          {/* <Button variant="outline" size="sm" onClick={handleDownload} className="shrink-0 mt-1 print:hidden">
+            <Download className="h-4 w-4 mr-2" />
+            Télécharger guide
+          </Button> */}
+        </div>
+
+        {/* En-tête visible uniquement à l'impression */}
+        <div className="hidden print:flex items-center justify-between pb-3 border-b mb-2">
+          <span className="text-sm font-semibold text-gray-700">www.pilot-commerce.com — Guide utilisateur</span>
+          <span className="text-sm text-gray-500">{new Date().toLocaleDateString('fr-FR')}</span>
+        </div>
+
+        <div className="space-y-4">
+          {isProduction ? <GuideProduction /> : <GuideRevente />}
+        </div>
+      </div>
+    </PrintContext.Provider>
   )
 }
