@@ -81,7 +81,7 @@ const Steps = ({ items }: { items: { title: string; desc: string }[] }) => (
         </span>
         <div>
           <p className="font-medium text-foreground text-sm mb-0.5">{item.title}</p>
-          <p className="text-sm text-muted-foreground">{item.desc}</p>
+          <p className="text-xs sm:text-sm text-muted-foreground">{item.desc}</p>
         </div>
       </div>
     ))}
@@ -90,16 +90,16 @@ const Steps = ({ items }: { items: { title: string; desc: string }[] }) => (
 
 const RulesTable = ({ headers, rows }: { headers: string[]; rows: (string | React.ReactNode)[][] }) => (
   <div className="overflow-x-auto rounded-lg border">
-    <table className="w-full text-sm">
+    <table className="w-full text-xs sm:text-sm">
       <thead>
         <tr className="border-b bg-muted/50">
-          {headers.map((h, i) => <th key={i} className="px-4 py-2.5 text-left font-semibold text-foreground">{h}</th>)}
+          {headers.map((h, i) => <th key={i} className="px-2.5 sm:px-4 py-2 sm:py-2.5 text-left font-semibold text-foreground">{h}</th>)}
         </tr>
       </thead>
       <tbody>
         {rows.map((row, i) => (
           <tr key={i} className="border-b last:border-0 hover:bg-muted/20">
-            {row.map((cell, j) => <td key={j} className="px-4 py-2.5 text-muted-foreground">{cell}</td>)}
+            {row.map((cell, j) => <td key={j} className="px-2.5 sm:px-4 py-2 sm:py-2.5 text-muted-foreground">{cell}</td>)}
           </tr>
         ))}
       </tbody>
@@ -162,27 +162,55 @@ const GuideRevente = () => (
       <p className="text-sm text-muted-foreground">Dès la connexion, le tableau de bord centralise tous vos indicateurs clés pour la période sélectionnée. Vous pouvez changer le mois — ou passer en vue annuelle — depuis le sélecteur en haut de page.</p>
       <div className="space-y-3">
         <p className="text-sm font-medium text-foreground">Indicateurs calculés</p>
-        <div className="grid grid-cols-2 sm:grid-cols-3 gap-2">
-          {[
-            { label: 'CA Ventes', desc: 'Total facturé sur la période' },
-            { label: 'Encaissé', desc: 'Montant reçu des clients' },
-            { label: 'À recevoir', desc: 'Impayés clients restants' },
-            { label: 'Total Achats', desc: 'Dépenses engagées' },
-            { label: 'Décaissé', desc: 'Payé aux fournisseurs' },
-            { label: 'À payer', desc: 'Dettes fournisseurs restantes' },
-            { label: 'Marge brute', desc: 'CA − coût des achats' },
-            { label: 'Trésorerie', desc: 'Encaissé − Décaissé' },
-            { label: 'Volume ventes', desc: 'Nombre de transactions' },
-          ].map((k, i) => (
-            <div key={i} className="rounded-lg border bg-muted/40 p-3 space-y-0.5">
-              <p className="font-semibold text-foreground text-xs">{k.label}</p>
-              <p className="text-xs text-muted-foreground leading-snug">{k.desc}</p>
+        <div className="space-y-2">
+          <div className="grid grid-cols-2 sm:grid-cols-3 gap-2">
+            <div className="col-span-2 sm:col-span-1 rounded-lg border bg-muted/40 p-3 space-y-0.5">
+              <p className="font-semibold text-foreground text-xs">Marge brute</p>
+              <p className="text-xs text-muted-foreground leading-snug">CA − coût des achats</p>
             </div>
-          ))}
+            <div className="rounded-lg border bg-muted/40 p-3 space-y-0.5">
+              <p className="font-semibold text-foreground text-xs">Trésorerie</p>
+              <p className="text-xs text-muted-foreground leading-snug">Encaissé − Décaissé</p>
+            </div>
+            <div className="rounded-lg border bg-muted/40 p-3 space-y-0.5">
+              <p className="font-semibold text-foreground text-xs">Volume ventes</p>
+              <p className="text-xs text-muted-foreground leading-snug">Nombre de transactions</p>
+            </div>
+          </div>
+          <div className="mx-1 h-px bg-border" />
+          <div className="grid grid-cols-2 sm:grid-cols-3 gap-2">
+            <div className="col-span-2 sm:col-span-1 rounded-lg border bg-muted/40 p-3 space-y-0.5">
+              <p className="font-semibold text-foreground text-xs">CA Ventes</p>
+              <p className="text-xs text-muted-foreground leading-snug">Total facturé sur la période</p>
+            </div>
+            <div className="rounded-lg border bg-muted/40 p-3 space-y-0.5">
+              <p className="font-semibold text-foreground text-xs">Encaissé</p>
+              <p className="text-xs text-muted-foreground leading-snug">Montant reçu des clients</p>
+            </div>
+            <div className="rounded-lg border bg-muted/40 p-3 space-y-0.5">
+              <p className="font-semibold text-foreground text-xs">À recevoir</p>
+              <p className="text-xs text-muted-foreground leading-snug">Impayés clients restants</p>
+            </div>
+          </div>
+          <div className="mx-1 h-px bg-border" />
+          <div className="grid grid-cols-2 sm:grid-cols-3 gap-2">
+            <div className="col-span-2 sm:col-span-1 rounded-lg border bg-muted/40 p-3 space-y-0.5">
+              <p className="font-semibold text-foreground text-xs">Total Achats</p>
+              <p className="text-xs text-muted-foreground leading-snug">Dépenses engagées</p>
+            </div>
+            <div className="rounded-lg border bg-muted/40 p-3 space-y-0.5">
+              <p className="font-semibold text-foreground text-xs">Décaissé</p>
+              <p className="text-xs text-muted-foreground leading-snug">Payé aux fournisseurs</p>
+            </div>
+            <div className="rounded-lg border bg-muted/40 p-3 space-y-0.5">
+              <p className="font-semibold text-foreground text-xs">À payer</p>
+              <p className="text-xs text-muted-foreground leading-snug">Dettes fournisseurs restantes</p>
+            </div>
+          </div>
         </div>
         <p className="text-sm font-medium text-foreground">Graphiques</p>
         <ul className="text-sm text-muted-foreground space-y-1 list-disc list-inside">
-          <li>Évolution des ventes par jour (ou par mois en vue annuelle)</li>
+          <li>Évolution des ventes <strong>et</strong> des achats par jour (ou par mois en vue annuelle) — deux courbes superposées pour comparer vos encaissements et vos dépenses sur la même période</li>
           <li>Top 5 produits les plus vendus</li>
           <li>Top 5 clients par chiffre d'affaires</li>
           <li>Répartition des ventes par produit</li>
@@ -338,27 +366,55 @@ const GuideProduction = () => (
       <p className="text-sm text-muted-foreground">Dès la connexion, le tableau de bord centralise tous vos indicateurs clés pour la période sélectionnée. Vous pouvez changer le mois — ou passer en vue annuelle — depuis le sélecteur en haut de page.</p>
       <div className="space-y-3">
         <p className="text-sm font-medium text-foreground">Indicateurs calculés</p>
-        <div className="grid grid-cols-2 sm:grid-cols-3 gap-2">
-          {[
-            { label: 'CA Ventes', desc: 'Total facturé sur la période' },
-            { label: 'Encaissé', desc: 'Montant reçu des clients' },
-            { label: 'À recevoir', desc: 'Impayés clients restants' },
-            { label: 'Total Achats', desc: 'Dépenses engagées' },
-            { label: 'Décaissé', desc: 'Payé aux fournisseurs' },
-            { label: 'À payer', desc: 'Dettes fournisseurs restantes' },
-            { label: 'Marge brute', desc: 'CA − coût des achats' },
-            { label: 'Trésorerie', desc: 'Encaissé − Décaissé' },
-            { label: 'Volume ventes', desc: 'Nombre de transactions' },
-          ].map((k, i) => (
-            <div key={i} className="rounded-lg border bg-muted/40 p-3 space-y-0.5">
-              <p className="font-semibold text-foreground text-xs">{k.label}</p>
-              <p className="text-xs text-muted-foreground leading-snug">{k.desc}</p>
+        <div className="space-y-2">
+          <div className="grid grid-cols-2 sm:grid-cols-3 gap-2">
+            <div className="col-span-2 sm:col-span-1 rounded-lg border bg-muted/40 p-3 space-y-0.5">
+              <p className="font-semibold text-foreground text-xs">Marge brute</p>
+              <p className="text-xs text-muted-foreground leading-snug">CA − coût des achats</p>
             </div>
-          ))}
+            <div className="rounded-lg border bg-muted/40 p-3 space-y-0.5">
+              <p className="font-semibold text-foreground text-xs">Trésorerie</p>
+              <p className="text-xs text-muted-foreground leading-snug">Encaissé − Décaissé</p>
+            </div>
+            <div className="rounded-lg border bg-muted/40 p-3 space-y-0.5">
+              <p className="font-semibold text-foreground text-xs">Volume ventes</p>
+              <p className="text-xs text-muted-foreground leading-snug">Nombre de transactions</p>
+            </div>
+          </div>
+          <div className="mx-1 h-px bg-border" />
+          <div className="grid grid-cols-2 sm:grid-cols-3 gap-2">
+            <div className="col-span-2 sm:col-span-1 rounded-lg border bg-muted/40 p-3 space-y-0.5">
+              <p className="font-semibold text-foreground text-xs">CA Ventes</p>
+              <p className="text-xs text-muted-foreground leading-snug">Total facturé sur la période</p>
+            </div>
+            <div className="rounded-lg border bg-muted/40 p-3 space-y-0.5">
+              <p className="font-semibold text-foreground text-xs">Encaissé</p>
+              <p className="text-xs text-muted-foreground leading-snug">Montant reçu des clients</p>
+            </div>
+            <div className="rounded-lg border bg-muted/40 p-3 space-y-0.5">
+              <p className="font-semibold text-foreground text-xs">À recevoir</p>
+              <p className="text-xs text-muted-foreground leading-snug">Impayés clients restants</p>
+            </div>
+          </div>
+          <div className="mx-1 h-px bg-border" />
+          <div className="grid grid-cols-2 sm:grid-cols-3 gap-2">
+            <div className="col-span-2 sm:col-span-1 rounded-lg border bg-muted/40 p-3 space-y-0.5">
+              <p className="font-semibold text-foreground text-xs">Total Achats</p>
+              <p className="text-xs text-muted-foreground leading-snug">Dépenses engagées</p>
+            </div>
+            <div className="rounded-lg border bg-muted/40 p-3 space-y-0.5">
+              <p className="font-semibold text-foreground text-xs">Décaissé</p>
+              <p className="text-xs text-muted-foreground leading-snug">Payé aux fournisseurs</p>
+            </div>
+            <div className="rounded-lg border bg-muted/40 p-3 space-y-0.5">
+              <p className="font-semibold text-foreground text-xs">À payer</p>
+              <p className="text-xs text-muted-foreground leading-snug">Dettes fournisseurs restantes</p>
+            </div>
+          </div>
         </div>
         <p className="text-sm font-medium text-foreground">Graphiques</p>
         <ul className="text-sm text-muted-foreground space-y-1 list-disc list-inside">
-          <li>Évolution des ventes par jour (ou par mois en vue annuelle)</li>
+          <li>Évolution des ventes <strong>et</strong> des achats par jour (ou par mois en vue annuelle) — deux courbes superposées pour comparer vos encaissements et vos dépenses sur la même période</li>
           <li>Top 5 produits les plus vendus</li>
           <li>Top 5 clients par chiffre d'affaires</li>
           <li>Répartition des ventes par produit</li>

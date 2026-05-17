@@ -1,6 +1,5 @@
--- Dernière version déployée : 17-05-2026_01_dashboard_achats_par_jour.sql
--- Ce fichier = source de vérité. Toute modif passe par un script dans migrations/
--- puis on met à jour ce fichier en même temps.
+-- Ajout de achatsParJour dans get_dashboard_stats
+-- pour afficher la courbe achats vs ventes sur le même graphe
 
 CREATE OR REPLACE FUNCTION get_dashboard_stats(p_year int, p_month int)
 RETURNS json
@@ -46,7 +45,7 @@ BEGIN
   FROM sales
   WHERE user_id = auth.uid()
     AND date BETWEEN v_start AND v_end
-    AND status != v_cancelled;  -- ← exclure les annulées
+    AND status != v_cancelled;
 
   -- ── KPIs achats (hors annulés) ─────────────────────────────────────────────
   SELECT
@@ -57,11 +56,10 @@ BEGIN
   FROM purchases
   WHERE user_id = auth.uid()
     AND date BETWEEN v_start AND v_end
-    AND status != v_cancelled;  -- ← exclure les annulés
+    AND status != v_cancelled;
 
   -- ── Évolution des ventes ──────────────────────────────────────────────────
   IF p_month = 0 THEN
-    -- Vue annuelle : 12 points (un par mois), toujours présents même sans ventes
     SELECT json_agg(
       json_build_object('day', day_label, 'total', COALESCE(agg.total, 0))
       ORDER BY m
@@ -80,11 +78,10 @@ BEGIN
       SELECT EXTRACT(MONTH FROM date)::int AS mois, SUM(total) AS total
       FROM sales
       WHERE user_id = auth.uid() AND date BETWEEN v_start AND v_end
-        AND status != v_cancelled  -- ← exclure les annulées
+        AND status != v_cancelled
       GROUP BY mois
     ) agg ON agg.mois = m;
   ELSE
-    -- Vue mensuelle : un point par jour du mois
     SELECT json_agg(
       json_build_object('day', d::text, 'total', COALESCE(agg.total, 0))
       ORDER BY d
@@ -95,7 +92,7 @@ BEGIN
       SELECT EXTRACT(DAY FROM date)::int AS jour, SUM(total) AS total
       FROM sales
       WHERE user_id = auth.uid() AND date BETWEEN v_start AND v_end
-        AND status != v_cancelled  -- ← exclure les annulées
+        AND status != v_cancelled
       GROUP BY jour
     ) agg ON agg.jour = d;
   END IF;
@@ -140,7 +137,6 @@ BEGIN
   END IF;
 
   -- ── Produits : scan unique sale_items → top5 + répartition ──────────────
-  -- Une seule agrégation LIMIT 8 couvre les deux widgets (top5 ⊂ top8)
   SELECT COALESCE(json_agg(json_build_object('name', name, 'total', total)), '[]'::json)
   INTO v_produits_agg
   FROM (
@@ -150,19 +146,17 @@ BEGIN
     JOIN products  p ON p.id = si.product_id
     WHERE s.user_id = auth.uid()
       AND s.date BETWEEN v_start AND v_end
-      AND s.status != v_cancelled  -- ← exclure les annulées
+      AND s.status != v_cancelled
     GROUP BY p.id, p.name
     ORDER BY total DESC
     LIMIT 8
   ) t;
 
-  -- top5Produits : 5 premiers éléments, champ 'total'
   SELECT COALESCE(json_agg(elem), '[]'::json)
   INTO v_top5p
   FROM json_array_elements(v_produits_agg) WITH ORDINALITY AS t(elem, ord)
   WHERE ord <= 5;
 
-  -- repartitionProduits : 8 éléments, champ renommé 'value'
   SELECT COALESCE(json_agg(json_build_object('name', elem->>'name', 'value', (elem->>'total')::numeric)), '[]'::json)
   INTO v_rpart
   FROM json_array_elements(v_produits_agg) AS elem;
@@ -176,14 +170,13 @@ BEGIN
     JOIN clients c ON c.id = s.client_id
     WHERE s.user_id = auth.uid()
       AND s.date BETWEEN v_start AND v_end
-      AND s.status != v_cancelled  -- ← exclure les annulées
+      AND s.status != v_cancelled
     GROUP BY c.id, c.name
     ORDER BY total DESC
     LIMIT 5
   ) t;
 
   -- ── Alertes stock ─────────────────────────────────────────────────────────
-  -- FIX : <= 0 au lieu de = 0 pour couvrir les stocks négatifs
   SELECT COALESCE(json_agg(
     json_build_object(
       'id',          p.id,

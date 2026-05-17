@@ -9,7 +9,7 @@ import {
   ResponsiveContainer,
   AreaChart, Area, CartesianGrid, XAxis, YAxis,
   BarChart, Bar,
-  PieChart, Pie, Cell, Legend,
+  PieChart, Pie, Cell,
   Tooltip,
 } from 'recharts'
 
@@ -105,15 +105,17 @@ const TooltipMAD = ({
   label,
 }: {
   active?: boolean
-  payload?: Array<{ value: number }>
+  payload?: Array<{ value: number; color: string; name: string }>
   label?: string
 }) => {
   if (!active || !payload?.length) return null
   const isNumeric = !isNaN(Number(label))
   return (
-    <div className="rounded-md border bg-background px-3 py-2 text-xs shadow-md">
+    <div className="rounded-md border bg-background px-3 py-2 text-xs shadow-md space-y-0.5">
       <p className="font-medium mb-1">{isNumeric ? `Jour ${label}` : label}</p>
-      <p className="text-primary">{formatCurrency(payload[0].value)}</p>
+      {payload.map((p) => (
+        <p key={p.name} style={{ color: p.color }}>{p.name} : {formatCurrency(p.value)}</p>
+      ))}
     </div>
   )
 }
@@ -136,20 +138,16 @@ export const Dashboard = () => {
 
   return (
     <div className="space-y-6">
-      {/* ── En-tête + Sélecteurs période ── */}
-      <div className="flex items-center justify-between flex-wrap gap-3">
-        <h1 className="text-xl font-semibold">Dashboard</h1>
-
-        <div className="flex items-center gap-2">
-          <PeriodSelector
-            month={month}
-            year={year}
-            availableYears={availableYears}
-            onMonthChange={setMonth}
-            onYearChange={setYear}
-            allowAllMonths={true}
-          />
-        </div>
+      {/* ── Sélecteurs période ── */}
+      <div className="flex items-center gap-2">
+        <PeriodSelector
+          month={month}
+          year={year}
+          availableYears={availableYears}
+          onMonthChange={setMonth}
+          onYearChange={setYear}
+          allowAllMonths={true}
+        />
       </div>
 
       {isLoading ? (
@@ -162,13 +160,15 @@ export const Dashboard = () => {
           <div className="space-y-4 mb-8">
             {/* Résumé (Performance) - Toujours visible */}
             <div className="grid grid-cols-2 lg:grid-cols-3 gap-3 sm:gap-4">
-              <KPICard
-                label="Marge brute"
-                value={formatCurrency(data?.marge ?? 0)}
-                sub={`CA − Achats ${periodSub}`}
-                color={(data?.marge ?? 0) < 0 ? 'red' : (data?.marge ?? 0) > 0 ? 'green' : undefined}
-                icon={TrendingUp}
-              />
+              <div className="col-span-2 lg:col-span-1">
+                <KPICard
+                  label="Marge brute"
+                  value={formatCurrency(data?.marge ?? 0)}
+                  sub={`CA − Achats ${periodSub}`}
+                  color={(data?.marge ?? 0) < 0 ? 'red' : (data?.marge ?? 0) > 0 ? 'green' : undefined}
+                  icon={TrendingUp}
+                />
+              </div>
               <KPICard
                 label="Trésorerie"
                 value={formatCurrency((data?.encaisse ?? 0) - (data?.decaisse ?? 0))}
@@ -210,12 +210,16 @@ export const Dashboard = () => {
             {showDetails && (
               <div className="grid grid-cols-2 lg:grid-cols-3 gap-3 sm:gap-4 animate-in fade-in slide-in-from-top-2 duration-300">
                 {/* Ventes */}
-                <KPICard label="CA Ventes" value={formatCurrency(data?.ca ?? 0)} sub={`Total facturé ${periodSub}`} icon={Banknote} color="blue" />
+                <div className="col-span-2 lg:col-span-1">
+                  <KPICard label="CA Ventes" value={formatCurrency(data?.ca ?? 0)} sub={`Total facturé ${periodSub}`} icon={Banknote} color="blue" />
+                </div>
                 <KPICard label="Encaissé" value={formatCurrency(data?.encaisse ?? 0)} sub={`Reçu des clients ${periodSub}`} color="green" icon={TrendingUp} />
                 <KPICard label="À recevoir" value={formatCurrency(data?.aRecevoir ?? 0)} sub="Impayés clients" color={(data?.aRecevoir ?? 0) > 0 ? 'red' : 'green'} icon={Activity} />
 
                 {/* Achats */}
-                <KPICard label="Total Achats" value={formatCurrency(data?.totalAchats ?? 0)} sub={`Dépenses engagées ${periodSub}`} icon={ShoppingCart} color="purple" />
+                <div className="col-span-2 lg:col-span-1">
+                  <KPICard label="Total Achats" value={formatCurrency(data?.totalAchats ?? 0)} sub={`Dépenses engagées ${periodSub}`} icon={ShoppingCart} color="purple" />
+                </div>
                 <KPICard label="Décaissé" value={formatCurrency(data?.decaisse ?? 0)} sub={`Payé aux fournisseurs ${periodSub}`} color="green" icon={Wallet} />
                 <KPICard label="À payer" value={formatCurrency(data?.aPayer ?? 0)} sub="Dettes fournisseurs" color={(data?.aPayer ?? 0) > 0 ? 'red' : 'green'} icon={Activity} />
               </div>
@@ -226,40 +230,67 @@ export const Dashboard = () => {
 
           {/* ── Graphiques ── */}
           <div className="grid gap-6 lg:grid-cols-2">
-            {/* Évolution ventes */}
+            {/* Évolution ventes vs achats */}
             <ChartCard
-              title={isYearView ? '📈 Évolution ventes / mois' : '📈 Évolution ventes / jour'}
-              empty={(data?.ventesParJour ?? []).every(d => d.total === 0)}
+              title={isYearView ? '📈 Ventes & achats / mois' : '📈 Ventes & achats / jour'}
+              empty={
+                (data?.ventesParJour ?? []).every(d => d.total === 0) &&
+                (data?.achatsParJour ?? []).every(d => d.total === 0)
+              }
               emptyText={`Aucune donnée ${periodSub}`}
             >
-              <ResponsiveContainer width="100%" height={240}>
-                <AreaChart data={data?.ventesParJour} margin={{ top: 10, right: 10, left: 0, bottom: 0 }}>
-                  <defs>
-                    <linearGradient id="colorTotal" x1="0" y1="0" x2="0" y2="1">
-                      <stop offset="5%" stopColor={chartColors.primary} stopOpacity={0.3} />
-                      <stop offset="95%" stopColor={chartColors.primary} stopOpacity={0} />
-                    </linearGradient>
-                  </defs>
-                  <CartesianGrid strokeDasharray="3 3" vertical={false} stroke={chartColors.border} />
-                  <XAxis
-                    dataKey="day"
-                    tick={{ fontSize: 11, fill: chartColors.mutedForeground }}
-                    tickLine={false}
-                    axisLine={false}
-                    interval={isYearView ? 0 : 4}
-                    dy={10}
-                  />
-                  <YAxis
-                    tick={{ fontSize: 11, fill: chartColors.mutedForeground }}
-                    tickLine={false}
-                    axisLine={false}
-                    tickFormatter={v => v === 0 ? '0' : `${(v / 1000).toFixed(0)}k`}
-                    width={40}
-                  />
-                  <Tooltip content={<TooltipMAD />} />
-                  <Area type="monotone" dataKey="total" stroke={chartColors.primary} strokeWidth={3} fillOpacity={1} fill="url(#colorTotal)" />
-                </AreaChart>
-              </ResponsiveContainer>
+              <div className="space-y-3">
+                <div className="flex items-center gap-4 text-xs text-muted-foreground">
+                  <span className="flex items-center gap-1.5">
+                    <span className="inline-block h-2.5 w-5 rounded-sm" style={{ backgroundColor: chartColors.primary }} />
+                    Ventes
+                  </span>
+                  <span className="flex items-center gap-1.5">
+                    <span className="inline-block h-2.5 w-5 rounded-sm bg-orange-400" />
+                    Achats
+                  </span>
+                </div>
+                <ResponsiveContainer width="100%" height={220}>
+                  <AreaChart
+                    data={(data?.ventesParJour ?? []).map((v, i) => ({
+                      day: v.day,
+                      ventes: v.total,
+                      achats: data?.achatsParJour?.[i]?.total ?? 0,
+                    }))}
+                    margin={{ top: 10, right: 10, left: 0, bottom: 0 }}
+                  >
+                    <defs>
+                      <linearGradient id="colorVentes" x1="0" y1="0" x2="0" y2="1">
+                        <stop offset="5%" stopColor={chartColors.primary} stopOpacity={0.25} />
+                        <stop offset="95%" stopColor={chartColors.primary} stopOpacity={0} />
+                      </linearGradient>
+                      <linearGradient id="colorAchats" x1="0" y1="0" x2="0" y2="1">
+                        <stop offset="5%" stopColor="#fb923c" stopOpacity={0.25} />
+                        <stop offset="95%" stopColor="#fb923c" stopOpacity={0} />
+                      </linearGradient>
+                    </defs>
+                    <CartesianGrid strokeDasharray="3 3" vertical={false} stroke={chartColors.border} />
+                    <XAxis
+                      dataKey="day"
+                      tick={{ fontSize: 11, fill: chartColors.mutedForeground }}
+                      tickLine={false}
+                      axisLine={false}
+                      interval={isYearView ? 0 : 4}
+                      dy={10}
+                    />
+                    <YAxis
+                      tick={{ fontSize: 11, fill: chartColors.mutedForeground }}
+                      tickLine={false}
+                      axisLine={false}
+                      tickFormatter={v => v === 0 ? '0' : `${(v / 1000).toFixed(0)}k`}
+                      width={40}
+                    />
+                    <Tooltip content={<TooltipMAD />} />
+                    <Area type="monotone" dataKey="ventes" name="Ventes" stroke={chartColors.primary} strokeWidth={2.5} fillOpacity={1} fill="url(#colorVentes)" />
+                    <Area type="monotone" dataKey="achats" name="Achats" stroke="#fb923c" strokeWidth={2.5} fillOpacity={1} fill="url(#colorAchats)" />
+                  </AreaChart>
+                </ResponsiveContainer>
+              </div>
             </ChartCard>
 
             {/* Top 5 produits */}
@@ -322,38 +353,38 @@ export const Dashboard = () => {
               empty={(data?.repartitionProduits ?? []).length === 0}
               emptyText={`Aucune donnée ${periodSub}`}
             >
-              <ResponsiveContainer width="100%" height={isMobile ? 320 : 260}>
-                <PieChart>
-                  <Pie
-                    data={data?.repartitionProduits}
-                    dataKey="value"
-                    nameKey="name"
-                    cx={isMobile ? "50%" : "40%"}
-                    cy={isMobile ? "35%" : "45%"}
-                    outerRadius={isMobile ? 60 : 70}
-                    label={({ percent }) => `${(percent * 100).toFixed(0)}%`}
-                    labelLine
-                  >
-                    {(data?.repartitionProduits ?? []).map((_, i) => (
-                      <Cell key={`cell-${i}`} fill={PIE_COLORS[i % PIE_COLORS.length]} />
-                    ))}
-                  </Pie>
-                  <Tooltip formatter={(v: number) => [formatCurrency(v), 'Total']} />
-                  <Legend
-                    layout={isMobile ? "horizontal" : "vertical"}
-                    align={isMobile ? "center" : "right"}
-                    verticalAlign={isMobile ? "bottom" : "middle"}
-                    iconSize={10}
-                    wrapperStyle={{ 
-                      fontSize: isMobile ? '10px' : '11px', 
-                      maxWidth: isMobile ? '100%' : '45%', 
-                      lineHeight: '1.6',
-                      paddingTop: isMobile ? '20px' : '0'
-                    }}
-                  />
-                </PieChart>
-              </ResponsiveContainer>
-
+              <div className="flex flex-col gap-3">
+                <ResponsiveContainer width="100%" height={200}>
+                  <PieChart>
+                    <Pie
+                      data={data?.repartitionProduits}
+                      dataKey="value"
+                      nameKey="name"
+                      cx="50%"
+                      cy="50%"
+                      outerRadius={isMobile ? 75 : 85}
+                    >
+                      {(data?.repartitionProduits ?? []).map((_, i) => (
+                        <Cell key={`cell-${i}`} fill={PIE_COLORS[i % PIE_COLORS.length]} />
+                      ))}
+                    </Pie>
+                    <Tooltip formatter={(v: number) => [formatCurrency(v), 'Total']} />
+                  </PieChart>
+                </ResponsiveContainer>
+                <div className="flex flex-wrap justify-center gap-x-4 gap-y-1.5">
+                  {(data?.repartitionProduits ?? []).map((item: { name: string; value: number }, i: number) => {
+                    const total = (data?.repartitionProduits ?? []).reduce((s: number, d: { value: number }) => s + d.value, 0)
+                    const pct = total > 0 ? Math.round((item.value / total) * 100) : 0
+                    return (
+                      <div key={item.name} className="flex items-center gap-1.5 text-xs text-muted-foreground">
+                        <span className="h-2.5 w-2.5 shrink-0 rounded-sm" style={{ backgroundColor: PIE_COLORS[i % PIE_COLORS.length] }} />
+                        <span className="max-w-[120px] truncate">{item.name}</span>
+                        <span className="font-semibold text-foreground">{pct}%</span>
+                      </div>
+                    )
+                  })}
+                </div>
+              </div>
             </ChartCard>
           </div>
         </>

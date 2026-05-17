@@ -19,6 +19,7 @@ export interface DashboardData {
   nbVentes: number
   marge: number
   ventesParJour: { day: string; total: number }[]
+  achatsParJour: { day: string; total: number }[]
   top5Produits: { name: string; total: number }[]
   top5Clients: { name: string; total: number }[]
   repartitionProduits: { name: string; value: number }[]
