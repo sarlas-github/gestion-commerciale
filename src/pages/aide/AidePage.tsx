@@ -109,15 +109,15 @@ const RulesTable = ({ headers, rows }: { headers: string[]; rows: (string | Reac
 
 const StatusBadge = ({ type }: { type: 'paid' | 'partial' | 'unpaid' | 'cancelled' | 'instock' | 'low' | 'outofstock' }) => {
   const map = {
-    paid: { label: '🟢 Payé', cls: 'bg-green-100 text-green-800 dark:bg-green-900/30 dark:text-green-400' },
-    partial: { label: '🟡 Partiel', cls: 'bg-orange-100 text-orange-800 dark:bg-orange-900/30 dark:text-orange-400' },
-    unpaid: { label: '🔴 Impayé', cls: 'bg-red-100 text-red-800 dark:bg-red-900/30 dark:text-red-400' },
-    cancelled: { label: '⛔ Annulé', cls: 'bg-gray-100 text-gray-500 dark:bg-gray-800 dark:text-gray-400' },
-    instock: { label: '🟢 En stock', cls: 'bg-green-100 text-green-800 dark:bg-green-900/30 dark:text-green-400' },
-    low: { label: '🟡 Faible', cls: 'bg-orange-100 text-orange-800 dark:bg-orange-900/30 dark:text-orange-400' },
-    outofstock: { label: '🔴 Rupture', cls: 'bg-red-100 text-red-800 dark:bg-red-900/30 dark:text-red-400' },
+    paid:       { label: 'Payé',     cls: 'bg-green-100 text-green-800 dark:bg-green-900/30 dark:text-green-400' },
+    partial:    { label: 'Partiel',  cls: 'bg-orange-100 text-orange-800 dark:bg-orange-900/30 dark:text-orange-400' },
+    unpaid:     { label: 'Impayé',   cls: 'bg-red-100 text-red-800 dark:bg-red-900/30 dark:text-red-400' },
+    cancelled:  { label: 'Annulé',   cls: 'bg-gray-100 text-gray-500 dark:bg-gray-800 dark:text-gray-400' },
+    instock:    { label: 'En stock', cls: 'bg-green-100 text-green-800 dark:bg-green-900/30 dark:text-green-400' },
+    low:        { label: 'Faible',   cls: 'bg-orange-100 text-orange-800 dark:bg-orange-900/30 dark:text-orange-400' },
+    outofstock: { label: 'Rupture',  cls: 'bg-red-100 text-red-800 dark:bg-red-900/30 dark:text-red-400' },
   }
-  return <span className={cn('inline-flex rounded-full px-2.5 py-0.5 text-xs font-medium', map[type].cls)}>{map[type].label}</span>
+  return <span className={cn('inline-flex whitespace-nowrap rounded-full px-2.5 py-0.5 text-xs font-medium', map[type].cls)}>{map[type].label}</span>
 }
 
 
@@ -125,17 +125,18 @@ const IntroCard = ({ lines }: { lines: { before: string; after: string }[] }) =>
   <div className="rounded-xl border bg-primary/5 border-primary/20 p-6 space-y-5">
     <div className="space-y-1">
       <p className="text-base font-bold text-foreground">Avec PilotCommerce, vous prenez enfin le contrôle.</p>
+      <p className="text-sm text-muted-foreground">Accédez à votre activité à tout moment, depuis n'importe quel appareil — PC ou mobile.</p>
       <p className="text-sm text-muted-foreground">Fini la gestion à l'aveugle. Voici ce que l'application change concrètement pour vous :</p>
     </div>
     <div className="space-y-3">
       {lines.map((line, i) => (
-        <div key={i} className="grid grid-cols-[1fr_auto_1fr] items-center gap-3">
+        <div key={i} className="flex flex-col sm:grid sm:grid-cols-[1fr_auto_1fr] sm:items-center gap-1 sm:gap-3">
           <div className="flex items-start gap-2">
             <XCircle className="h-4 w-4 text-destructive shrink-0 mt-0.5" />
             <p className="text-sm text-muted-foreground">{line.before}</p>
           </div>
-          <span className="text-muted-foreground/40 text-xs font-bold">→</span>
-          <div className="flex items-start gap-2">
+          <span className="hidden sm:block text-muted-foreground/40 text-xs font-bold">→</span>
+          <div className="flex items-start gap-2 pl-6 sm:pl-0">
             <CheckCircle2 className="h-4 w-4 text-green-600 dark:text-green-400 shrink-0 mt-0.5" />
             <p className="text-sm text-foreground font-medium">{line.after}</p>
           </div>
