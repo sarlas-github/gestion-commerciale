@@ -1,4 +1,5 @@
 import { useState, createContext, useContext } from 'react'
+import { Link } from 'react-router-dom'
 import {
   LayoutDashboard,
   Package,
@@ -15,6 +16,7 @@ import {
   ChevronDown,
   CheckCircle2,
   XCircle,
+  AlertTriangle,
 } from 'lucide-react'
 import { PageHeader } from '@/components/shared/PageHeader'
 import { useProfile } from '@/hooks/useProfile'
@@ -146,6 +148,24 @@ const IntroCard = ({ lines }: { lines: { before: string; after: string }[] }) =>
   </div>
 )
 
+const PrerequisiteBanner = () => (
+  <div className="rounded-xl border-2 border-amber-400 bg-amber-50 dark:bg-amber-950/30 dark:border-amber-600 p-4 flex gap-3">
+    <AlertTriangle className="h-5 w-5 text-amber-600 dark:text-amber-400 shrink-0 mt-0.5" />
+    <div className="space-y-1.5">
+      <p className="text-sm font-bold text-amber-900 dark:text-amber-200">Avant de commencer — Configurez votre entreprise</p>
+      <p className="text-sm text-amber-800 dark:text-amber-300 leading-relaxed">
+        Votre <strong>nom d'entreprise</strong>, <strong>logo</strong>, <strong>couleur de marque</strong> et <strong>taux de TVA</strong> apparaissent sur toutes vos factures et reçus. Ces informations sont figées au moment de la génération du document — si vous les modifiez après, les anciens documents ne seront pas mis à jour.
+      </p>
+      <p className="text-sm text-amber-800 dark:text-amber-300">
+        Configurez ces paramètres <strong>avant d'enregistrer votre première vente</strong>.{' '}
+        <Link to="/settings" className="underline font-semibold hover:text-amber-900 dark:hover:text-amber-100">
+          Aller aux Paramètres →
+        </Link>
+      </p>
+    </div>
+  </div>
+)
+
 // ─── Guide Revente ──────────────────────────────────────────────────────────────
 
 const GuideRevente = () => (
@@ -157,6 +177,8 @@ const GuideRevente = () => (
       { before: 'Factures saisies manuellement, risque d\'erreur', after: 'Facture générée à chaque vente, reçu à chaque paiement — numérotés, archivés, sans saisie manuelle' },
       { before: 'Aucune vision globale sur votre activité', after: 'Dashboard avec indicateurs clés et graphiques pour piloter votre commerce' },
     ]} />
+
+    <PrerequisiteBanner />
 
     <Section icon={LayoutDashboard} title="Votre tableau de bord" n={1}>
       <p className="text-sm text-muted-foreground">Dès la connexion, le tableau de bord centralise tous vos indicateurs clés pour la période sélectionnée. Vous pouvez changer le mois — ou passer en vue annuelle — depuis le sélecteur en haut de page.</p>
@@ -371,6 +393,8 @@ const GuideProduction = () => (
       { before: 'Factures saisies manuellement, risque d\'erreur', after: 'Facture générée à chaque vente, reçu à chaque paiement — numérotés, archivés, sans saisie manuelle' },
       { before: 'Aucune vision globale sur votre activité', after: 'Dashboard avec indicateurs clés et graphiques pour piloter votre production' },
     ]} />
+
+    <PrerequisiteBanner />
 
     <Section icon={LayoutDashboard} title="Votre tableau de bord" n={1}>
       <p className="text-sm text-muted-foreground">Dès la connexion, le tableau de bord centralise tous vos indicateurs clés pour la période sélectionnée. Vous pouvez changer le mois — ou passer en vue annuelle — depuis le sélecteur en haut de page.</p>
