@@ -29,7 +29,7 @@ export const ProductModal = ({ product, open, onOpenChange, onSuccess, defaultNa
       } else {
         result = await createProduct.mutateAsync(data)
       }
-      onSuccess?.(result)
+      onSuccess?.(result as ProductWithStock)
       onOpenChange(false)
     } catch (err) {
       if (isUniqueNameError(err)) {
