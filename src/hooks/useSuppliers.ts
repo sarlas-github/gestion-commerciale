@@ -2,6 +2,7 @@
 import { toast } from 'sonner'
 import { getApiErrorMessage } from '@/lib/apiError'
 import { supabase } from '@/lib/supabase'
+import { getCompanyId } from '@/lib/getCompanyId'
 import { isUniqueNameError } from '@/lib/utils'
 import type { Supplier, CreateSupplierInput, UpdateSupplierInput } from '@/types'
 
@@ -31,6 +32,7 @@ export const useSuppliers = () =>
 export const useSupplier = (id: string) =>
   useQuery({
     queryKey: ['suppliers', id],
+    staleTime: 60_000,
     queryFn: async () => {
       const { data, error } = await supabase
         .from('suppliers')
@@ -48,6 +50,7 @@ export const useSupplier = (id: string) =>
 export const useSupplierPurchases = (supplierId: string) =>
   useQuery({
     queryKey: ['suppliers', supplierId, 'purchases'],
+    staleTime: 60_000,
     queryFn: async () => {
       const { data, error } = await supabase
         .from('purchases')
@@ -65,6 +68,7 @@ export const useSupplierPurchases = (supplierId: string) =>
 export const useSupplierPayments = (supplierId: string) =>
   useQuery({
     queryKey: ['suppliers', supplierId, 'payments'],
+    staleTime: 60_000,
     queryFn: async () => {
       // Récupère les IDs des achats du fournisseur
       const { data: purchases, error: pErr } = await supabase
@@ -93,6 +97,7 @@ export const useSupplierPayments = (supplierId: string) =>
 export const useSupplierMonthlyState = (supplierId: string, year: number, month: number) =>
   useQuery({
     queryKey: ['suppliers', supplierId, 'state', year, month],
+    staleTime: 2 * 60_000,
     queryFn: async () => {
       const { data, error } = await supabase.rpc('get_supplier_monthly_stats', {
         p_supplier_id: supplierId,
@@ -111,10 +116,10 @@ export const useCreateSupplier = () => {
   const qc = useQueryClient()
   return useMutation({
     mutationFn: async (input: CreateSupplierInput) => {
-      const user = await getCurrentUser()
+      const [user, companyId] = await Promise.all([getCurrentUser(), getCompanyId()])
       const { data, error } = await supabase
         .from('suppliers')
-        .insert({ ...input, user_id: user.id })
+        .insert({ ...input, user_id: user.id, company_id: companyId })
         .select()
         .single()
 

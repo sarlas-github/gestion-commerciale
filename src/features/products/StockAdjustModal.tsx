@@ -55,10 +55,10 @@ export const StockAdjustModal = ({
   }, [open, reset])
 
   const onSubmit = async (data: FormData) => {
-    if (!product?.stock) return
+    if (!product) return
     await adjustStock.mutateAsync({
       productId: product.id,
-      currentStockId: product.stock.id,
+      currentStockId: product.stock?.id ?? null,
       currentQuantity: currentQty,
       type: data.type,
       quantity: data.quantity,

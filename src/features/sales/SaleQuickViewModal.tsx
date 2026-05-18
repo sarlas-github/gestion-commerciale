@@ -24,9 +24,10 @@ interface Props {
   saleId: string | null
   open: boolean
   onOpenChange: (open: boolean) => void
+  from?: string
 }
 
-export const SaleQuickViewModal = ({ saleId, open, onOpenChange }: Props) => {
+export const SaleQuickViewModal = ({ saleId, open, onOpenChange, from }: Props) => {
   const navigate = useNavigate()
   const { data: sale, isLoading } = useSale(saleId ?? '')
 
@@ -112,7 +113,7 @@ export const SaleQuickViewModal = ({ saleId, open, onOpenChange }: Props) => {
             <Button
               onClick={() => {
                 onOpenChange(false)
-                navigate(`/sales/${sale.id}/edit`)
+                navigate(`/sales/${sale.id}/edit`, { state: { from } })
               }}
             >
               <ExternalLink className="mr-1.5 h-3.5 w-3.5" />

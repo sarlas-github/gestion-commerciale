@@ -19,6 +19,19 @@ export interface Profile {
   updated_at: string
 }
 
+// ─── company_members ──────────────────────────────────────────────────────────
+
+export type CompanyRole = 'admin'
+
+export interface CompanyMember {
+  id: string
+  company_id: string
+  user_id: string
+  role: CompanyRole
+  invited_by: string | null
+  created_at: string
+}
+
 // ─── companies ────────────────────────────────────────────────────────────────
 
 export interface Company {
@@ -51,6 +64,7 @@ export type UpdateCompanyInput = Partial<CreateCompanyInput>
 export interface Product {
   id: string
   user_id: string
+  company_id: string
   name: string
   type: ProductType
   nature: ProductNature
@@ -60,7 +74,7 @@ export interface Product {
   updated_at: string
 }
 
-export type CreateProductInput = Omit<Product, 'id' | 'user_id' | 'created_at' | 'updated_at'>
+export type CreateProductInput = Omit<Product, 'id' | 'user_id' | 'company_id' | 'created_at' | 'updated_at'>
 export type UpdateProductInput = Partial<CreateProductInput>
 
 // ─── clients ──────────────────────────────────────────────────────────────────
@@ -68,6 +82,7 @@ export type UpdateProductInput = Partial<CreateProductInput>
 export interface Client {
   id: string
   user_id: string
+  company_id: string
   name: string
   phone: string | null
   address: string | null
@@ -76,7 +91,7 @@ export interface Client {
   updated_at: string
 }
 
-export type CreateClientInput = Omit<Client, 'id' | 'user_id' | 'created_at' | 'updated_at'>
+export type CreateClientInput = Omit<Client, 'id' | 'user_id' | 'company_id' | 'created_at' | 'updated_at'>
 export type UpdateClientInput = Partial<CreateClientInput>
 
 // ─── suppliers ────────────────────────────────────────────────────────────────
@@ -84,6 +99,7 @@ export type UpdateClientInput = Partial<CreateClientInput>
 export interface Supplier {
   id: string
   user_id: string
+  company_id: string
   name: string
   phone: string | null
   address: string | null
@@ -92,7 +108,7 @@ export interface Supplier {
   updated_at: string
 }
 
-export type CreateSupplierInput = Omit<Supplier, 'id' | 'user_id' | 'created_at' | 'updated_at'>
+export type CreateSupplierInput = Omit<Supplier, 'id' | 'user_id' | 'company_id' | 'created_at' | 'updated_at'>
 export type UpdateSupplierInput = Partial<CreateSupplierInput>
 
 // ─── stock ────────────────────────────────────────────────────────────────────
@@ -100,6 +116,7 @@ export type UpdateSupplierInput = Partial<CreateSupplierInput>
 export interface Stock {
   id: string
   user_id: string
+  company_id: string
   product_id: string
   quantity: number
   updated_at: string
@@ -110,6 +127,7 @@ export interface Stock {
 export interface StockMovement {
   id: string
   user_id: string
+  company_id: string
   product_id: string
   type: StockMovementType
   quantity: number
@@ -122,13 +140,14 @@ export interface StockMovement {
   products?: Pick<Product, 'id' | 'name' | 'pieces_count'>
 }
 
-export type CreateStockMovementInput = Omit<StockMovement, 'id' | 'user_id' | 'created_at' | 'products'>
+export type CreateStockMovementInput = Omit<StockMovement, 'id' | 'user_id' | 'company_id' | 'created_at' | 'products'>
 
 // ─── purchases ────────────────────────────────────────────────────────────────
 
 export interface Purchase {
   id: string
   user_id: string
+  company_id: string
   supplier_id: string
   reference: string | null
   date: string
@@ -170,6 +189,7 @@ export type CreatePurchaseItemInput = Omit<PurchaseItem, 'id' | 'subtotal' | 'pr
 export interface SupplierPayment {
   id: string
   user_id: string
+  company_id: string
   purchase_id: string
   amount: number
   date: string
@@ -187,6 +207,7 @@ export type CreateSupplierPaymentInput = Omit<SupplierPayment, 'id' | 'user_id' 
 export interface Sale {
   id: string
   user_id: string
+  company_id: string
   client_id: string
   reference: string | null
   date: string
@@ -229,6 +250,7 @@ export type CreateSaleItemInput = Omit<SaleItem, 'id' | 'subtotal' | 'products'>
 export interface ClientPayment {
   id: string
   user_id: string
+  company_id: string
   sale_id: string
   amount: number
   date: string
@@ -246,6 +268,7 @@ export type CreateClientPaymentInput = Omit<ClientPayment, 'id' | 'user_id' | 'c
 export interface Document {
   id: string
   user_id: string
+  company_id: string
   client_id: string | null
   sale_id: string | null
   payment_id: string | null

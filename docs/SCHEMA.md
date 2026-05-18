@@ -5,14 +5,31 @@
 
 ---
 
-## Principe d'isolation (RLS)
-Chaque table contient `user_id` → auth.users(id).
-RLS activé sur toutes les tables.
-Chaque utilisateur voit et modifie UNIQUEMENT ses propres données.
+## Principe d'isolation (RLS) — Multi-tenant
+
+**Isolation par `company_id`** : les données sont cloisonnées par entreprise, pas par utilisateur. Plusieurs membres peuvent appartenir à la même entreprise via `company_members`.
+
+- `user_id` reste sur toutes les tables à titre d'**audit** (qui a créé la ligne).
+- RLS filtre systématiquement sur `company_id = get_my_company_id()`.
+- `get_my_company_id()` est une fonction SECURITY DEFINER qui lit `company_members` sans déclencher sa propre RLS.
+- La RLS de `company_members` elle-même filtre sur `user_id = auth.uid()` (pas le helper, pour éviter la récursion).
 
 ---
 
 ## Tables
+
+### company_members
+Table pivot reliant utilisateurs et entreprises.
+```
+id          UUID PK
+company_id  UUID FK → companies (CASCADE)
+user_id     UUID FK → auth.users (CASCADE)
+role        TEXT NOT NULL DEFAULT 'admin' CHECK (role = 'admin')
+invited_by  UUID FK → auth.users (nullable)
+created_at  TIMESTAMPTZ
+UNIQUE (company_id, user_id)
+```
+RLS : `USING (user_id = auth.uid())` — filtre direct, PAS via `get_my_company_id()`.
 
 ### companies
 ```
@@ -39,114 +56,135 @@ updated_at       TIMESTAMPTZ
 ### products
 ```
 id            UUID PK
-user_id       UUID FK → auth.users
+user_id       UUID FK → auth.users        ← audit
+company_id    UUID FK → companies (CASCADE) ← isolation RLS
 name          TEXT NOT NULL
 type          TEXT → 'individual' | 'pack'
 pieces_count  INTEGER DEFAULT 1
 stock_alert   INTEGER DEFAULT 0
 created_at    TIMESTAMPTZ
 updated_at    TIMESTAMPTZ
+UNIQUE (company_id, name)
 ```
 
 ### clients
 ```
 id          UUID PK
-user_id     UUID FK → auth.users
+user_id     UUID FK → auth.users        ← audit
+company_id  UUID FK → companies (CASCADE) ← isolation RLS
 name        TEXT NOT NULL
 phone       TEXT
 address     TEXT
 ice         TEXT
 created_at  TIMESTAMPTZ
 updated_at  TIMESTAMPTZ
+UNIQUE (company_id, name)
 ```
 
 ### suppliers
 ```
 id          UUID PK
-user_id     UUID FK → auth.users
+user_id     UUID FK → auth.users        ← audit
+company_id  UUID FK → companies (CASCADE) ← isolation RLS
 name        TEXT NOT NULL
 phone       TEXT
 address     TEXT
 ice         TEXT
 created_at  TIMESTAMPTZ
 updated_at  TIMESTAMPTZ
+UNIQUE (company_id, name)
 ```
 
 ### stock
 ```
 id          UUID PK
-user_id     UUID FK → auth.users
-product_id  UUID FK → products (UNIQUE avec user_id)
+user_id     UUID FK → auth.users        ← audit
+company_id  UUID FK → companies (CASCADE) ← isolation RLS
+product_id  UUID FK → products
 quantity    INTEGER DEFAULT 0
 updated_at  TIMESTAMPTZ
+UNIQUE (company_id, product_id)
 ```
 
 ### stock_movements
 ```
 id              UUID PK
-user_id         UUID FK → auth.users
+user_id         UUID FK → auth.users        ← audit
+company_id      UUID FK → companies (CASCADE) ← isolation RLS
 product_id      UUID FK → products
-type            TEXT → 'IN' | 'OUT' | 'ADJUST'
+type            TEXT → 'in' | 'out' | 'adjust'   ← minuscules en DB (GOTCHA #3)
 quantity        INTEGER
 reference_type  TEXT → 'purchase' | 'sale' | 'manual'
 reference_id    UUID
 note            TEXT
 date            DATE
+stock_avant     NUMERIC ← snapshot avant mouvement
+stock_apres     NUMERIC ← snapshot après mouvement
 created_at      TIMESTAMPTZ
 ```
 
 ### purchases
 ```
 id           UUID PK
-user_id      UUID FK → auth.users
+user_id      UUID FK → auth.users        ← audit
+company_id   UUID FK → companies (CASCADE) ← isolation RLS
 supplier_id  UUID FK → suppliers
 reference    TEXT
 date         DATE
 total        NUMERIC(12,2)
+tva_rate     NUMERIC(5,2) DEFAULT 0
+tva_amount   NUMERIC(12,2) DEFAULT 0
 paid         NUMERIC(12,2) DEFAULT 0
 remaining    NUMERIC GENERATED → total - paid
-status       TEXT → 'paid' | 'partial' | 'unpaid'
+status       TEXT → 'paid' | 'partial' | 'unpaid' | 'cancelled'
 note         TEXT
 created_at   TIMESTAMPTZ
 updated_at   TIMESTAMPTZ
+UNIQUE (company_id, reference)
 ```
 
 ### purchase_items
 ```
-id           UUID PK
-purchase_id  UUID FK → purchases (CASCADE)
-product_id   UUID FK → products
-quantity     INTEGER
-unit_price   NUMERIC(12,2)
-subtotal     NUMERIC GENERATED → quantity * unit_price
+id            UUID PK
+purchase_id   UUID FK → purchases (CASCADE)
+product_id    UUID FK → products
+quantity      INTEGER
+pieces_count  INTEGER DEFAULT 1 ← snapshot (GOTCHA #7)
+unit_price    NUMERIC(12,2)
+subtotal      NUMERIC GENERATED → quantity * pieces_count * unit_price
 ```
 
 ### supplier_payments
 ```
 id                UUID PK
-user_id           UUID FK → auth.users
+user_id           UUID FK → auth.users        ← audit
+company_id        UUID FK → companies (CASCADE) ← isolation RLS
 purchase_id       UUID FK → purchases
 amount            NUMERIC(12,2)
 date              DATE
 note              TEXT
-methode_paiement  TEXT (nullable) ← ENUM: 'Espèces', 'Virement bancaire', 'Chèque', 'Effet', 'Traite', 'Carte bancaire'
+methode_paiement  TEXT (nullable) ← 'Espèces' | 'Virement bancaire' | 'Chèque' | 'Effet' | 'Traite' | 'Carte bancaire'
 created_at        TIMESTAMPTZ
 ```
 
 ### sales
 ```
 id          UUID PK
-user_id     UUID FK → auth.users
+user_id     UUID FK → auth.users        ← audit
+company_id  UUID FK → companies (CASCADE) ← isolation RLS
 client_id   UUID FK → clients
 reference   TEXT
 date        DATE
 total       NUMERIC(12,2)
+tva_rate    NUMERIC(5,2) DEFAULT 0
+tva_amount  NUMERIC(12,2) DEFAULT 0
 paid        NUMERIC(12,2) DEFAULT 0
 remaining   NUMERIC GENERATED → total - paid
-status      TEXT → 'paid' | 'partial' | 'unpaid'
+status      TEXT → 'paid' | 'partial' | 'unpaid' | 'cancelled'
 note        TEXT
 created_at  TIMESTAMPTZ
 updated_at  TIMESTAMPTZ
+UNIQUE (company_id, reference)
 ```
 
 ### sale_items
@@ -155,20 +193,21 @@ id            UUID PK
 sale_id       UUID FK → sales (CASCADE)
 product_id    UUID FK → products
 quantity      INTEGER
-pieces_count  INTEGER ← snapshot au moment vente
+pieces_count  INTEGER DEFAULT 1 ← snapshot (GOTCHA #7)
 unit_price    NUMERIC(12,2)
-subtotal      NUMERIC GENERATED → quantity * unit_price
+subtotal      NUMERIC GENERATED → quantity * pieces_count * unit_price
 ```
 
 ### client_payments
 ```
 id                UUID PK
-user_id           UUID FK → auth.users
+user_id           UUID FK → auth.users        ← audit
+company_id        UUID FK → companies (CASCADE) ← isolation RLS
 sale_id           UUID FK → sales
 amount            NUMERIC(12,2)
 date              DATE
 note              TEXT
-methode_paiement  TEXT (nullable) ← ENUM: 'Espèces', 'Virement bancaire', 'Chèque', 'Effet', 'Traite', 'Carte bancaire'
+methode_paiement  TEXT (nullable) ← 'Espèces' | 'Virement bancaire' | 'Chèque' | 'Effet' | 'Traite' | 'Carte bancaire'
 created_at        TIMESTAMPTZ
 ```
 
@@ -177,36 +216,44 @@ Table unifiée pour tous les documents commerciaux.
 Types : invoice (auto), receipt (auto), quote/order/delivery (manuels Phase 2)
 ```
 id               UUID PK
-user_id          UUID FK → auth.users
+user_id          UUID FK → auth.users        ← audit
+company_id       UUID FK → companies (CASCADE) ← isolation RLS
 client_id        UUID FK → clients
-sale_id          UUID FK → sales (nullable) ← pour invoice
-payment_id       UUID FK → client_payments (nullable) ← pour receipt
-parent_id        UUID FK → documents (nullable) ← conversion Phase 2
+sale_id          UUID FK → sales (nullable)            ← pour invoice
+payment_id       UUID FK → client_payments (nullable)  ← pour receipt
+parent_id        UUID FK → documents (nullable)        ← conversion Phase 2
 type             TEXT → 'invoice' | 'receipt' | 'quote' | 'order' | 'delivery'
 number           TEXT (FAC-2025-001, REC-2025-001...)
 date             DATE
 status           TEXT → 'draft' | 'confirmed' | 'cancelled'
 payment_status   TEXT → 'paid' | 'partial' | 'unpaid'
 total            NUMERIC(12,2)
+tva_rate         NUMERIC(5,2) DEFAULT 0
+tva_amount       NUMERIC(12,2) DEFAULT 0
 paid             NUMERIC(12,2)
 remaining        NUMERIC GENERATED → total - paid
 note             TEXT
+mode_paiement    TEXT (nullable)
 
 ── Snapshots client ──────────────────
 client_name      TEXT
 client_address   TEXT
 client_ice       TEXT
+client_phone     TEXT
 
-── Snapshots entreprise ──────────────
-company_name     TEXT
-company_address  TEXT
-company_phone    TEXT
-company_email    TEXT
-company_ice      TEXT
-company_if       TEXT
-company_rc       TEXT
-company_tp       TEXT
-company_logo_url TEXT
+── Snapshots entreprise (figés à la génération) ──
+company_name          TEXT
+company_address       TEXT
+company_phone         TEXT
+company_email         TEXT
+company_ice           TEXT
+company_if            TEXT
+company_rc            TEXT
+company_tp            TEXT
+company_rib           TEXT
+company_site_web      TEXT
+company_couleur_marque TEXT
+company_logo_url      TEXT
 
 created_at       TIMESTAMPTZ
 updated_at       TIMESTAMPTZ
@@ -227,44 +274,74 @@ subtotal      NUMERIC GENERATED → quantity * unit_price
 ### document_sequences
 ```
 id           UUID PK
-user_id      UUID FK → auth.users
+user_id      UUID FK → auth.users        ← audit
+company_id   UUID FK → companies (CASCADE) ← isolation RLS
 type         TEXT (purchase, sale, invoice, receipt...)
 year         INTEGER
 last_number  INTEGER DEFAULT 0
-UNIQUE(user_id, type, year)
+UNIQUE (company_id, type, year)   ← séquence par entreprise (pas par user)
 ```
 
 ---
 
-## Transactions atomiques
+## Transactions atomiques (fonctions PostgreSQL SECURITY DEFINER)
 
-### Création vente
-```
-1. INSERT sales
-2. INSERT sale_items
-3. UPDATE stock (-quantity) pour chaque produit
-4. INSERT stock_movements (type: OUT, reference_type: sale)
-5. INSERT documents (type: invoice, sale_id, snapshots)
-6. INSERT document_items (avec product_name snapshot)
-→ Tout ou rien (transaction)
-```
+Toutes les opérations multi-tables sont des fonctions PL/pgSQL appelées via `supabase.rpc()`. Rollback automatique si une étape échoue. Elles récupèrent `auth.uid()` et `get_my_company_id()` elles-mêmes — ne pas les passer en paramètre.
 
-### Création paiement client
+### `create_sale(p_client_id, p_date, p_note, p_tva_rate, p_items, p_payments)`
 ```
-1. INSERT client_payments
-2. UPDATE sales SET paid = SUM(payments), status recalculé
-3. INSERT documents (type: receipt, payment_id, snapshots)
-→ Tout ou rien (transaction)
+1. INSERT document_sequences (séquence atomique → VEN-YYYY-NNN)
+2. INSERT sales
+3. Pour chaque article : INSERT sale_items + UPDATE stock(-) + INSERT stock_movements(out)
+4. Pour chaque paiement : INSERT client_payments
+→ Retourne : sale_id (uuid)
 ```
 
-### Création achat
+### `update_sale(p_id, p_client_id, p_date, p_note, p_tva_rate, p_items, p_payments)`
 ```
-1. INSERT purchases
-2. INSERT purchase_items
-3. UPDATE stock (+quantity) pour chaque produit
-4. INSERT stock_movements (type: IN, reference_type: purchase)
-5. INSERT supplier_payments si paiement initial saisi
-→ Tout ou rien (transaction)
+1. Vérification ownership (company_id)
+2. UPDATE sales header
+3. Pour articles existants (original_id) : UPDATE sale_items (prix uniquement)
+4. Pour nouveaux articles : INSERT sale_items + UPDATE stock(-) + INSERT stock_movements(out)
+5. DELETE client_payments + re-INSERT
+→ Retourne : void
+```
+
+### `create_purchase(p_supplier_id, p_date, p_note, p_tva_rate, p_items, p_payments)`
+```
+1. INSERT document_sequences (séquence atomique → ACH-YYYY-NNN)
+2. INSERT purchases
+3. Pour chaque article : INSERT purchase_items + UPDATE stock(+) + INSERT stock_movements(in)
+4. Pour chaque paiement : INSERT supplier_payments
+→ Retourne : purchase_id (uuid)
+```
+
+### `update_purchase(p_id, p_supplier_id, p_date, p_note, p_tva_rate, p_items, p_payments)`
+```
+1. Vérification ownership (company_id)
+2. UPDATE purchases header
+3. Pour articles existants : UPDATE purchase_items (prix uniquement)
+4. Pour nouveaux articles : INSERT purchase_items + UPDATE stock(+) + INSERT stock_movements(in)
+5. DELETE supplier_payments + re-INSERT
+→ Retourne : void
+```
+
+### `create_invoice(p_sale_id, p_client_id, p_date, ...)` ✅
+```
+INSERT documents (type: invoice) + INSERT document_items
+→ Retourne : document_id
+```
+
+### `create_receipt(p_payment_id, p_sale_id, ...)` ✅
+```
+INSERT documents (type: receipt) + INSERT document_items
+→ Retourne : document_id
+```
+
+### `cancel_transaction(p_id, p_type)` ✅
+```
+UPDATE sale/purchase status = 'cancelled'
++ stock_movements inversés + UPDATE stock
 ```
 
 ---

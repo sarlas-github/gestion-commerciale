@@ -2,7 +2,7 @@
 
 ## 🎯 Projet
 Application web de gestion commerciale (produits, stock, achats fournisseurs, ventes clients, facturation, paiements, dashboard).
-Multi-utilisateurs : chaque utilisateur voit uniquement ses propres données (RLS Supabase).
+**Multi-tenant** : plusieurs utilisateurs peuvent appartenir à la même entreprise (`company_members`). L'isolation des données se fait par `company_id`, pas par `user_id`. Le `user_id` reste présent sur chaque ligne à titre d'audit (qui a créé l'enregistrement).
 
 ---
 
@@ -28,6 +28,7 @@ src/
 ├── App.tsx
 ├── lib/
 │   ├── supabase.ts
+│   ├── getCompanyId.ts   ← cache module-level du company_id courant, reset au logout
 │   └── utils.ts
 ├── types/
 │   └── index.ts
@@ -73,14 +74,23 @@ src/
 
 ## Règle d'or RLS Supabase
 
-Toute nouvelle table DOIT avoir :
-1. ALTER TABLE xxx ENABLE ROW LEVEL SECURITY
-2. CREATE POLICY "user_xxx" ON xxx
-   FOR ALL USING (user_id = auth.uid())
+Toute nouvelle table métier DOIT avoir :
+1. `ALTER TABLE xxx ENABLE ROW LEVEL SECURITY`
+2. `CREATE POLICY "company_xxx" ON xxx FOR ALL USING (company_id = get_my_company_id()) WITH CHECK (company_id = get_my_company_id())`
+
+**Exception — `company_members`** : utiliser `USING (user_id = auth.uid())` directement (pas le helper `get_my_company_id()`), sinon récursion infinie.
+
+**Exception — tables enfant sans `company_id`** (`sale_items`, `purchase_items`, `document_items`) : filtrer via la table parent :
+```sql
+USING (sale_id IN (SELECT id FROM sales WHERE company_id = get_my_company_id()))
+```
+
+**Fonction helper** : `get_my_company_id()` est SECURITY DEFINER — elle lit `company_members` en contournant la RLS pour éviter la récursion.
 
 Dans le code React :
-- INSERT → toujours inclure user_id: session.user.id
-- SELECT/UPDATE/DELETE → RLS filtre automatiquement
+- **Multi-tables → toujours via `supabase.rpc()`** : la fonction PG appelle `auth.uid()` et `get_my_company_id()` elle-même, rien à passer.
+- **INSERT direct (tables simples)** → toujours inclure `user_id: user.id` ET `company_id: await getCompanyId()`.
+- SELECT/UPDATE/DELETE → RLS filtre automatiquement par `company_id`.
 
 ---
 
@@ -197,34 +207,66 @@ Si un nouveau champ entreprise/client est ajouté, il faut systématiquement :
 
 ## ⚠️ Transactions atomiques — Règle absolue
 
-Toute opération touchant plusieurs tables DOIT être 
-implémentée via une fonction PostgreSQL appelée avec 
-supabase.rpc() — JAMAIS via des await séquentiels.
+Toute opération touchant plusieurs tables DOIT être implémentée via une fonction PostgreSQL appelée avec `supabase.rpc()` — JAMAIS via des await séquentiels.
 
-Pattern obligatoire pour TOUTE opération multi-tables :
-
+```typescript
 // ✅ CORRECT
-await supabase.rpc('create_sale', { params })
+await supabase.rpc('create_sale', { p_client_id, p_date, p_items, p_payments, ... })
 
 // ❌ INTERDIT
 await supabase.from('sales').insert(...)
 await supabase.from('sale_items').insert(...)
 await supabase.from('stock').update(...)
+```
 
-Fonctions PostgreSQL à créer dans Supabase pour :
-- create_purchase → purchases + purchase_items 
-  + stock(+) + stock_movements(IN) + supplier_payments
-- create_sale → sales + sale_items + stock(-) 
-  + stock_movements(OUT) + client_payments 
-  + documents(invoice) + document_items
-- create_client_payment → client_payments 
-  + sales update + documents(receipt)
-- create_supplier_payment → supplier_payments 
-  + purchases update
+Si une étape échoue → rollback complet automatique garanti par PostgreSQL.
 
-Si une étape échoue → rollback complet automatique.
-Cette règle s'applique à TOUTES les opérations 
-multi-tables présentes et futures.
+### Règle de détection — appliquer à CHAQUE nouveau `useMutation`
+
+**Compter les opérations d'écriture dans le corps de `mutationFn` :**
+
+| Décompte | Décision |
+|---|---|
+| 1 seule écriture | INSERT/UPDATE/DELETE direct autorisé |
+| ≥ 2 écritures | **STOP — créer une fonction RPC d'abord** |
+
+**Opérations qui comptent comme écriture :**
+- `supabase.from('xxx').insert(...)`
+- `supabase.from('xxx').update(...)`
+- `supabase.from('xxx').delete(...)`
+- `supabase.rpc('nom_fn')` qui écrit en DB (vérifier la fonction PG)
+
+**Ne comptent PAS :**
+- `supabase.from('xxx').select(...)` — lecture pure
+- `supabase.rpc('get_*')` / `supabase.rpc('count_*')` — lecture pure
+
+**Checklist avant de déclarer un hook terminé :**
+```
+□ Je compte les lignes supabase.from().insert/update/delete dans mutationFn
+□ Si ≥ 2 → j'ai créé la fonction RPC correspondante dans supabase/migrations/
+□ Si ≥ 2 → j'ai mis à jour supabase/functions/nom_fonction.sql
+□ La table des fonctions ci-dessous est à jour
+```
+
+**Cas piège fréquent :** une opération qui met à jour une table + en crée/modifie une autre en cascade (ex: ajuster le stock ET logger le mouvement, créer un produit ET initialiser son stock). Ces cas SEMBLENT être une seule action métier mais touchent 2 tables → RPC obligatoire.
+
+### Fonctions implémentées ✅
+
+| Fonction | Tables touchées |
+|---|---|
+| `create_sale` | sales + sale_items + stock(-) + stock_movements(out) + client_payments |
+| `update_sale` | sales + sale_items + stock(-) + stock_movements(out) + client_payments |
+| `create_purchase` | purchases + purchase_items + stock(+) + stock_movements(in) + supplier_payments |
+| `update_purchase` | purchases + purchase_items + stock(+) + stock_movements(in) + supplier_payments |
+| `create_invoice` | documents + document_items + document_sequences |
+| `create_receipt` | documents + document_items + document_sequences |
+| `cancel_transaction` | sales/purchases + stock(±) + stock_movements |
+| `create_client_payment` | client_payments + sales (paid, status) |
+| `create_supplier_payment` | supplier_payments + purchases (paid, status) |
+| `create_product` | products + stock (initialisation à 0) |
+| `adjust_stock` | stock + stock_movements |
+
+Cette règle s'applique à TOUTES les opérations multi-tables présentes et futures.
 
 ---
 

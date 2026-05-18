@@ -170,7 +170,7 @@ const TabAchats = ({ supplierId }: { supplierId: string }) => {
         <Button
           variant="ghost"
           size="sm"
-          onClick={() => navigate(`/purchases/${row.original.id}/edit`)}
+          onClick={() => navigate(`/purchases/${row.original.id}/edit`, { state: { from: `/suppliers/${supplierId}` } })}
         >
           <Pencil className="h-3.5 w-3.5" />
         </Button>
@@ -184,6 +184,7 @@ const TabAchats = ({ supplierId }: { supplierId: string }) => {
         columns={columns}
         data={purchases as Purchase[]}
         isLoading={isLoading}
+        defaultSorting={[{ id: 'date', desc: true }]}
         exportFileName={`achats-fournisseur-${supplierId}`}
         exportMapper={p => ({
           Référence: (p as Purchase).reference ?? '',
@@ -199,6 +200,7 @@ const TabAchats = ({ supplierId }: { supplierId: string }) => {
         purchaseId={selectedPurchaseId}
         open={isModalOpen}
         onOpenChange={setIsModalOpen}
+        from={`/suppliers/${supplierId}`}
       />
     </>
   )
@@ -247,6 +249,7 @@ const TabPaiements = ({ supplierId }: { supplierId: string }) => {
         columns={columns}
         data={payments as SupplierPayment[]}
         isLoading={isLoading}
+        defaultSorting={[{ id: 'date', desc: true }]}
         exportFileName={`paiements-fournisseur-${supplierId}`}
         exportMapper={p => ({
           Date: formatDate((p as SupplierPayment).date),
@@ -267,6 +270,7 @@ const TabPaiements = ({ supplierId }: { supplierId: string }) => {
         purchaseId={selectedPurchaseId}
         open={isModalOpen}
         onOpenChange={setIsModalOpen}
+        from={`/suppliers/${supplierId}`}
       />
     </div>
   )

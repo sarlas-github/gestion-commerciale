@@ -18,6 +18,7 @@ export interface SupplierReportData {
 export const useSupplierReport = (year: number, month: number) => {
   return useQuery({
     queryKey: ['supplier-report', year, month],
+    staleTime: 2 * 60_000,
     queryFn: async () => {
       const { data, error } = await supabase.rpc('get_supplier_report', {
         p_year:  year,

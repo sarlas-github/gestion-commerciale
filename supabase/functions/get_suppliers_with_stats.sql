@@ -1,6 +1,6 @@
--- Dernière version déployée : 20260509_04_exclude_cancelled_from_stats.sql
+-- Dernière version déployée : 17-05-2026_05_multi_tenant_functions.sql
 
-CREATE OR REPLACE FUNCTION get_suppliers_with_stats()
+CREATE OR REPLACE FUNCTION public.get_suppliers_with_stats()
 RETURNS json
 LANGUAGE plpgsql
 SECURITY INVOKER
@@ -13,6 +13,7 @@ BEGIN
   SELECT COALESCE(json_agg(json_build_object(
     'id',            s.id,
     'user_id',       s.user_id,
+    'company_id',    s.company_id,
     'name',          s.name,
     'phone',         s.phone,
     'address',       s.address,
@@ -34,11 +35,11 @@ BEGIN
       SUM(remaining)                           AS total_du,
       bool_or(status IN ('unpaid', 'partial')) AS has_unpaid
     FROM purchases
-    WHERE user_id = auth.uid()
+    WHERE company_id = get_my_company_id()
       AND status != v_cancelled
     GROUP BY supplier_id
   ) agg ON agg.supplier_id = s.id
-  WHERE s.user_id = auth.uid();
+  WHERE s.company_id = get_my_company_id();
 
   RETURN v_result;
 END;

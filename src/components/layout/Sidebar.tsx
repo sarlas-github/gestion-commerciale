@@ -120,7 +120,9 @@ export const Sidebar = ({ onClose, collapsed = false, onToggleCollapse }: Sideba
     setIsDark(nextDark)
   }
 
-  const isActive = (href: string) => location.pathname.startsWith(href)
+  const originPath = (location.state as { from?: string } | null)?.from
+  const isActive = (href: string) =>
+    originPath ? originPath.startsWith(href) : location.pathname.startsWith(href)
 
   const toggleExpand = (label: string) => {
     setExpandedItems((prev) =>

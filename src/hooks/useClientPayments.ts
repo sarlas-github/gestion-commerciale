@@ -1,6 +1,16 @@
-import { useQuery } from '@tanstack/react-query'
+import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query'
+import { toast } from 'sonner'
+import { getApiErrorMessage } from '@/lib/apiError'
 import { supabase } from '@/lib/supabase'
 import type { ClientPayment } from '@/types'
+
+export interface AddClientPaymentPayload {
+  sale_id: string
+  date: string
+  amount: number
+  note?: string
+  methode_paiement?: string | null
+}
 
 export interface ClientPaymentRow {
   id: string
@@ -17,6 +27,7 @@ export interface ClientPaymentRow {
 export const useAllClientPayments = (month?: string, year?: string) =>
   useQuery({
     queryKey: ['client-payments-all', month, year],
+    staleTime: 60_000,
     queryFn: async () => {
       let query = supabase
         .from('client_payments')
@@ -63,6 +74,7 @@ export const useAllClientPayments = (month?: string, year?: string) =>
 export const useClientPayment = (paymentId: string | null | undefined) =>
   useQuery({
     queryKey: ['client-payment', paymentId],
+    staleTime: 60_000,
     queryFn: async () => {
       if (!paymentId) return null
       const { data, error } = await supabase
@@ -75,3 +87,32 @@ export const useClientPayment = (paymentId: string | null | undefined) =>
     },
     enabled: Boolean(paymentId),
   })
+
+export const useAddClientPayment = () => {
+  const qc = useQueryClient()
+  return useMutation({
+    mutationFn: async (payload: AddClientPaymentPayload) => {
+      const { data: paymentId, error } = await supabase.rpc('create_client_payment', {
+        p_sale_id:          payload.sale_id,
+        p_date:             payload.date,
+        p_amount:           payload.amount,
+        p_note:             payload.note || null,
+        p_methode_paiement: payload.methode_paiement || null,
+      })
+      if (error) throw error
+      return { id: paymentId as string }
+    },
+    onSuccess: (_, { sale_id }) => {
+      qc.invalidateQueries({ queryKey: ['sales'] })
+      qc.invalidateQueries({ queryKey: ['sales', sale_id] })
+      qc.invalidateQueries({ queryKey: ['clients'] })
+      qc.invalidateQueries({ queryKey: ['unpaid-clients-count'] })
+      qc.invalidateQueries({ queryKey: ['client-payments-all'] })
+      qc.invalidateQueries({ queryKey: ['dashboard'] })
+      toast.success('Paiement enregistré')
+    },
+    onError: (err: Error) => {
+      toast.error(getApiErrorMessage(err, "Erreur lors de l'enregistrement du paiement"))
+    },
+  })
+}

@@ -18,6 +18,7 @@ export interface ClientReportData {
 export const useClientReport = (year: number, month: number) => {
   return useQuery({
     queryKey: ['client-report', year, month],
+    staleTime: 2 * 60_000,
     queryFn: async () => {
       const { data, error } = await supabase.rpc('get_client_report', {
         p_year:  year,

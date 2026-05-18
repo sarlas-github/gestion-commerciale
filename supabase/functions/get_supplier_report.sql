@@ -1,6 +1,6 @@
--- Dernière version déployée : 20260509_04_exclude_cancelled_from_stats.sql
+-- Dernière version déployée : 17-05-2026_05_multi_tenant_functions.sql
 
-CREATE OR REPLACE FUNCTION get_supplier_report(p_year int, p_month int)
+CREATE OR REPLACE FUNCTION public.get_supplier_report(p_year int, p_month int)
 RETURNS json
 LANGUAGE plpgsql
 SECURITY INVOKER
@@ -38,7 +38,7 @@ BEGIN
       SUM(p.remaining)  AS reste
     FROM purchases p
     JOIN suppliers su ON su.id = p.supplier_id
-    WHERE p.user_id = auth.uid()
+    WHERE p.company_id = get_my_company_id()
       AND p.date BETWEEN v_start AND v_end
       AND p.status != v_cancelled
     GROUP BY su.id, su.name

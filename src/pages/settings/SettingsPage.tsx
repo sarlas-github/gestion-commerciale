@@ -82,7 +82,7 @@ export const SettingsPage = () => {
       tp_number: company?.tp_number ?? '',
       rib: company?.rib ?? '',
       taux_tva_defaut: company?.taux_tva_defaut ?? 0,
-      couleur_marque: company?.couleur_marque ?? DEFAULT_BRAND_COLOR,
+      couleur_marque: company?.couleur_marque || DEFAULT_BRAND_COLOR,
     },
   })
 

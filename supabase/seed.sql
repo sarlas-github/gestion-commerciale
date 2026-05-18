@@ -1,5 +1,21 @@
 SET session_replication_role = replica;
 
+-- ── Patch multi-tenant : company_id nullable pendant le seeding ───────────────
+-- Le seed a été généré avant la migration multi-tenant (company_id NOT NULL).
+-- On relaxe temporairement les contraintes, on reporte la population en fin de fichier.
+ALTER TABLE public.clients           ALTER COLUMN company_id DROP NOT NULL;
+ALTER TABLE public.suppliers         ALTER COLUMN company_id DROP NOT NULL;
+ALTER TABLE public.products          ALTER COLUMN company_id DROP NOT NULL;
+ALTER TABLE public.sales             ALTER COLUMN company_id DROP NOT NULL;
+ALTER TABLE public.purchases         ALTER COLUMN company_id DROP NOT NULL;
+ALTER TABLE public.documents         ALTER COLUMN company_id DROP NOT NULL;
+ALTER TABLE public.document_sequences ALTER COLUMN company_id DROP NOT NULL;
+ALTER TABLE public.client_payments   ALTER COLUMN company_id DROP NOT NULL;
+ALTER TABLE public.supplier_payments ALTER COLUMN company_id DROP NOT NULL;
+ALTER TABLE public.stock             ALTER COLUMN company_id DROP NOT NULL;
+ALTER TABLE public.stock_movements   ALTER COLUMN company_id DROP NOT NULL;
+-- ─────────────────────────────────────────────────────────────────────────────
+
 --
 -- PostgreSQL database dump
 --
@@ -638,6 +654,48 @@ INSERT INTO "storage"."objects" ("id", "bucket_id", "name", "owner", "created_at
 
 SELECT pg_catalog.setval('"auth"."refresh_tokens_id_seq"', 330, true);
 
+
+-- ── Patch multi-tenant : population company_id + restauration NOT NULL ────────
+
+-- 1. Créer les entreprises manquantes (utilisateurs sans company dans le seed)
+INSERT INTO public.companies (id, user_id, name, couleur_marque, created_at, updated_at)
+SELECT gen_random_uuid(), u.id, split_part(u.email, '@', 1), '#4f46e5', now(), now()
+FROM auth.users u
+WHERE NOT EXISTS (SELECT 1 FROM public.companies c WHERE c.user_id = u.id);
+
+-- 2. Ajouter tous les users en tant qu'admin de leur entreprise
+INSERT INTO public.company_members (company_id, user_id, role)
+SELECT c.id, c.user_id, 'admin'
+FROM public.companies c
+ON CONFLICT (company_id, user_id) DO NOTHING;
+
+-- 3. Peupler company_id pour toutes les tables (via user_id → company)
+UPDATE public.clients           t SET company_id = c.id FROM public.companies c WHERE c.user_id = t.user_id AND t.company_id IS NULL;
+UPDATE public.suppliers         t SET company_id = c.id FROM public.companies c WHERE c.user_id = t.user_id AND t.company_id IS NULL;
+UPDATE public.products          t SET company_id = c.id FROM public.companies c WHERE c.user_id = t.user_id AND t.company_id IS NULL;
+UPDATE public.sales             t SET company_id = c.id FROM public.companies c WHERE c.user_id = t.user_id AND t.company_id IS NULL;
+UPDATE public.purchases         t SET company_id = c.id FROM public.companies c WHERE c.user_id = t.user_id AND t.company_id IS NULL;
+UPDATE public.documents         t SET company_id = c.id FROM public.companies c WHERE c.user_id = t.user_id AND t.company_id IS NULL;
+UPDATE public.document_sequences t SET company_id = c.id FROM public.companies c WHERE c.user_id = t.user_id AND t.company_id IS NULL;
+UPDATE public.client_payments   t SET company_id = c.id FROM public.companies c WHERE c.user_id = t.user_id AND t.company_id IS NULL;
+UPDATE public.supplier_payments t SET company_id = c.id FROM public.companies c WHERE c.user_id = t.user_id AND t.company_id IS NULL;
+UPDATE public.stock             t SET company_id = c.id FROM public.companies c WHERE c.user_id = t.user_id AND t.company_id IS NULL;
+UPDATE public.stock_movements   t SET company_id = c.id FROM public.companies c WHERE c.user_id = t.user_id AND t.company_id IS NULL;
+
+-- 4. Restaurer les contraintes NOT NULL
+ALTER TABLE public.clients            ALTER COLUMN company_id SET NOT NULL;
+ALTER TABLE public.suppliers          ALTER COLUMN company_id SET NOT NULL;
+ALTER TABLE public.products           ALTER COLUMN company_id SET NOT NULL;
+ALTER TABLE public.sales              ALTER COLUMN company_id SET NOT NULL;
+ALTER TABLE public.purchases          ALTER COLUMN company_id SET NOT NULL;
+ALTER TABLE public.documents          ALTER COLUMN company_id SET NOT NULL;
+ALTER TABLE public.document_sequences ALTER COLUMN company_id SET NOT NULL;
+ALTER TABLE public.client_payments    ALTER COLUMN company_id SET NOT NULL;
+ALTER TABLE public.supplier_payments  ALTER COLUMN company_id SET NOT NULL;
+ALTER TABLE public.stock              ALTER COLUMN company_id SET NOT NULL;
+ALTER TABLE public.stock_movements    ALTER COLUMN company_id SET NOT NULL;
+
+-- ─────────────────────────────────────────────────────────────────────────────
 
 --
 -- PostgreSQL database dump complete

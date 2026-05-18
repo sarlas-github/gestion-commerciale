@@ -101,6 +101,7 @@ export const ClientPaymentsPage = () => {
         columns={columns}
         data={filtered}
         isLoading={isLoading}
+        defaultSorting={[{ id: 'date', desc: true }]}
         exportFileName="paiements-clients"
         exportMapper={p => ({
           Date: formatDate(p.date),

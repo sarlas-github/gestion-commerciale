@@ -7,6 +7,7 @@ import { useAuth } from '@/hooks/useAuth'
 import { Sheet, SheetContent } from '@/components/ui/sheet'
 import { PageProvider } from '@/contexts/PageContext'
 import { useCompany } from '@/hooks/useCompany'
+import { DEFAULT_BRAND_COLOR } from '@/lib/constants'
 
 export const AppLayout = () => {
   const { user, loading } = useAuth()
@@ -15,8 +16,8 @@ export const AppLayout = () => {
   const [sidebarCollapsed, setSidebarCollapsed] = useState(false)
 
   useEffect(() => {
-    if (company?.couleur_marque) {
-      document.documentElement.style.setProperty('--primary', company.couleur_marque)
+    if (company !== undefined) {
+      document.documentElement.style.setProperty('--primary', company?.couleur_marque || DEFAULT_BRAND_COLOR)
     }
   }, [company?.couleur_marque])
 

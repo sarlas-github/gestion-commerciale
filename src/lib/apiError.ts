@@ -2,7 +2,7 @@ export function getApiErrorMessage(err: Error, fallback: string): string {
   const msg = err?.message ?? ''
   if (msg.includes('unique') || msg.includes('duplicate'))
     return 'Cette valeur existe déjà.'
-  if (msg.includes('foreign key') || msg.includes('violates'))
+  if (msg.includes('foreign key') || (msg.includes('violates') && !msg.includes('security policy') && !msg.includes('row-level')))
     return 'Suppression impossible : cet élément est utilisé dans d\'autres documents (ventes, achats ou stock).'
   if (msg.includes('Unauthorized') || msg.includes('JWT') || msg.includes('auth'))
     return 'Session expirée. Reconnectez-vous.'

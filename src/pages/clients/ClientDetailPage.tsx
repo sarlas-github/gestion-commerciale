@@ -163,7 +163,7 @@ const TabVentes = ({ clientId }: { clientId: string }) => {
         <Button
           variant="ghost"
           size="sm"
-          onClick={() => navigate(`/sales/${row.original.id}/edit`)}
+          onClick={() => navigate(`/sales/${row.original.id}/edit`, { state: { from: `/clients/${clientId}` } })}
         >
           <Pencil className="h-3.5 w-3.5" />
         </Button>
@@ -177,6 +177,7 @@ const TabVentes = ({ clientId }: { clientId: string }) => {
         columns={columns}
         data={sales}
         isLoading={isLoading}
+        defaultSorting={[{ id: 'date', desc: true }]}
         exportFileName={`ventes-client-${clientId}`}
         exportMapper={s => ({
           Référence: s.reference ?? '',
@@ -192,6 +193,7 @@ const TabVentes = ({ clientId }: { clientId: string }) => {
         saleId={selectedSaleId}
         open={isModalOpen}
         onOpenChange={setIsModalOpen}
+        from={`/clients/${clientId}`}
       />
     </>
   )
@@ -215,7 +217,7 @@ const TabPaiements = ({ clientId }: { clientId: string }) => {
       accessorKey: 'sale_id',
       header: 'Vente réf.',
       cell: ({ row }) => {
-        const ref = (row.original as any).sales?.reference
+        const ref = (row.original as ClientPayment & { sales?: { reference: string } | null }).sales?.reference
         return (
           <button
             className="flex items-center gap-1 text-primary hover:underline text-sm font-medium"
@@ -240,6 +242,7 @@ const TabPaiements = ({ clientId }: { clientId: string }) => {
         columns={columns}
         data={payments}
         isLoading={isLoading}
+        defaultSorting={[{ id: 'date', desc: true }]}
         exportFileName={`paiements-client-${clientId}`}
         exportMapper={p => ({
           Date: formatDate(p.date),
@@ -260,6 +263,7 @@ const TabPaiements = ({ clientId }: { clientId: string }) => {
         saleId={selectedSaleId}
         open={isModalOpen}
         onOpenChange={setIsModalOpen}
+        from={`/clients/${clientId}`}
       />
     </div>
   )

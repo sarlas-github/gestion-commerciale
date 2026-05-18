@@ -1,3 +1,30 @@
+liberer ports
+net stop winnat
+net start winnat
+
+npx supabase db reset
+
+Étape 1 : Récupérer vos clés locales
+npx supabase status
+ Publishable::::: key
+ url::::: acces bd
+
+ VITE_SUPABASE_URL=http://100.98.128.42:54321
+VITE_SUPABASE_ANON_KEY=sb_publishable_ACJWlzQHlZjBrEguHvfOxg_3BJgxAaH
+
+npx supabase stop && npx supabase start && npx supabase db reset
+
+
+
+npm run dev -- --host
+
+Étape finale sur le mobile
+Vérifiez que Tailscale est bien activé sur votre téléphone.
+Ouvrez le navigateur du téléphone et tapez l'adresse : http://100.98.128.42:5173
+
+
+SELECT public.create_app_user('test.banina@gmail.com', 'Démo123',  'banina', 'production');
+
 # 🚀 Guide Master : Du Setup Initial au Déploiement Pro
 
 Ce document retrace toutes les étapes pour configurer un projet Supabase de zéro, comme nous l'avons fait le 11/05/2026. Utilise ce guide pour tes futurs SaaS.

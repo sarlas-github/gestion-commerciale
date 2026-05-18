@@ -17,6 +17,7 @@ async function getCurrentUser() {
 export const useCompany = () =>
   useQuery({
     queryKey: ['company'],
+    staleTime: 5 * 60_000,
     queryFn: async () => {
       const user = await getCurrentUser()
       const { data, error } = await supabase
@@ -60,8 +61,6 @@ export const useUpsertCompany = () => {
           throw new Error('Format non autorisé. Utilisez PNG, JPG ou WebP.')
         if (input.logoFile.size > MAX_LOGO_SIZE)
           throw new Error('Logo trop lourd. Maximum 2 Mo.')
-
-        await supabase.storage.createBucket('logos', { public: true }).catch(() => {})
 
         const ext = input.logoFile.name.split('.').pop()?.toLowerCase() ?? 'png'
         const path = `${user.id}/logo.${ext}`

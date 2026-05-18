@@ -7,22 +7,22 @@ interface PhoneInputProps extends Omit<React.ComponentProps<"input">, "onChange"
   onChange: (value: string) => void
 }
 
-export function PhoneInput({ value, onChange, ...props }: PhoneInputProps) {
-  const handleChange = (e: React.ChangeEvent<HTMLInputElement>) => {
-    const rawValue = e.target.value
-    // On nettoie pour ne garder que les chiffres (max 10)
-    const cleaned = rawValue.replace(/\D/g, '').slice(0, 10)
-    // On notifie le parent avec la valeur brute (chiffres uniquement)
-    onChange(cleaned)
-  }
+export const PhoneInput = React.forwardRef<HTMLInputElement, PhoneInputProps>(
+  function PhoneInput({ value, onChange, ...props }, ref) {
+    const handleChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+      const cleaned = e.target.value.replace(/\D/g, '').slice(0, 10)
+      onChange(cleaned)
+    }
 
-  return (
-    <Input
-      {...props}
-      value={formatPhone(value)}
-      onChange={handleChange}
-      placeholder="06 XX XX XX XX"
-      maxLength={14} // 10 chiffres + 4 espaces
-    />
-  )
-}
+    return (
+      <Input
+        {...props}
+        ref={ref}
+        value={formatPhone(value)}
+        onChange={handleChange}
+        placeholder="06 XX XX XX XX"
+        maxLength={14}
+      />
+    )
+  }
+)

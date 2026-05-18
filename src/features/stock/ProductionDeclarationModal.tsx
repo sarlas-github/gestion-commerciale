@@ -56,7 +56,7 @@ export const ProductionDeclarationModal = ({
   } = useForm<FormData>({
     resolver: zodResolver(schema),
     defaultValues: { 
-      type: defaultNature === 'matiere_premiere' ? 'out' : (defaultNature === 'produit_fini' ? 'in' : undefined as any), 
+      type: defaultNature === 'matiere_premiere' ? 'out' : (defaultNature === 'produit_fini' ? 'in' : 'in' as FormData['type']), 
       quantity: undefined, 
       note: defaultNature === 'matiere_premiere' ? 'Consommation' : (defaultNature === 'produit_fini' ? 'Production' : '') 
     },
@@ -74,7 +74,7 @@ export const ProductionDeclarationModal = ({
   useEffect(() => {
     if (open) {
       reset({ 
-        type: defaultNature === 'matiere_premiere' ? 'out' : (defaultNature === 'produit_fini' ? 'in' : undefined as any), 
+        type: defaultNature === 'matiere_premiere' ? 'out' : (defaultNature === 'produit_fini' ? 'in' : 'in' as FormData['type']), 
         quantity: undefined, 
         note: defaultNature === 'matiere_premiere' ? 'Consommation' : (defaultNature === 'produit_fini' ? 'Production' : '') 
       })
@@ -82,10 +82,10 @@ export const ProductionDeclarationModal = ({
   }, [open, reset, defaultNature])
 
   const onSubmit = async (data: FormData) => {
-    if (!selectedProduct?.stock) return
+    if (!selectedProduct) return
     await adjustStock.mutateAsync({
       productId: selectedProduct.id,
-      currentStockId: selectedProduct.stock.id,
+      currentStockId: selectedProduct.stock?.id ?? null,
       currentQuantity: currentQty,
       type: data.type,
       quantity: data.quantity,
@@ -94,7 +94,7 @@ export const ProductionDeclarationModal = ({
     onOpenChange(false)
   }
 
-  const handleProductSuccess = (product: any) => {
+  const handleProductSuccess = (product: { id: string }) => {
     setValue('product_id', product.id)
     setShowNewProduct(false)
   }

@@ -1,6 +1,6 @@
--- Dernière version déployée : 20260509_04_exclude_cancelled_from_stats.sql
+-- Dernière version déployée : 17-05-2026_05_multi_tenant_functions.sql
 
-CREATE OR REPLACE FUNCTION get_client_report(p_year int, p_month int)
+CREATE OR REPLACE FUNCTION public.get_client_report(p_year int, p_month int)
 RETURNS json
 LANGUAGE plpgsql
 SECURITY INVOKER
@@ -38,7 +38,7 @@ BEGIN
       SUM(s.remaining) AS reste
     FROM sales s
     JOIN clients c ON c.id = s.client_id
-    WHERE s.user_id = auth.uid()
+    WHERE s.company_id = get_my_company_id()
       AND s.date BETWEEN v_start AND v_end
       AND s.status != v_cancelled
     GROUP BY c.id, c.name

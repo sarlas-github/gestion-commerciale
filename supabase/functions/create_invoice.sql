@@ -1,6 +1,6 @@
--- Dernière version déployée : 20260508_04_fix_security_definer_functions.sql
+-- Dernière version déployée : 17-05-2026_05_multi_tenant_functions.sql
 
-CREATE OR REPLACE FUNCTION create_invoice(
+CREATE OR REPLACE FUNCTION public.create_invoice(
   p_sale_id       uuid,
   p_client_id     uuid,
   p_date          date,
@@ -19,6 +19,7 @@ SET search_path = public
 AS $$
 DECLARE
   v_user_id        uuid    := auth.uid();
+  v_company_id     uuid    := get_my_company_id();
   v_year           int     := EXTRACT(YEAR FROM p_date)::int;
   v_seq            int;
   v_number         text;
@@ -28,16 +29,18 @@ DECLARE
   v_payment_status text;
   v_item           jsonb;
 BEGIN
-  IF NOT EXISTS (SELECT 1 FROM sales WHERE id = p_sale_id AND user_id = v_user_id) THEN
+  IF v_company_id IS NULL THEN RAISE EXCEPTION 'Aucune entreprise associée'; END IF;
+
+  IF NOT EXISTS (SELECT 1 FROM sales WHERE id = p_sale_id AND company_id = v_company_id) THEN
     RAISE EXCEPTION 'Unauthorized';
   END IF;
-  IF NOT EXISTS (SELECT 1 FROM clients WHERE id = p_client_id AND user_id = v_user_id) THEN
+  IF NOT EXISTS (SELECT 1 FROM clients WHERE id = p_client_id AND company_id = v_company_id) THEN
     RAISE EXCEPTION 'Unauthorized';
   END IF;
 
-  INSERT INTO document_sequences (user_id, type, year, last_number)
-  VALUES (v_user_id, 'invoice', v_year, 1)
-  ON CONFLICT (user_id, type, year) DO UPDATE
+  INSERT INTO document_sequences (user_id, company_id, type, year, last_number)
+  VALUES (v_user_id, v_company_id, 'invoice', v_year, 1)
+  ON CONFLICT (company_id, type, year) DO UPDATE
     SET last_number = document_sequences.last_number + 1
   RETURNING last_number INTO v_seq;
 
@@ -49,11 +52,11 @@ BEGIN
     ELSE                        'unpaid'
   END;
 
-  SELECT * INTO v_company FROM companies WHERE user_id = v_user_id LIMIT 1;
+  SELECT * INTO v_company FROM companies WHERE id = v_company_id;
   SELECT name, address, ice, phone INTO v_client FROM clients WHERE id = p_client_id;
 
   INSERT INTO documents (
-    user_id, client_id, sale_id,
+    user_id, company_id, client_id, sale_id,
     type, number, date, status, payment_status,
     total, tva_rate, tva_amount, paid, note,
     client_name, client_address, client_ice, client_phone,
@@ -62,7 +65,7 @@ BEGIN
     company_site_web, company_couleur_marque, company_logo_url,
     mode_paiement
   ) VALUES (
-    v_user_id, p_client_id, p_sale_id,
+    v_user_id, v_company_id, p_client_id, p_sale_id,
     'invoice', v_number, p_date, 'confirmed', v_payment_status,
     p_total, p_tva_rate, p_tva_amount, p_paid, p_note,
     v_client.name, v_client.address, v_client.ice, v_client.phone,

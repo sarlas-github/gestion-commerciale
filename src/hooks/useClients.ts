@@ -2,6 +2,7 @@
 import { toast } from 'sonner'
 import { getApiErrorMessage } from '@/lib/apiError'
 import { supabase } from '@/lib/supabase'
+import { getCompanyId } from '@/lib/getCompanyId'
 import { isUniqueNameError } from '@/lib/utils'
 import type { Client, CreateClientInput, UpdateClientInput, Sale, ClientPayment } from '@/types'
 
@@ -38,6 +39,7 @@ export const useClients = () =>
 export const useClient = (id: string) =>
   useQuery({
     queryKey: ['clients', id],
+    staleTime: 60_000,
     queryFn: async () => {
       const { data, error } = await supabase
         .from('clients')
@@ -55,6 +57,7 @@ export const useClient = (id: string) =>
 export const useClientSales = (clientId: string) =>
   useQuery({
     queryKey: ['clients', clientId, 'sales'],
+    staleTime: 60_000,
     queryFn: async () => {
       const { data, error } = await supabase
         .from('sales')
@@ -72,6 +75,7 @@ export const useClientSales = (clientId: string) =>
 export const useClientPayments = (clientId: string) =>
   useQuery({
     queryKey: ['clients', clientId, 'payments'],
+    staleTime: 60_000,
     queryFn: async () => {
       const { data: sales, error: sErr } = await supabase
         .from('sales')
@@ -99,6 +103,7 @@ export const useClientPayments = (clientId: string) =>
 export const useClientMonthlyState = (clientId: string, year: number, month: number) =>
   useQuery({
     queryKey: ['clients', clientId, 'state', year, month],
+    staleTime: 2 * 60_000,
     queryFn: async () => {
       const { data, error } = await supabase.rpc('get_client_monthly_stats', {
         p_client_id: clientId,
@@ -117,10 +122,10 @@ export const useCreateClient = () => {
   const qc = useQueryClient()
   return useMutation({
     mutationFn: async (input: CreateClientInput) => {
-      const user = await getCurrentUser()
+      const [user, companyId] = await Promise.all([getCurrentUser(), getCompanyId()])
       const { data, error } = await supabase
         .from('clients')
-        .insert({ ...input, user_id: user.id })
+        .insert({ ...input, user_id: user.id, company_id: companyId })
         .select()
         .single()
 

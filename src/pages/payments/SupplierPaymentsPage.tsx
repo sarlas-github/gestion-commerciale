@@ -101,6 +101,7 @@ export const SupplierPaymentsPage = () => {
         columns={columns}
         data={filtered}
         isLoading={isLoading}
+        defaultSorting={[{ id: 'date', desc: true }]}
         exportFileName="paiements-fournisseurs"
         exportMapper={p => ({
           Date: formatDate(p.date),

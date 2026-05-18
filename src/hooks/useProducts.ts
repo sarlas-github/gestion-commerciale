@@ -10,6 +10,7 @@ import { getStockStatus, isUniqueNameError } from '@/lib/utils'
 interface StockRow {
   id: string
   user_id: string
+  company_id: string
   product_id: string
   quantity: number
   updated_at: string
@@ -17,21 +18,11 @@ interface StockRow {
 
 export interface AdjustStockInput {
   productId: string
-  currentStockId: string
+  currentStockId: string | null
   currentQuantity: number
   type: 'in' | 'out'
-  quantity: number // delta positif
+  quantity: number
   note: string
-}
-
-// ── Helper ────────────────────────────────────────────────────────────────────
-
-async function getCurrentUser() {
-  const {
-    data: { user },
-  } = await supabase.auth.getUser()
-  if (!user) throw new Error('Non authentifié')
-  return user
 }
 
 function toProductWithStock(p: Record<string, unknown>): ProductWithStock {
@@ -49,6 +40,7 @@ function toProductWithStock(p: Record<string, unknown>): ProductWithStock {
 export const useProducts = () =>
   useQuery({
     queryKey: ['products'],
+    staleTime: 60_000,
     queryFn: async () => {
       const { data, error } = await supabase
         .from('products')
@@ -63,6 +55,7 @@ export const useProducts = () =>
 export const useProduct = (id: string) =>
   useQuery({
     queryKey: ['products', id],
+    staleTime: 60_000,
     queryFn: async () => {
       const { data, error } = await supabase
         .from('products')
@@ -93,23 +86,23 @@ export const useCreateProduct = () => {
   const qc = useQueryClient()
   return useMutation({
     mutationFn: async (input: CreateProductInput) => {
-      const user = await getCurrentUser()
-
-      const { data: product, error } = await supabase
-        .from('products')
-        .insert({ ...input, user_id: user.id })
-        .select()
-        .single()
-
+      const { data: productId, error } = await supabase.rpc('create_product', {
+        p_name:         input.name,
+        p_type:         input.type,
+        p_nature:       input.nature,
+        p_pieces_count: input.pieces_count || 1,
+        p_stock_alert:  input.stock_alert ?? 0,
+      })
       if (error) throw error
 
-      const { error: stockErr } = await supabase
-        .from('stock')
-        .insert({ product_id: product.id, user_id: user.id, quantity: 0 })
+      const { data, error: fetchErr } = await supabase
+        .from('products')
+        .select('*, stock(*)')
+        .eq('id', productId as string)
+        .single()
+      if (fetchErr) throw fetchErr
 
-      if (stockErr) throw stockErr
-
-      return product as Product
+      return toProductWithStock(data as Record<string, unknown>)
     },
     onSuccess: () => {
       qc.invalidateQueries({ queryKey: ['products'] })
@@ -204,32 +197,15 @@ export const useAdjustStock = () => {
   const qc = useQueryClient()
   return useMutation({
     mutationFn: async (input: AdjustStockInput) => {
-      const user = await getCurrentUser()
-
-      const signedDelta = input.type === 'in' ? input.quantity : -input.quantity
-      const newQty = input.currentQuantity + signedDelta
-
-      const { error: stockErr } = await supabase
-        .from('stock')
-        .update({ quantity: newQty })
-        .eq('id', input.currentStockId)
-
-      if (stockErr) throw stockErr
-
-      // DB utilise lowercase 'in' / 'out' dans la contrainte CHECK
-      const { error: movErr } = await supabase.from('stock_movements').insert({
-        user_id: user.id,
-        product_id: input.productId,
-        type: input.type,
-        quantity: signedDelta,
-        reference_type: 'manual',
-        note: input.note,
-        date: new Date().toISOString().split('T')[0],
-        stock_avant: input.currentQuantity,
-        stock_apres: newQty,
+      const { error } = await supabase.rpc('adjust_stock', {
+        p_stock_id:   input.currentStockId,
+        p_product_id: input.productId,
+        p_type:       input.type,
+        p_quantity:   input.quantity,
+        p_note:       input.note || null,
+        p_date:       new Date().toISOString().split('T')[0],
       })
-
-      if (movErr) throw movErr
+      if (error) throw error
     },
     onSuccess: () => {
       qc.invalidateQueries({ queryKey: ['products'] })

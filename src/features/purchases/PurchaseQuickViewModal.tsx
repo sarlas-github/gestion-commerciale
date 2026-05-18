@@ -24,9 +24,10 @@ interface Props {
   purchaseId: string | null
   open: boolean
   onOpenChange: (open: boolean) => void
+  from?: string
 }
 
-export const PurchaseQuickViewModal = ({ purchaseId, open, onOpenChange }: Props) => {
+export const PurchaseQuickViewModal = ({ purchaseId, open, onOpenChange, from }: Props) => {
   const navigate = useNavigate()
   const { data: purchase, isLoading } = usePurchase(purchaseId ?? '')
 
@@ -112,7 +113,7 @@ export const PurchaseQuickViewModal = ({ purchaseId, open, onOpenChange }: Props
             <Button
               onClick={() => {
                 onOpenChange(false)
-                navigate(`/purchases/${purchase.id}/edit`)
+                navigate(`/purchases/${purchase.id}/edit`, { state: { from } })
               }}
             >
               <ExternalLink className="mr-1.5 h-3.5 w-3.5" />

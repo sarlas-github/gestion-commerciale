@@ -1,4 +1,4 @@
-import { useNavigate, useParams } from 'react-router-dom'
+import { useNavigate, useParams, useLocation } from 'react-router-dom'
 import { ArrowLeft, Loader2, FileText } from 'lucide-react'
 import { Button } from '@/components/ui/button'
 import { PageHeader } from '@/components/shared/PageHeader'
@@ -9,6 +9,8 @@ import { useGetSaleInvoice } from '@/hooks/useDocuments'
 export const SaleEditPage = () => {
   const { id } = useParams<{ id: string }>()
   const navigate = useNavigate()
+  const location = useLocation()
+  const backTo = (location.state as { from?: string } | null)?.from ?? '/sales'
   const { data: sale, isLoading } = useSale(id!)
   const updateSale = useUpdateSale()
   const { data: existingInvoice } = useGetSaleInvoice(id)
@@ -39,7 +41,7 @@ export const SaleEditPage = () => {
       <PageHeader
         title={`Vente — ${sale.clients?.name ?? 'Client inconnu'}`}
         leftAction={
-          <Button variant="ghost" size="icon" onClick={() => navigate('/sales')} className="mr-1 shrink-0">
+          <Button variant="ghost" size="icon" onClick={() => navigate(backTo)} className="mr-1 shrink-0">
             <ArrowLeft className="h-5 w-5" />
           </Button>
         }
@@ -51,7 +53,7 @@ export const SaleEditPage = () => {
             </Button>
             {sale.status !== 'cancelled' && (
               <>
-                <Button variant="outline" onClick={() => navigate(-1)} disabled={updateSale.isPending}>
+                <Button variant="outline" onClick={() => navigate(backTo)} disabled={updateSale.isPending}>
                   Annuler
                 </Button>
                 <Button type="submit" form={formId} disabled={updateSale.isPending}>

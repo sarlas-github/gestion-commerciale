@@ -23,6 +23,7 @@ export interface StockMovementRow {
 export const useStockMovements = (month?: string, year?: string) =>
   useQuery({
     queryKey: ['stock-movements', month, year],
+    staleTime: 60_000,
     queryFn: async () => {
       let query = supabase
         .from('stock_movements')

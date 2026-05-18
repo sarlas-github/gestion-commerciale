@@ -28,8 +28,25 @@ TS : `'IN' | 'OUT' | 'ADJUST'` mais CHECK constraint DB : `('in', 'out', 'adjust
 
 ---
 
-## 4. `user_id` — obligatoire dans chaque INSERT
-RLS filtre sur `user_id = auth.uid()` mais ne l'injecte pas. Toujours passer `user_id: user!.id` explicitement.
+## 4. `user_id` + `company_id` — obligatoires dans chaque INSERT direct
+
+Depuis la migration multi-tenant, chaque INSERT direct (single table via `supabase.from().insert()`) doit inclure **les deux** :
+
+```ts
+// ✅ CORRECT — INSERT direct (clients, suppliers, products, stock…)
+const [user, companyId] = await Promise.all([getCurrentUser(), getCompanyId()])
+.insert({ ...input, user_id: user.id, company_id: companyId })
+
+// ❌ INTERDIT — manque company_id → RLS bloque l'accès
+.insert({ ...input, user_id: user.id })
+```
+
+**Exception — opérations multi-tables via RPC** : les fonctions PostgreSQL (`create_sale`, `create_purchase`, `create_invoice`, `create_receipt`…) obtiennent `auth.uid()` et `get_my_company_id()` elles-mêmes en interne. Ne pas les passer en paramètre.
+
+```ts
+// ✅ CORRECT — RPC, aucun user_id/company_id à passer
+await supabase.rpc('create_sale', { p_client_id, p_date, p_items, p_payments })
+```
 
 ---
 
@@ -46,6 +63,49 @@ Ne jamais inclure ces champs dans un INSERT/UPDATE → erreur "cannot insert a n
 ---
 
 ## 7. `pieces_count` — toujours snapshoter à l'insertion
+
+---
+
+## 8. RLS `company_members` — NE PAS utiliser `get_my_company_id()`
+
+La politique RLS de `company_members` **doit** filtrer sur `user_id = auth.uid()` directement, jamais via `get_my_company_id()`.
+
+`get_my_company_id()` est SECURITY DEFINER et lit `company_members` sans RLS. Si la RLS de `company_members` elle-même appelait `get_my_company_id()`, elle déclencherait une récursion infinie → erreur Supabase.
+
+```sql
+-- ✅ CORRECT
+CREATE POLICY "user_company_members" ON public.company_members
+  USING (user_id = auth.uid());
+
+-- ❌ RÉCURSION INFINIE
+CREATE POLICY "company_company_members" ON public.company_members
+  USING (company_id = get_my_company_id());
+```
+
+---
+
+## 9. JSONB null vs string `'null'` dans les fonctions PostgreSQL
+
+Quand JavaScript sérialise `null` dans un objet JSON passé à `supabase.rpc()`, PostgreSQL reçoit la chaîne `'null'` (pas SQL NULL). La vérification `IS NOT NULL` seule ne suffit pas.
+
+S'applique notamment au champ `original_id` dans `update_sale` / `update_purchase` pour distinguer articles existants (à mettre à jour) de nouveaux articles (à insérer) :
+
+```sql
+-- ✅ CORRECT — double vérification
+IF (v_item->>'original_id') IS NOT NULL
+   AND (v_item->>'original_id') <> 'null' THEN
+  UPDATE ...  -- article existant
+ELSE
+  INSERT ...  -- nouvel article + stock + movement
+END IF;
+
+-- ❌ INSUFFISANT — passe si JS envoie null sérialisé en 'null'
+IF (v_item->>'original_id') IS NOT NULL THEN
+```
+
+---
+
+
 Le calcul du total HT est `quantity × pieces_count × unit_price`. `pieces_count` doit être inséré explicitement dans `purchase_items` et `sale_items` au moment de la transaction — ne pas le laisser au DEFAULT (1).
 
 ```ts

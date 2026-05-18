@@ -16,20 +16,20 @@ import { cn, formatDate } from '@/lib/utils'
 import { usePageAction } from '@/contexts/PageContext'
 
 const STOCK_STATUS_OPTIONS = [
-  { value: 'rupture', label: 'Rupture',  emoji: '🔴', badge: 'bg-red-100 text-red-800'    },
-  { value: 'faible',  label: 'Faible',   emoji: '🟡', badge: 'bg-orange-100 text-orange-800' },
-  { value: 'ok',      label: 'En stock', emoji: '🟢', badge: 'bg-green-100 text-green-800' },
+  { value: 'rupture', label: 'Rupture', emoji: '🔴', badge: 'bg-red-100 text-red-800' },
+  { value: 'faible', label: 'Faible', emoji: '🟡', badge: 'bg-orange-100 text-orange-800' },
+  { value: 'ok', label: 'En stock', emoji: '🟢', badge: 'bg-green-100 text-green-800' },
 ] as const
 
 const StockStatusBadge = ({ status }: { status: string }) => {
-  if (status === 'ok')     return <Badge className="bg-green-100 text-green-800 hover:bg-green-100">🟢 En stock</Badge>
+  if (status === 'ok') return <Badge className="bg-green-100 text-green-800 hover:bg-green-100">🟢 En stock</Badge>
   if (status === 'faible') return <Badge className="bg-orange-100 text-orange-800 hover:bg-orange-100">🟡 Faible</Badge>
   return <Badge className="bg-red-100 text-red-800 hover:bg-red-100">🔴 Rupture</Badge>
 }
 
 const STOCK_COLORS: Record<string, string> = {
-  ok:      'text-green-600 font-medium',
-  faible:  'text-orange-500 font-medium',
+  ok: 'text-green-600 font-medium',
+  faible: 'text-orange-500 font-medium',
   rupture: 'text-destructive font-medium',
 }
 
@@ -51,12 +51,12 @@ export const ProductsPage = () => {
   const [adjustProduct, setAdjustProduct] = useState<ProductWithStock | null>(null)
   const [deleteId, setDeleteId] = useState<string | null>(null)
   const [filterStatuses, setFilterStatuses] = useState<string[]>([])
-  
+
   // Initialiser l'onglet : soit depuis l'état (après création), soit par défaut
   const [natureTab, setNatureTab] = useState<'matiere_premiere' | 'produit_fini'>(
     location.state?.nature || 'matiere_premiere'
   )
- 
+
   // Effet pour mettre à jour l'onglet si on arrive avec une nature spécifique
   useEffect(() => {
     if (location.state?.nature) {
@@ -111,16 +111,6 @@ export const ProductsPage = () => {
       header: 'Type',
       cell: ({ row }) => TYPE_LABELS[row.original.type] ?? row.original.type,
     },
-    ...(isProduction ? [{
-      accessorKey: 'nature',
-      header: 'Nature',
-      cell: ({ row }: { row: any }) => {
-        const n = row.original.nature
-        if (n === 'matiere_premiere') return <Badge variant="outline" className="bg-amber-50 text-amber-700 border-amber-200">Mat. Première</Badge>
-        if (n === 'produit_fini') return <Badge variant="outline" className="bg-indigo-50 text-indigo-700 border-indigo-200">Produit Fini</Badge>
-        return <Badge variant="outline" className="bg-slate-50 text-slate-600 border-slate-200">Revente</Badge>
-      }
-    }] : []),
     {
       accessorKey: 'pieces_count',
       header: 'Pièces',
@@ -194,7 +184,7 @@ export const ProductsPage = () => {
     await deleteProduct.mutateAsync(deleteId)
     setDeleteId(null)
   }
- 
+
   if (isLoading || isProfileLoading) {
     return (
       <div className="flex h-[400px] items-center justify-center">

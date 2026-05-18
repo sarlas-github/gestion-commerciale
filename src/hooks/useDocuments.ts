@@ -27,6 +27,7 @@ export interface CreateInvoicePayload {
 export const useGetSaleInvoice = (saleId: string | null | undefined) =>
   useQuery({
     queryKey: ['sale-invoice', saleId],
+    staleTime: 60_000,
     queryFn: async () => {
       if (!saleId) return null
       const { data, error } = await supabase
@@ -92,6 +93,7 @@ export interface CreateReceiptPayload {
 export const useGetPaymentReceipt = (paymentId: string | null | undefined) =>
   useQuery({
     queryKey: ['payment-receipt', paymentId],
+    staleTime: 60_000,
     queryFn: async () => {
       if (!paymentId) return null
       const { data, error } = await supabase
