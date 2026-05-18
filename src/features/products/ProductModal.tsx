@@ -2,14 +2,14 @@ import { ProductForm, type ProductFormData } from '@/features/products/ProductFo
 import { useCreateProduct, useUpdateProduct } from '@/hooks/useProducts'
 import { ResponsiveModal } from '@/components/shared/ResponsiveModal'
 import { isUniqueNameError } from '@/lib/utils'
-import type { Product, ProductWithStock } from '@/types'
+import type { ProductWithStock } from '@/types'
 import type { UseFormSetError } from 'react-hook-form'
 
 interface ProductModalProps {
   product?: ProductWithStock | null
   open: boolean
   onOpenChange: (open: boolean) => void
-  onSuccess?: (product: Product) => void
+  onSuccess?: (product: ProductWithStock) => void
   defaultNature?: 'revente' | 'matiere_premiere' | 'produit_fini'
   isProduction?: boolean
 }

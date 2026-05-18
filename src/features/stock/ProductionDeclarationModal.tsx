@@ -11,6 +11,7 @@ import { EntityAutocomplete } from '@/components/shared/EntityAutocomplete'
 import { ProductModal } from '@/features/products/ProductModal'
 import { useProducts, useAdjustStock } from '@/hooks/useProducts'
 import { useProfile } from '@/hooks/useProfile'
+import type { ProductWithStock } from '@/types'
 
 const schema = z.object({
   product_id: z.string().min(1, 'Veuillez choisir un produit'),
@@ -45,6 +46,7 @@ export const ProductionDeclarationModal = ({
   }, [allProducts, defaultNature])
 
   const [showNewProduct, setShowNewProduct] = useState(false)
+  const [pendingProduct, setPendingProduct] = useState<ProductWithStock | null>(null)
 
   const {
     handleSubmit,
@@ -63,7 +65,10 @@ export const ProductionDeclarationModal = ({
   })
 
   const productId = watch('product_id')
-  const selectedProduct = useMemo(() => products.find(p => p.id === productId), [products, productId])
+  const selectedProduct = useMemo(
+    () => products.find(p => p.id === productId) ?? (pendingProduct?.id === productId ? pendingProduct : undefined),
+    [products, productId, pendingProduct]
+  )
   const opType = watch('type')
   const qty = Number(watch('quantity')) || 0
   
@@ -73,11 +78,12 @@ export const ProductionDeclarationModal = ({
 
   useEffect(() => {
     if (open) {
-      reset({ 
-        type: defaultNature === 'matiere_premiere' ? 'out' : (defaultNature === 'produit_fini' ? 'in' : 'in' as FormData['type']), 
-        quantity: undefined, 
-        note: defaultNature === 'matiere_premiere' ? 'Consommation' : (defaultNature === 'produit_fini' ? 'Production' : '') 
+      reset({
+        type: defaultNature === 'matiere_premiere' ? 'out' : (defaultNature === 'produit_fini' ? 'in' : 'in' as FormData['type']),
+        quantity: undefined,
+        note: defaultNature === 'matiere_premiere' ? 'Consommation' : (defaultNature === 'produit_fini' ? 'Production' : '')
       })
+      setPendingProduct(null)
     }
   }, [open, reset, defaultNature])
 
@@ -94,7 +100,8 @@ export const ProductionDeclarationModal = ({
     onOpenChange(false)
   }
 
-  const handleProductSuccess = (product: { id: string }) => {
+  const handleProductSuccess = (product: ProductWithStock) => {
+    setPendingProduct(product)
     setValue('product_id', product.id)
     setShowNewProduct(false)
   }
