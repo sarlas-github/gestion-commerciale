@@ -1,153 +1,172 @@
-liberer ports
-net stop winnat
-net start winnat
-
-npx supabase db reset
-
-Étape 1 : Récupérer vos clés locales
-npx supabase status
- Publishable::::: key
- url::::: acces bd
-
- VITE_SUPABASE_URL=http://100.98.128.42:54321
-VITE_SUPABASE_ANON_KEY=sb_publishable_ACJWlzQHlZjBrEguHvfOxg_3BJgxAaH
-
-npx supabase stop && npx supabase start && npx supabase db reset
-
-
-
-npm run dev -- --host
-
-Étape finale sur le mobile
-Vérifiez que Tailscale est bien activé sur votre téléphone.
-Ouvrez le navigateur du téléphone et tapez l'adresse : http://100.98.128.42:5173
-
-
-SELECT public.create_app_user('test.banina@gmail.com', 'Démo123',  'banina', 'production');
-
-# 🚀 Guide Master : Du Setup Initial au Déploiement Pro
-
-Ce document retrace toutes les étapes pour configurer un projet Supabase de zéro, comme nous l'avons fait le 11/05/2026. Utilise ce guide pour tes futurs SaaS.
+# 🚀 Guide Workflow Supabase — Local ↔ Production
 
 ---
 
-## 🛠️ Étape 0 : Configuration Initiale (À faire une fois par projet)
+## ⚡ Commandes rapides (anti-oubli)
 
-C'est ce que nous avons fait pour nettoyer et lier ton projet actuel.
-
-### 1. Installation des outils
-- **Docker Desktop** : Télécharger et installer (indispensable pour le local). Activer **WSL 2**.
-- **Supabase CLI** : Pas besoin d'installation globale, on utilise `npx supabase`.
-
-### 2. Connexion et Liaison
 ```bash
-# Se connecter à son compte Supabase (une seule fois par PC)
-npx supabase login
+# Libérer les ports Docker si bloqués
+net stop winnat && net start winnat
 
-# Initialiser le dossier du projet
-npx supabase init
-
-# Lier le dossier local au projet Cloud (récupérer la Ref dans le Dashboard Supabase)
-npx supabase link --project-ref yirxzhazygrvymtfikap
-```
-
-### 3. Créer la "Baseline" (L'état de départ)
-Si tu as déjà des tables en ligne et que tu veux les ramener sur ton PC :
-```bash
-# 1. Créer le fichier de structure (YYYYMMDDHHMMSS_baseline.sql)
-npx supabase db dump --linked -f supabase/migrations/20260511000000_v1_baseline.sql
-
-# 2. (Optionnel) Récupérer les données existantes pour les tests
-npx supabase db dump --linked --data-only -f supabase/seed.sql
-```
-
----
-
-## 💻 Étape 1 : Environnement de DEV Local
-
-Une fois le setup fini, voici comment travailler au quotidien sur ton PC.
-
-### Démarrage
-```bash
-# Lancer les serveurs locaux (Docker)
+# Démarrer l'environnement local
 npx supabase start
 
-# Dashboard Studio Local : http://127.0.0.1:54323
+# Récupérer les clés locales (URL + anon key)
+npx supabase status
+
+# Reset complet de la BD locale (repart du baseline + migrations)
+npx supabase db reset
+
+# Lancer l'app connectée au réseau Tailscale (test mobile)
+npm run dev -- --host
 ```
 
-### Configuration des environnements (.env)
-- `.env.development` : `VITE_SUPABASE_URL=http://127.0.0.1:54321`
-- `.env.production` : Tes clés Cloud réelles.
+**Accès mobile (Tailscale ON) :**
+- App : `http://100.98.128.42:5173`
+- Studio local : `http://127.0.0.1:54323`
+
+**Créer un user de test :**
+```sql
+SELECT public.create_app_user('test.banina@gmail.com', 'Démo123', 'banina', 'production');
+```
 
 ---
 
-## 🔄 Étape 2 : Le Cycle de Déploiement Sécurisé
+## 🗂️ Nomenclature des migrations
 
-Suis toujours cet ordre pour protéger ta production (et tes démos clients).
+Tout fichier SQL va dans `supabase/migrations/` avec ce format :
 
-### Phase A : Développement (Branche de feature)
-1. **Créer la Migration** : Crée ton fichier `supabase/migrations/YYYYMMDDHHMMSS_nom.sql`.
-2. **Coder & Tester en Local** : Utilise ton PC avec Tailscale pour valider sur mobile. Ta base locale peut être cassée et remise à zéro (`db reset`) sans crainte.
+```
+YYYYMMDDHHMMSS_CATÉGORIE_description.sql
+```
 
-### Phase B : Staging / Test Cloud (Validation & Démo)
-*C'est ici que tu montres ton travail à tes clients via un lien STABLE.*
+| Catégorie | Quand l'utiliser |
+|---|---|
+| `_ARCHI_` | Changement de structure : CREATE/ALTER TABLE, colonnes, index, contraintes, RLS ENABLE |
+| `_OBJETS_` | Objets DB : fonctions PG, RLS policies, triggers, vues, storage buckets |
 
-1. **Pousser le SQL** : `npx supabase db push` (lié au projet TEST).
-2. **Merge dans la branche `test`** : Pour mettre à jour le lien de démo client.
-   ```bash
-   git checkout test
-   git merge feat/ma-nouveaute
-   git push origin test
-   ```
-3. **Lien stable** : Ton client utilise toujours la même URL (ex: `https://test.ton-projet.pages.dev`). 
-   *C'est ton "laboratoire" branché sur Supabase TEST.*
+**Exemples :**
+```
+20260520143000_ARCHI_add_invoice_columns.sql
+20260520143001_OBJETS_update_create_sale_function.sql
+```
 
-### Phase C : Production (Le grand saut) 🚩
-*Une fois que le client a validé sur le lien de test.*
-
-1. **Lier la PROD** : `npx supabase link --project-ref <REF_PROD>`.
-2. **Pousser le SQL** : `npx supabase db push`.
-3. **Merge dans `main`** : 
-   ```bash
-   git checkout main
-   git merge test
-   git push origin main
-   ```
-   *Ton site officiel est à jour avec une base de données déjà prête.*
+> Les anciennes migrations sont archivées dans `supabase/migrations/archive/` — lecture seule.
 
 ---
 
-## 🚀 Étape 3 : Création du projet de PROD (Futur)
+## 🔄 Cycle de travail quotidien
 
-Quand tu lanceras ton SaaS officiellement :
+### 1. Créer une migration
 
-1. Crée un nouveau projet vide sur Supabase.
-2. Lie ton terminal à ce nouveau projet : `npx supabase link --project-ref <REF_PROD>`.
+```bash
+# Créer le fichier (nommer avec timestamp actuel)
+# Exemple : 20260520143000_ARCHI_description.sql
+```
+
+Écrire le SQL dans le fichier.  
+Si c'est une fonction → mettre aussi à jour `supabase/functions/nom_fonction.sql`.
+
+### 2. Tester en local
+
+```bash
+# Applique toutes les migrations en attente sur Docker local
+npx supabase db push --local
+```
+
+Ou pour tout repartir de zéro (baseline + toutes les migrations) :
+
+```bash
+npx supabase db reset
+```
+
+### 3. Déployer en production
+
+```bash
+# Applique les migrations en attente sur la BD prod (projet lié)
+npx supabase db push
+```
+
+---
+
+## 🎯 Local vs Production — Résumé
+
+| Commande | Cible |
+|---|---|
+| `npx supabase db push` | **Production** (projet lié `yirxzhazygrvymtfikap`) |
+| `npx supabase db push --local` | **Docker local** |
+| `npx supabase db dump --linked` | Dump depuis **Production** |
+| `npx supabase db dump --local` | Dump depuis **Docker local** |
+| `npx supabase db reset` | Recrée **Docker local** depuis zéro (baseline + migrations) |
+| `npx supabase migration list` | Voir quelles migrations sont appliquées sur LOCAL et REMOTE |
+
+---
+
+## 🔧 Repartir sur une nouvelle BD locale
+
+Quand tu veux une BD locale propre (nouveau PC, environnement cassé, etc.) :
+
+```bash
+# 1. Démarrer Docker local
+npx supabase start
+
+# 2. Appliquer toutes les migrations (baseline + suite)
+npx supabase db reset
+
+# 3. Récupérer les clés locales générées
+npx supabase status
+# → Copier VITE_SUPABASE_URL et VITE_SUPABASE_ANON_KEY dans .env.development
+
+# 4. (Optionnel) Récupérer les données de prod pour tester
+npx supabase db dump --linked --data-only -f supabase/seed.sql
+npx supabase db reset  # relancer pour inclure le seed
+```
+
+> `db reset` rejoue dans l'ordre tous les fichiers `supabase/migrations/*.sql` + `supabase/seed.sql` si présent.
+
+---
+
+## 🏗️ Créer un nouveau baseline (nouvelle version)
+
+Quand l'historique de migrations est trop long et qu'on veut archiver :
+
+```bash
+# 1. Archiver les migrations actuelles
+mv supabase/migrations/*.sql supabase/migrations/archive/
+
+# 2. Générer le nouveau baseline depuis la prod
+npx supabase db dump --linked --file supabase/migrations/YYYYMMDDHHMMSS_ARCHI_v3_baseline.sql
+
+# 3. Marquer le baseline comme déjà appliqué sur prod (pas besoin de le relancer)
+npx supabase migration repair --status applied YYYYMMDDHHMMSS
+
+# 4. Vérifier
+npx supabase migration list
+```
+
+---
+
+## 🔑 Setup initial (nouveau PC ou nouveau projet)
+
+```bash
+# 1. Connexion Supabase (une fois par PC)
+npx supabase login
+
+# 2. Lier au projet prod
 npx supabase link --project-ref yirxzhazygrvymtfikap
-3. Lance `npx supabase db push` : toutes tes tables et fonctions seront créées en 10 secondes.
-4. Configure ton domaine final pour pointer sur ce nouveau projet.
-tjrs linker sur le projet et pusher
+
+# 3. Démarrer local
+npx supabase start
+
+# 4. Appliquer les migrations en local
+npx supabase db reset
+```
 
 ---
 
-## 📱 4. Tester sur Mobile (Mode Local Pro)
+## 📏 Règles d'or
 
-Pour tester ton code local et ta base locale sur ton mobile sans passer par le Cloud.
-
-### Setup (À faire une fois)
-1. Installe **Tailscale** sur ton PC et sur ton Mobile. Connecte-les au même compte.
-2. Note l'IP Tailscale de ton PC (ex: `100.98.128.42`).
-
-### Au quotidien pour le test mobile
-1. **Config** : Dans `.env.development`, utilise ton IP Tailscale :
-   `VITE_SUPABASE_URL=http://100.x.y.z:54321`
-2. **Lancer** : `npm run dev -- --host`
-3. **Mobile** : Ouvre `http://100.x.y.z:5173` sur ton téléphone (avec Tailscale **ON**).
-
----
-
-## 📏 Règles d'Or
-- **Zéro modification manuelle** : Ne change jamais une table directement via l'interface Cloud. Passe toujours par un fichier de migration.
-- **Immuabilité** : Un fichier dans `migrations/` ne se modifie jamais. On en crée un nouveau pour corriger.
-
-*Guide rédigé par ton copilote Antigravity.*
+- **Jamais de SQL direct** dans le dashboard Supabase cloud — toujours via un fichier de migration.
+- **Un fichier = immuable** — on ne modifie jamais un fichier existant dans `migrations/`, on crée un nouveau.
+- **Fonctions PG** → toujours mettre à jour aussi `supabase/functions/nom.sql` (source de vérité).
+- **`db reset` ne touche pas la prod** — uniquement le Docker local.

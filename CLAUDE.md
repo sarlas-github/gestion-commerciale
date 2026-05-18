@@ -135,21 +135,30 @@ Toute l'interface en **français** — labels, boutons, messages d'erreur, titre
 
 ## 🗄️ Migrations SQL — Règle absolue
 
-Tout script SQL (migration, fonction, index, colonne, etc.) DOIT être créé dans :
+Tout script SQL DOIT être créé dans `supabase/migrations/` avec la nomenclature Supabase :
 
 ```
-supabase/migrations/DD-MM-YYYY_NN_description.sql
+YYYYMMDDHHMMSS_CATÉGORIE_description.sql
 ```
 
-- `DD-MM-YYYY` = date du jour (Jour-Mois-Année)
-- `NN` = numéro d'ordre sur 2 chiffres si plusieurs scripts le même jour (`01`, `02`…)
+- `YYYYMMDDHHMMSS` = horodatage complet (14 chiffres) — utilisé par Supabase pour ordonner les migrations
+- `CATÉGORIE` = **ARCHI** ou **OBJETS** (voir ci-dessous) — séparé par `_` (Supabase ne reconnaît pas le `-` comme séparateur)
 - `description` = nom court en minuscules avec underscores
 
-Exemples :
-```
-supabase/migrations/04-05-2026_01_company_rib.sql
-supabase/scripts/04-05-2026_02_products_index.sql
-```
+Exemples : `20260520143000_ARCHI_add_company_members.sql`, `20260520143001_OBJETS_create_sale_function.sql`
+
+### Catégories
+
+| Catégorie | Contenu |
+|---|---|
+| `_ARCHI_` | Structure : CREATE TABLE, ALTER TABLE, ADD/DROP COLUMN, index, contraintes, RLS ENABLE |
+| `_OBJETS_` | Objets DB : fonctions PG, RLS policies, triggers, vues, storage buckets |
+
+### Archive
+
+Les migrations antérieures sont conservées dans `supabase/migrations/archive/` — historique en lecture seule, ne pas modifier.
+
+Le baseline actuel de référence est le fichier `YYYYMMDD_01-ARCHI-v2_baseline.sql` présent dans `supabase/migrations/`.
 
 Ne jamais écrire de SQL directement dans le chat sans créer le fichier correspondant.
 
