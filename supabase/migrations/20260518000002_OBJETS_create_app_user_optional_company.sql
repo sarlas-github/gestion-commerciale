@@ -1,8 +1,7 @@
--- Dernière version déployée : 20260518000002_OBJETS_create_app_user_optional_company.sql
--- Nouvel utilisateur + nouvelle entreprise (défaut) :
---   SELECT * FROM public.create_app_user('email@test.com', 'motdepasse');
--- Nouvel utilisateur dans une entreprise existante :
---   SELECT * FROM public.create_app_user('email@test.com', 'motdepasse', 'revente', 'admin', 'uuid-company-id');
+-- Ajout du paramètre optionnel p_company_id dans create_app_user
+-- Retourne user_id ET company_id via paramètres OUT
+-- NULL (défaut) → crée une nouvelle entreprise
+-- UUID fourni   → rattache l'utilisateur à une entreprise existante
 
 DROP FUNCTION IF EXISTS public.create_app_user(text, text, text, text);
 DROP FUNCTION IF EXISTS public.create_app_user(text, text, text, text, text);

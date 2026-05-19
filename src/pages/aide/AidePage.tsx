@@ -1,5 +1,4 @@
 import { useState, createContext, useContext } from 'react'
-import { Link } from 'react-router-dom'
 import {
   LayoutDashboard,
   Package,
@@ -16,10 +15,11 @@ import {
   ChevronDown,
   CheckCircle2,
   XCircle,
-  AlertTriangle,
+  Download,
 } from 'lucide-react'
 import { PageHeader } from '@/components/shared/PageHeader'
-import { useProfile } from '@/hooks/useProfile'
+import { Button } from '@/components/ui/button'
+import { useProfile, useMyRole } from '@/hooks/useProfile'
 import { cn } from '@/lib/utils'
 
 const PrintContext = createContext(false)
@@ -111,13 +111,13 @@ const RulesTable = ({ headers, rows }: { headers: string[]; rows: (string | Reac
 
 const StatusBadge = ({ type }: { type: 'paid' | 'partial' | 'unpaid' | 'cancelled' | 'instock' | 'low' | 'outofstock' }) => {
   const map = {
-    paid:       { label: 'Payé',     cls: 'bg-green-100 text-green-800 dark:bg-green-900/30 dark:text-green-400' },
-    partial:    { label: 'Partiel',  cls: 'bg-orange-100 text-orange-800 dark:bg-orange-900/30 dark:text-orange-400' },
-    unpaid:     { label: 'Impayé',   cls: 'bg-red-100 text-red-800 dark:bg-red-900/30 dark:text-red-400' },
-    cancelled:  { label: 'Annulé',   cls: 'bg-gray-100 text-gray-500 dark:bg-gray-800 dark:text-gray-400' },
-    instock:    { label: 'En stock', cls: 'bg-green-100 text-green-800 dark:bg-green-900/30 dark:text-green-400' },
-    low:        { label: 'Faible',   cls: 'bg-orange-100 text-orange-800 dark:bg-orange-900/30 dark:text-orange-400' },
-    outofstock: { label: 'Rupture',  cls: 'bg-red-100 text-red-800 dark:bg-red-900/30 dark:text-red-400' },
+    paid: { label: 'Payé', cls: 'bg-green-100 text-green-800 dark:bg-green-900/30 dark:text-green-400' },
+    partial: { label: 'Partiel', cls: 'bg-orange-100 text-orange-800 dark:bg-orange-900/30 dark:text-orange-400' },
+    unpaid: { label: 'Impayé', cls: 'bg-red-100 text-red-800 dark:bg-red-900/30 dark:text-red-400' },
+    cancelled: { label: 'Annulé', cls: 'bg-gray-100 text-gray-500 dark:bg-gray-800 dark:text-gray-400' },
+    instock: { label: 'En stock', cls: 'bg-green-100 text-green-800 dark:bg-green-900/30 dark:text-green-400' },
+    low: { label: 'Faible', cls: 'bg-orange-100 text-orange-800 dark:bg-orange-900/30 dark:text-orange-400' },
+    outofstock: { label: 'Rupture', cls: 'bg-red-100 text-red-800 dark:bg-red-900/30 dark:text-red-400' },
   }
   return <span className={cn('inline-flex whitespace-nowrap rounded-full px-2.5 py-0.5 text-xs font-medium', map[type].cls)}>{map[type].label}</span>
 }
@@ -125,10 +125,13 @@ const StatusBadge = ({ type }: { type: 'paid' | 'partial' | 'unpaid' | 'cancelle
 
 const IntroCard = ({ lines }: { lines: { before: string; after: string }[] }) => (
   <div className="rounded-xl border bg-primary/5 border-primary/20 p-6 space-y-5">
-    <div className="space-y-1">
+    <div className="space-y-2">
       <p className="text-base font-bold text-foreground">Avec PilotCommerce, vous prenez enfin le contrôle.</p>
-      <p className="text-sm text-muted-foreground">Accédez à votre activité à tout moment, depuis n'importe quel appareil — PC ou mobile.</p>
-      <p className="text-sm text-muted-foreground">Fini la gestion à l'aveugle. Voici ce que l'application change concrètement pour vous :</p>
+      <p className="text-sm text-muted-foreground leading-relaxed">
+        Accédez à votre activité à tout moment, depuis n'importe quel appareil — PC ou mobile.
+        Vos données vous appartiennent : exportez n'importe quelle liste en Excel en un clic.
+      </p>
+      <p className="text-sm text-muted-foreground">Voici ce que l'application change concrètement pour vous :</p>
     </div>
     <div className="space-y-3">
       {lines.map((line, i) => (
@@ -148,24 +151,6 @@ const IntroCard = ({ lines }: { lines: { before: string; after: string }[] }) =>
   </div>
 )
 
-const PrerequisiteBanner = () => (
-  <div className="rounded-xl border-2 border-amber-400 bg-amber-50 dark:bg-amber-950/30 dark:border-amber-600 p-4 flex gap-3">
-    <AlertTriangle className="h-5 w-5 text-amber-600 dark:text-amber-400 shrink-0 mt-0.5" />
-    <div className="space-y-1.5">
-      <p className="text-sm font-bold text-amber-900 dark:text-amber-200">Avant de commencer — Configurez votre entreprise</p>
-      <p className="text-sm text-amber-800 dark:text-amber-300 leading-relaxed">
-        Votre <strong>nom d'entreprise</strong>, <strong>logo</strong>, <strong>couleur de marque</strong> et <strong>taux de TVA</strong> apparaissent sur toutes vos factures et reçus. Ces informations sont figées au moment de la génération du document — si vous les modifiez après, les anciens documents ne seront pas mis à jour.
-      </p>
-      <p className="text-sm text-amber-800 dark:text-amber-300">
-        Configurez ces paramètres <strong>avant d'enregistrer votre première vente</strong>.{' '}
-        <Link to="/settings" className="underline font-semibold hover:text-amber-900 dark:hover:text-amber-100">
-          Aller aux Paramètres →
-        </Link>
-      </p>
-    </div>
-  </div>
-)
-
 // ─── Guide Revente ──────────────────────────────────────────────────────────────
 
 const GuideRevente = () => (
@@ -177,8 +162,6 @@ const GuideRevente = () => (
       { before: 'Factures saisies manuellement, risque d\'erreur', after: 'Facture générée à chaque vente, reçu à chaque paiement — numérotés, archivés, sans saisie manuelle' },
       { before: 'Aucune vision globale sur votre activité', after: 'Dashboard avec indicateurs clés et graphiques pour piloter votre commerce' },
     ]} />
-
-    <PrerequisiteBanner />
 
     <Section icon={LayoutDashboard} title="Votre tableau de bord" n={1}>
       <p className="text-sm text-muted-foreground">Dès la connexion, le tableau de bord centralise tous vos indicateurs clés pour la période sélectionnée. Vous pouvez changer le mois — ou passer en vue annuelle — depuis le sélecteur en haut de page.</p>
@@ -393,8 +376,6 @@ const GuideProduction = () => (
       { before: 'Factures saisies manuellement, risque d\'erreur', after: 'Facture générée à chaque vente, reçu à chaque paiement — numérotés, archivés, sans saisie manuelle' },
       { before: 'Aucune vision globale sur votre activité', after: 'Dashboard avec indicateurs clés et graphiques pour piloter votre production' },
     ]} />
-
-    <PrerequisiteBanner />
 
     <Section icon={LayoutDashboard} title="Votre tableau de bord" n={1}>
       <p className="text-sm text-muted-foreground">Dès la connexion, le tableau de bord centralise tous vos indicateurs clés pour la période sélectionnée. Vous pouvez changer le mois — ou passer en vue annuelle — depuis le sélecteur en haut de page.</p>
@@ -661,8 +642,21 @@ const GuideProduction = () => (
 
 export const AidePage = () => {
   const { data: profile } = useProfile()
+  const { data: role } = useMyRole()
   const isProduction = profile?.business_mode === 'production'
-  const [printAll] = useState(false)
+  const isSuperAdmin = role === 'super-admin'
+  const [printAll, setPrintAll] = useState(false)
+
+  const handleDownload = () => {
+    setPrintAll(true)
+    const prevTitle = document.title
+    document.title = 'Guide utilisateur'
+    setTimeout(() => {
+      window.print()
+      document.title = prevTitle
+      setTimeout(() => setPrintAll(false), 500)
+    }, 200)
+  }
 
   return (
     <PrintContext.Provider value={printAll}>
@@ -679,10 +673,12 @@ export const AidePage = () => {
       <div className="max-w-3xl space-y-6">
         <div className="flex items-start justify-between gap-4">
           <PageHeader title="Guide utilisateur" />
-          {/* <Button variant="outline" size="sm" onClick={handleDownload} className="shrink-0 mt-1 print:hidden">
-            <Download className="h-4 w-4 mr-2" />
-            Télécharger guide
-          </Button> */}
+          {isSuperAdmin && (
+            <Button variant="outline" size="sm" onClick={handleDownload} className="shrink-0 mt-1 print:hidden">
+              <Download className="h-4 w-4 mr-2" />
+              Télécharger guide
+            </Button>
+          )}
         </div>
 
         {/* En-tête visible uniquement à l'impression */}

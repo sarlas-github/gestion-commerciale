@@ -27,7 +27,9 @@ npm run dev -- --host
 
 **Créer un user de test :**
 ```sql
-SELECT public.create_app_user('test.banina@gmail.com', 'Démo123', 'banina', 'production');
+SELECT public.create_app_user('test@gmail.com', 'Démo123', 'production', 'admin');
+-- ou super-admin :
+SELECT public.create_app_user('test@gmail.com', 'Démo123', 'production', 'super-admin');
 ```
 
 ---
@@ -86,6 +88,26 @@ npx supabase db reset
 # Applique les migrations en attente sur la BD prod (projet lié)
 npx supabase db push
 ```
+
+---
+
+## 🔌 Basculer l'app entre Local et Production
+
+Le fichier `.env.development` détermine quelle base de données l'app utilise en `npm run dev`.
+
+**Connexion Production :**
+```env
+VITE_SUPABASE_URL=https://yirxzhazygrvymtfikap.supabase.co
+VITE_SUPABASE_ANON_KEY=<clé anon prod>
+```
+
+**Connexion Local (Docker) :**
+```env
+VITE_SUPABASE_URL=http://127.0.0.1:54321
+VITE_SUPABASE_ANON_KEY=<clé anon locale — récupérée via `npx supabase status`>
+```
+
+> Les deux valeurs sont rappelées en commentaire en tête de `.env.development` pour switcher rapidement.
 
 ---
 

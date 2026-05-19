@@ -267,9 +267,10 @@ que ce soit
 ```
 pending
 -
-data des 2 modes
-caroussel explicatifs
-preparer bd prod
+devise
+export excel pro , ligne et colonnes 
+international colonnes manquants
+il faut l ajouter dans guide utilisateurs
 ---
 
 ## Phase 2 — Documents (après validation client)
@@ -278,3 +279,10 @@ preparer bd prod
 ⏸️ Téléchargement PDF facture et reçu
 ⏸️ Paramètres complets (couleur marque sur PDF)
 ```
+
+🔄 Récapitulatif final de ta Checklist International (Pour ne rien perdre) :
+❌ Enlever la génération de documents : Supprimer ou masquer les boutons "Télécharger la facture officielle" ou "Imprimer le reçu".
+💱 Dynamiser la devise : Rendre le symbole monétaire modifiable selon le pays ($\in$, $, FCFA, DH...).
+📊 Enrichir l'export Excel (Achats & Ventes) : Ajouter les colonnes indispensables pour les comptables étrangers (Total HT, Taux de TVA, Montant de la TVA, Mode de règlement, et N° de facture fournisseur pour les achats).
+⚙️ Adapter les paramètres de l'entreprise (Le point oublié) : Rendre les champs d'identification entreprise génériques ou adaptés au pays, et préciser qu'ils servent à l'export Excel.
+

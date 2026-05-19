@@ -84,6 +84,27 @@ CREATE POLICY "company_company_members" ON public.company_members
 
 ---
 
+## 10. Modifier la signature d'une fonction PostgreSQL — `DROP` + `CREATE` obligatoire
+
+`CREATE OR REPLACE FUNCTION` échoue avec `ERROR 42P13` dès qu'on supprime ou renomme un paramètre. PostgreSQL autorise uniquement l'ajout de paramètres WITH DEFAULT à la fin.
+
+**Fix :** `DROP FUNCTION IF EXISTS` sur toutes les signatures existantes, puis `CREATE FUNCTION`.
+
+```sql
+-- ✅ CORRECT — signature modifiée (paramètre supprimé ou renommé)
+DROP FUNCTION IF EXISTS public.ma_fonction(text, text, text, text);
+DROP FUNCTION IF EXISTS public.ma_fonction(text, text, text, text, text);
+CREATE FUNCTION public.ma_fonction(p_email text, p_password text, p_mode text DEFAULT 'revente')
+...
+
+-- ❌ ERREUR 42P13 — impossible si un param est renommé/supprimé
+CREATE OR REPLACE FUNCTION public.ma_fonction(p_email text, p_password text, p_mode text DEFAULT 'revente')
+```
+
+Lister toutes les surcharges connues dans les `DROP` pour ne rien laisser en base.
+
+---
+
 ## 9. JSONB null vs string `'null'` dans les fonctions PostgreSQL
 
 Quand JavaScript sérialise `null` dans un objet JSON passé à `supabase.rpc()`, PostgreSQL reçoit la chaîne `'null'` (pas SQL NULL). La vérification `IS NOT NULL` seule ne suffit pas.

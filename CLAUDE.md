@@ -158,7 +158,7 @@ Exemples : `20260520143000_ARCHI_add_company_members.sql`, `20260520143001_OBJET
 
 Les migrations antérieures sont conservées dans `supabase/migrations/archive/` — historique en lecture seule, ne pas modifier.
 
-Le baseline actuel de référence est le fichier `YYYYMMDD_01-ARCHI-v2_baseline.sql` présent dans `supabase/migrations/`.
+Le baseline actuel de référence est le fichier `20260520143000_ARCHI-v2_baseline.sql` présent dans `supabase/migrations/`.
 
 Ne jamais écrire de SQL directement dans le chat sans créer le fichier correspondant.
 
@@ -169,7 +169,7 @@ Ne jamais écrire de SQL directement dans le chat sans créer le fichier corresp
 `supabase/functions/` contient **la dernière version déployée** de chaque fonction RPC.
 
 Règle à respecter à chaque modification d'une fonction :
-1. Créer le script dans `supabase/scripts/YYYYMMDD_NN_description.sql`
+1. Créer le script dans `supabase/scripts/20260520143000_ARCHI_description.sql`
 2. Mettre à jour le fichier correspondant dans `supabase/functions/nom_fonction.sql`
 
 Ne jamais modifier `supabase/functions/` sans créer le script de migration qui va avec.

@@ -21,11 +21,11 @@ const schema = z.object({
   phone: z.string().optional().or(z.literal('')),
   site_web: z.string().optional().or(z.literal('')),
   address: z.string().optional().or(z.literal('')),
-  ice: z.string().optional().or(z.literal('')),
-  if_number: z.string().optional().or(z.literal('')),
+  ice: z.string().refine(v => v === '' || /^\d{15}$/.test(v), 'ICE : 15 chiffres exactement').optional().or(z.literal('')),
+  if_number: z.string().refine(v => v === '' || /^\d{7,8}$/.test(v), 'IF : 7 ou 8 chiffres').optional().or(z.literal('')),
   rc: z.string().optional().or(z.literal('')),
-  tp_number: z.string().optional().or(z.literal('')),
-  rib: z.string().optional().or(z.literal('')),
+  tp_number: z.string().refine(v => v === '' || /^\d{8}$/.test(v), 'TP : 8 chiffres exactement').optional().or(z.literal('')),
+  rib: z.string().refine(v => v === '' || /^\d{24}$/.test(v), 'RIB : 24 chiffres exactement').optional().or(z.literal('')),
   taux_tva_defaut: z.number({ invalid_type_error: 'Entrer un taux' }).min(0).max(100).default(0),
   couleur_marque: z.string().min(1).default(DEFAULT_BRAND_COLOR),
 })
@@ -309,9 +309,10 @@ export const SettingsPage = () => {
                   control={control}
                   name="ice"
                   render={({ field }) => (
-                    <Input id="ice" {...field} placeholder="000 000 000 00000" />
+                    <Input id="ice" {...field} placeholder="000000000000000" maxLength={15} />
                   )}
                 />
+                {errors.ice && <p className="text-xs text-destructive">{errors.ice.message}</p>}
               </div>
               <div className="space-y-1.5">
                 <Label htmlFor="if_number">IF</Label>
@@ -319,9 +320,10 @@ export const SettingsPage = () => {
                   control={control}
                   name="if_number"
                   render={({ field }) => (
-                    <Input id="if_number" {...field} placeholder="Identifiant fiscal" />
+                    <Input id="if_number" {...field} placeholder="12345678" maxLength={8} />
                   )}
                 />
+                {errors.if_number && <p className="text-xs text-destructive">{errors.if_number.message}</p>}
               </div>
               <div className="space-y-1.5">
                 <Label htmlFor="rc">RC</Label>
@@ -329,7 +331,7 @@ export const SettingsPage = () => {
                   control={control}
                   name="rc"
                   render={({ field }) => (
-                    <Input id="rc" {...field} placeholder="Registre de commerce" />
+                    <Input id="rc" {...field} placeholder="12345 Casablanca" />
                   )}
                 />
               </div>
@@ -339,9 +341,10 @@ export const SettingsPage = () => {
                   control={control}
                   name="tp_number"
                   render={({ field }) => (
-                    <Input id="tp_number" {...field} placeholder="Taxe professionnelle" />
+                    <Input id="tp_number" {...field} placeholder="12345678" maxLength={8} />
                   )}
                 />
+                {errors.tp_number && <p className="text-xs text-destructive">{errors.tp_number.message}</p>}
               </div>
               <div className="col-span-2 space-y-1.5">
                 <Label htmlFor="rib">RIB</Label>
@@ -349,9 +352,10 @@ export const SettingsPage = () => {
                   control={control}
                   name="rib"
                   render={({ field }) => (
-                    <Input id="rib" {...field} placeholder="MA64 0110 0000 0000 1234 5678 9" />
+                    <Input id="rib" {...field} placeholder="000000000000000000000000" maxLength={24} />
                   )}
                 />
+                {errors.rib && <p className="text-xs text-destructive">{errors.rib.message}</p>}
               </div>
             </div>
           </section>

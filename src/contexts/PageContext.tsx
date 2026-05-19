@@ -98,8 +98,8 @@ export const usePageHeader = ({
     return () => {
       setTitle('')
       setSubtitle('')
-      setAction(null)
-      setLeftAction(null)
+      if (actions !== undefined) setAction(null)
+      if (leftAction !== undefined) setLeftAction(null)
     }
   }, [title, subtitle, actions, leftAction, setTitle, setSubtitle, setAction, setLeftAction])
 }

@@ -1,6 +1,6 @@
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query'
 import { supabase } from '@/lib/supabase'
-import type { Profile, BusinessMode } from '@/types'
+import type { Profile, BusinessMode, CompanyRole } from '@/types'
 
 async function getCurrentUser() {
   const { data: { user } } = await supabase.auth.getUser()
@@ -42,6 +42,22 @@ export const useProfile = () =>
     },
     retry: 1,
     staleTime: 1000 * 60 * 5, // 5 minutes
+  })
+
+export const useMyRole = () =>
+  useQuery({
+    queryKey: ['my-role'],
+    staleTime: 5 * 60_000,
+    queryFn: async () => {
+      const user = await getCurrentUser()
+      const { data, error } = await supabase
+        .from('company_members')
+        .select('role')
+        .eq('user_id', user.id)
+        .maybeSingle()
+      if (error) throw error
+      return (data?.role ?? null) as CompanyRole | null
+    },
   })
 
 export const useUpdateProfileMode = () => {

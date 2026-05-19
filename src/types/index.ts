@@ -21,7 +21,7 @@ export interface Profile {
 
 // ─── company_members ──────────────────────────────────────────────────────────
 
-export type CompanyRole = 'admin'
+export type CompanyRole = 'admin' | 'super-admin'
 
 export interface CompanyMember {
   id: string
