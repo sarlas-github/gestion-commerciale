@@ -1,5 +1,7 @@
+import { useState } from 'react'
 import { useNavigate, useParams, useLocation } from 'react-router-dom'
 import { ArrowLeft, Loader2, FileText } from 'lucide-react'
+import { toast } from 'sonner'
 import { Button } from '@/components/ui/button'
 import { PageHeader } from '@/components/shared/PageHeader'
 import { SaleForm, type SaleFormValues } from '@/features/sales/SaleForm'
@@ -11,9 +13,18 @@ export const SaleEditPage = () => {
   const navigate = useNavigate()
   const location = useLocation()
   const backTo = (location.state as { from?: string } | null)?.from ?? '/sales'
+  const [isFormDirty, setIsFormDirty] = useState(false)
   const { data: sale, isLoading } = useSale(id!)
   const updateSale = useUpdateSale()
   const { data: existingInvoice } = useGetSaleInvoice(id)
+
+  const handleOpenApercu = () => {
+    if (isFormDirty && !existingInvoice) {
+      toast.warning('Enregistrez vos modifications avant de prévisualiser')
+      return
+    }
+    navigate(`/sales/${id}/invoice`)
+  }
 
   const handleSubmit = async (values: SaleFormValues) => {
     await updateSale.mutateAsync({
@@ -47,7 +58,7 @@ export const SaleEditPage = () => {
         }
         actions={
           <div className="hidden md:flex items-center gap-3">
-            <Button variant="outline" size="sm" onClick={() => navigate(`/sales/${id}/invoice`)}>
+            <Button variant="outline" size="sm" onClick={handleOpenApercu}>
               <FileText className="mr-2 h-4 w-4" />
               {existingInvoice ? 'Voir facture' : 'Aperçu facture'}
             </Button>
@@ -71,11 +82,12 @@ export const SaleEditPage = () => {
         onSubmit={handleSubmit}
         hasInvoice={Boolean(existingInvoice)}
         savedPayments={sale.client_payments ?? []}
+        onDirtyChange={setIsFormDirty}
       />
 
       {/* Mobile Sticky Bar */}
       <div className="fixed bottom-0 left-0 right-0 h-16 px-4 bg-card border-t md:hidden flex items-center justify-end gap-3 z-50 shadow-[0_-4px_6px_-1px_rgba(0,0,0,0.05)]">
-        <Button variant="outline" size="sm" onClick={() => navigate(`/sales/${id}/invoice`)} className="bg-card">
+        <Button variant="outline" size="sm" onClick={handleOpenApercu} className="bg-card">
           <FileText className="mr-1.5 h-4 w-4" />
           {existingInvoice ? 'Facture' : 'Aperçu'}
         </Button>

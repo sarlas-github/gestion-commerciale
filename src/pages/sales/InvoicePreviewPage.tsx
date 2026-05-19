@@ -1,5 +1,6 @@
 import { useRef, useState, useEffect, useLayoutEffect, useCallback } from 'react'
 import { useParams, useNavigate } from 'react-router-dom'
+import { useQueryClient } from '@tanstack/react-query'
 import { Loader2, Printer, ArrowLeft } from 'lucide-react'
 import { toast } from 'sonner'
 import { Button } from '@/components/ui/button'
@@ -22,22 +23,29 @@ export const InvoicePreviewPage = () => {
   const [isPrinting, setIsPrinting] = useState(false)
   const [modePaiement, setModePaiement] = useState<string>('')
 
-  const { data: sale, isLoading: loadingSale } = useSale(saleId ?? '')
+  const queryClient = useQueryClient()
+  const { data: sale, isLoading: loadingSale, isFetching: fetchingSale } = useSale(saleId ?? '')
   const { data: company, isLoading: loadingCompany } = useCompany()
   const { data: existingInvoice, isLoading: loadingInvoice } = useGetSaleInvoice(saleId)
   const createInvoice = useCreateInvoice()
   const updateModePaiement = useUpdateInvoiceModePaiement()
 
-  const isLoading = loadingSale || loadingCompany || loadingInvoice
+  // Force a fresh fetch on mount so draft preview never shows stale cached data
+  useEffect(() => {
+    if (saleId) {
+      queryClient.invalidateQueries({ queryKey: ['sales', saleId] })
+    }
+  }, [saleId, queryClient])
+
+  // In draft mode, keep the spinner while the fresh sale data is being fetched
+  const isLoading = loadingSale || loadingCompany || loadingInvoice || (!loadingInvoice && !existingInvoice && fetchingSale)
 
   useEffect(() => {
     if (existingInvoice) {
       setModePaiement(existingInvoice.mode_paiement ?? '')
     } else if (sale?.client_payments?.length) {
-      const sorted = [...sale.client_payments].sort(
-        (a, b) => new Date(b.date).getTime() - new Date(a.date).getTime()
-      )
-      setModePaiement(sorted[0]?.methode_paiement ?? '')
+      const last = sale.client_payments[sale.client_payments.length - 1]
+      setModePaiement(last?.methode_paiement ?? '')
     }
   }, [existingInvoice, sale])
 

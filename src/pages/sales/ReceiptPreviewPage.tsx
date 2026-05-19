@@ -1,5 +1,6 @@
-import { useRef, useState, useLayoutEffect, useCallback } from 'react'
+import { useRef, useState, useEffect, useLayoutEffect, useCallback } from 'react'
 import { useParams, useNavigate } from 'react-router-dom'
+import { useQueryClient } from '@tanstack/react-query'
 import { Loader2, Printer, ArrowLeft } from 'lucide-react'
 import { toast } from 'sonner'
 import { Button } from '@/components/ui/button'
@@ -21,13 +22,22 @@ export const ReceiptPreviewPage = () => {
   const [previewHeight, setPreviewHeight] = useState(1400)
   const [isPrinting, setIsPrinting] = useState(false)
 
-  const { data: sale, isLoading: loadingSale } = useSale(saleId ?? '')
+  const queryClient = useQueryClient()
+  const { data: sale, isLoading: loadingSale, isFetching: fetchingSale } = useSale(saleId ?? '')
   const { data: company, isLoading: loadingCompany } = useCompany()
   const { data: payment, isLoading: loadingPayment } = useClientPayment(paymentId)
   const { data: existingReceipt, isLoading: loadingReceipt } = useGetPaymentReceipt(paymentId)
   const createReceipt = useCreateReceipt()
 
-  const isLoading = loadingSale || loadingCompany || loadingPayment || loadingReceipt
+  // Force a fresh fetch on mount so draft preview never shows stale cached data
+  useEffect(() => {
+    if (saleId) {
+      queryClient.invalidateQueries({ queryKey: ['sales', saleId] })
+    }
+  }, [saleId, queryClient])
+
+  // In draft mode, keep the spinner while the fresh sale data is being fetched
+  const isLoading = loadingSale || loadingCompany || loadingPayment || loadingReceipt || (!loadingReceipt && !existingReceipt && fetchingSale)
 
   const updateScale = useCallback(() => {
     if (!scaleWrapRef.current) return

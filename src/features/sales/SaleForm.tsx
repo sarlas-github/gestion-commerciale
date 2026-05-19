@@ -64,11 +64,12 @@ interface SaleFormProps {
   onSubmit: (values: SaleFormValues) => Promise<void>
   hasInvoice?: boolean
   savedPayments?: Array<{ id: string }>
+  onDirtyChange?: (isDirty: boolean) => void
 }
 
 // ── Composant principal ───────────────────────────────────────────────────────
 
-export const SaleForm = ({ id, existing, onSubmit, hasInvoice = false, savedPayments }: SaleFormProps) => {
+export const SaleForm = ({ id, existing, onSubmit, hasInvoice = false, savedPayments, onDirtyChange }: SaleFormProps) => {
   const navigate = useNavigate()
   const today = toISODate(new Date())
 
@@ -105,7 +106,8 @@ export const SaleForm = ({ id, existing, onSubmit, hasInvoice = false, savedPaym
     handleSubmit,
     watch,
     setValue,
-    formState: { errors },
+    reset,
+    formState: { errors, isDirty },
   } = useForm<SaleFormValues>({
     resolver: zodResolver(saleSchema),
     defaultValues: {
@@ -124,7 +126,9 @@ export const SaleForm = ({ id, existing, onSubmit, hasInvoice = false, savedPaym
     }
   }, [existing, company, setValue])
 
-
+  useEffect(() => {
+    onDirtyChange?.(isDirty)
+  }, [isDirty, onDirtyChange])
 
   const { fields: itemFields, append: appendItem, remove: removeItem } = useFieldArray({
     control,
@@ -201,7 +205,7 @@ export const SaleForm = ({ id, existing, onSubmit, hasInvoice = false, savedPaym
         isProduction={isProduction}
       />
 
-      <form id={id} onSubmit={isCancelled ? e => e.preventDefault() : handleSubmit(onSubmit)} noValidate className="space-y-8">
+      <form id={id} onSubmit={isCancelled ? e => e.preventDefault() : handleSubmit(async (values) => { await onSubmit(values); reset(values) })} noValidate className="space-y-8">
         {isCancelled && (
           <div className="rounded-lg border border-gray-200 bg-gray-50 px-4 py-3 text-sm text-gray-600 flex items-center gap-2">
             <span>⛔</span>

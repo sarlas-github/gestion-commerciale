@@ -287,4 +287,7 @@ mode de réglement achat vente
 💱 Dynamiser la devise : Rendre le symbole monétaire modifiable selon le pays ($\in$, $, FCFA, DH...).
 📊 Enrichir l'export Excel (Achats & Ventes) : Ajouter les colonnes indispensables pour les comptables étrangers (Total HT, Taux de TVA, Montant de la TVA, Mode de règlement, et N° de facture fournisseur pour les achats).
 ⚙️ Adapter les paramètres de l'entreprise (Le point oublié) : Rendre les champs d'identification entreprise génériques ou adaptés au pays, et préciser qu'ils servent à l'export Excel.
+check tva
+gereate demo
+mentionner dans guide ? vous pouvez avoir multi users
 
