@@ -1,5 +1,6 @@
 import { forwardRef } from 'react'
 import { formatCurrency, formatDate, numberToWords } from '@/lib/utils'
+import { getPaymentMethodLabel } from '@/lib/constants'
 
 export interface InvoicePreviewData {
   invoiceNumber?: string // undefined = brouillon (affiche "****")
@@ -290,7 +291,7 @@ export const InvoicePreview = forwardRef<HTMLDivElement, InvoicePreviewProps>(
             {modePaiement && (
               <>
                 <span style={{ fontWeight: 600 }}>Mode de paiement : </span>
-                <span>{modePaiement}</span>
+                <span>{getPaymentMethodLabel(modePaiement)}</span>
               </>
             )}
           </div>

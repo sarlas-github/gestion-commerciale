@@ -9,6 +9,7 @@ import { useCompany } from '@/hooks/useCompany'
 import { useGetSaleInvoice, useCreateInvoice, useUpdateInvoiceModePaiement } from '@/hooks/useDocuments'
 import { InvoicePreview } from '@/features/sales/InvoicePreview'
 import type { InvoicePreviewData } from '@/features/sales/InvoicePreview'
+import { PAYMENT_METHODS } from '@/lib/constants'
 
 export const InvoicePreviewPage = () => {
   const { id: saleId } = useParams<{ id: string }>()
@@ -30,10 +31,15 @@ export const InvoicePreviewPage = () => {
   const isLoading = loadingSale || loadingCompany || loadingInvoice
 
   useEffect(() => {
-    if (existingInvoice?.mode_paiement) {
-      setModePaiement(existingInvoice.mode_paiement)
+    if (existingInvoice) {
+      setModePaiement(existingInvoice.mode_paiement ?? '')
+    } else if (sale?.client_payments?.length) {
+      const sorted = [...sale.client_payments].sort(
+        (a, b) => new Date(b.date).getTime() - new Date(a.date).getTime()
+      )
+      setModePaiement(sorted[0]?.methode_paiement ?? '')
     }
-  }, [existingInvoice])
+  }, [existingInvoice, sale])
 
   // Measure the actual container width (accounts for sidebar, main padding, container padding)
   const updateScale = useCallback(() => {
@@ -270,12 +276,9 @@ export const InvoicePreviewPage = () => {
                 disabled={isWorking}
               >
                 <option value="">Mode de paiement</option>
-                <option value="Espèces">Espèces</option>
-                <option value="Virement bancaire">Virement bancaire</option>
-                <option value="Chèque">Chèque</option>
-                <option value="Effet">Effet</option>
-                <option value="Traite">Traite</option>
-                <option value="Carte bancaire">Carte bancaire</option>
+                {PAYMENT_METHODS.map(m => (
+                  <option key={m.value} value={m.value}>{m.label}</option>
+                ))}
               </select>
 
               {existingInvoice ? (
@@ -363,12 +366,9 @@ export const InvoicePreviewPage = () => {
           disabled={isWorking}
         >
           <option value="">Mode</option>
-          <option value="Espèces">Espèces</option>
-          <option value="Virement bancaire">Virement bancaire</option>
-          <option value="Chèque">Chèque</option>
-          <option value="Effet">Effet</option>
-          <option value="Traite">Traite</option>
-          <option value="Carte bancaire">Carte bancaire</option>
+          {PAYMENT_METHODS.map(m => (
+            <option key={m.value} value={m.value}>{m.label}</option>
+          ))}
         </select>
 
         {existingInvoice ? (

@@ -267,10 +267,12 @@ que ce soit
 ```
 pending
 -
+MODE DE paiement dans paiement obligatoire
 devise
 export excel pro , ligne et colonnes 
 international colonnes manquants
 il faut l ajouter dans guide utilisateurs
+mode de réglement achat vente
 ---
 
 ## Phase 2 — Documents (après validation client)

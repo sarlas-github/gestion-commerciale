@@ -16,6 +16,7 @@ import { useCompany } from '@/hooks/useCompany'
 import { SupplierModal } from '@/features/suppliers/SupplierModal'
 import { ProductModal } from '@/features/products/ProductModal'
 import { formatCurrency, getPaymentStatus, toISODate } from '@/lib/utils'
+import { PAYMENT_METHODS } from '@/lib/constants'
 import type { Purchase } from '@/types'
 
 // ── Schéma Zod ────────────────────────────────────────────────────────────────
@@ -32,7 +33,7 @@ const paymentSchema = z.object({
   date: z.string().min(1, 'Date obligatoire'),
   amount: z.number({ invalid_type_error: 'Entrer un montant' }).min(0),
   note: z.string().optional().or(z.literal('')),
-  methode_paiement: z.string().optional().or(z.literal('')),
+  methode_paiement: z.string().min(1, 'Mode obligatoire'),
 })
 
 export const purchaseSchema = z.object({
@@ -145,7 +146,7 @@ export const PurchaseForm = ({ id, existing, onSubmit }: PurchaseFormProps) => {
 
   const handleQuickSupplierSuccess = useCallback(
     (supplier: { id: string }) => {
-      setValue('supplier_id', supplier.id)
+      setValue('supplier_id', supplier.id, { shouldValidate: true })
       setShowNewSupplier(false)
     },
     [setValue]
@@ -161,7 +162,7 @@ export const PurchaseForm = ({ id, existing, onSubmit }: PurchaseFormProps) => {
 
   const handleQuickProductSuccess = useCallback((product: { id: string; pieces_count: number }) => {
     if (showNewProductIdx !== null) {
-      setValue(`items.${showNewProductIdx}.product_id`, product.id)
+      setValue(`items.${showNewProductIdx}.product_id`, product.id, { shouldValidate: true })
       setValue(`items.${showNewProductIdx}.pieces_count`, product.pieces_count)
     }
     setShowNewProductIdx(null)
@@ -628,25 +629,27 @@ export const PurchaseForm = ({ id, existing, onSubmit }: PurchaseFormProps) => {
                         {/* Ligne 2 : Mode + Note */}
                         <div className="grid grid-cols-2 gap-2">
                           <div className="space-y-1">
-                            <span className="text-xs text-muted-foreground block">Mode</span>
+                            <span className="text-xs text-muted-foreground block">Mode <span className="text-destructive">*</span></span>
                             <Controller
                               name={`payments.${idx}.methode_paiement`}
                               control={control}
-                              render={({ field: f }) => (
-                                <select
-                                  className="flex h-8 w-full rounded-md border border-input px-2 text-sm focus-visible:outline-none focus-visible:ring-1 focus-visible:ring-ring"
-                                  value={f.value ?? ''}
-                                  onChange={f.onChange}
-                                  ref={f.ref}
-                                >
-                                  <option value="">—</option>
-                                  <option value="Espèces">Espèces</option>
-                                  <option value="Virement bancaire">Virement</option>
-                                  <option value="Chèque">Chèque</option>
-                                  <option value="Effet">Effet</option>
-                                  <option value="Traite">Traite</option>
-                                  <option value="Carte bancaire">Carte</option>
-                                </select>
+                              render={({ field: f, fieldState }) => (
+                                <>
+                                  <select
+                                    className={`flex h-8 w-full rounded-md border px-2 text-sm focus-visible:outline-none focus-visible:ring-1 ${fieldState.error ? 'border-destructive ring-1 ring-destructive/30' : 'border-input focus-visible:ring-ring'}`}
+                                    value={f.value ?? ''}
+                                    onChange={f.onChange}
+                                    ref={f.ref}
+                                  >
+                                    <option value="">— Choisir —</option>
+                                    {PAYMENT_METHODS.map(m => (
+                                      <option key={m.value} value={m.value}>{m.label}</option>
+                                    ))}
+                                  </select>
+                                  {fieldState.error && (
+                                    <p className="text-xs text-destructive mt-0.5">{fieldState.error.message}</p>
+                                  )}
+                                </>
                               )}
                             />
                           </div>

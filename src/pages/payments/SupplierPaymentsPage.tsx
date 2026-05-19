@@ -9,6 +9,7 @@ import { useAvailableYears } from '@/hooks/useAvailableYears'
 import { PeriodSelector } from '@/components/shared/PeriodSelector'
 import { PurchaseQuickViewModal } from '@/features/purchases/PurchaseQuickViewModal'
 import { formatCurrency, formatDate } from '@/lib/utils'
+import { getPaymentMethodLabel } from '@/lib/constants'
 
 
 
@@ -73,7 +74,7 @@ export const SupplierPaymentsPage = () => {
     {
       accessorKey: 'methode_paiement',
       header: 'Méthode',
-      cell: ({ row }) => row.original.methode_paiement || '—',
+      cell: ({ row }) => getPaymentMethodLabel(row.original.methode_paiement),
     },
     {
       accessorKey: 'note',
@@ -108,7 +109,7 @@ export const SupplierPaymentsPage = () => {
           Fournisseur: p.supplier_name,
           Référence: p.purchase_reference ?? '',
           Montant: p.amount,
-          Méthode: p.methode_paiement ?? '',
+          Méthode: getPaymentMethodLabel(p.methode_paiement),
           Note: p.note ?? '',
         })}
       />

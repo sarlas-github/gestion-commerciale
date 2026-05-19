@@ -64,8 +64,14 @@ export function EntityAutocomplete({
   // Sync affichage quand la valeur ou les options changent (ex: après création)
   useEffect(() => {
     const label = getLabel(value)
-    setInputValue(label)
-    if (label) setLocalError(false)
+    if (label) {
+      setInputValue(label)
+      setLocalError(false)
+    } else if (!value) {
+      // Valeur vidée → reset input
+      setInputValue('')
+    }
+    // Si value non-vide mais pas encore dans options (refetch en cours), on garde l'inputValue actuel
   }, [value, getLabel])
 
   // ── Filtrage ───────────────────────────────────────────────────────────────

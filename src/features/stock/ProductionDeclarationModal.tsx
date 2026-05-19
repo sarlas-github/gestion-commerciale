@@ -102,7 +102,7 @@ export const ProductionDeclarationModal = ({
 
   const handleProductSuccess = (product: ProductWithStock) => {
     setPendingProduct(product)
-    setValue('product_id', product.id)
+    setValue('product_id', product.id, { shouldValidate: true })
     setShowNewProduct(false)
   }
 

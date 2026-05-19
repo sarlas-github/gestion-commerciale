@@ -1,4 +1,4 @@
--- Dernière version déployée : 17-05-2026_05_multi_tenant_functions.sql
+-- Met à jour generate_demo_data pour utiliser les nouvelles valeurs d'enum.
 
 CREATE OR REPLACE FUNCTION public.generate_demo_data(p_user_id uuid)
 RETURNS text

@@ -17,6 +17,7 @@ import { Input } from '@/components/ui/input'
 import { Table, TableBody, TableCell, TableFooter, TableHead, TableHeader, TableRow } from '@/components/ui/table'
 import { Skeleton } from '@/components/ui/skeleton'
 import { DEFAULT_PAGE_SIZE } from '@/lib/utils'
+import { useCompany } from '@/hooks/useCompany'
 
 const STATUS_LABELS: Record<string, string> = {
   paid: 'payé',
@@ -68,6 +69,7 @@ export function DataTable<TData>({
   onExportPdf,
   footer,
 }: DataTableProps<TData>) {
+  const { data: company } = useCompany()
   const [sorting, setSorting] = useState<SortingState>(defaultSorting)
   const [globalFilter, setGlobalFilter] = useState('')
 
@@ -94,10 +96,123 @@ export function DataTable<TData>({
 
     const workbook = new ExcelJS.Workbook()
     const worksheet = workbook.addWorksheet('Données')
-    if (exportData.length > 0) {
-      worksheet.columns = Object.keys(exportData[0]).map(key => ({ header: key, key }))
-      exportData.forEach(row => worksheet.addRow(row))
+
+    const keys = exportData.length > 0 ? Object.keys(exportData[0]) : []
+    const colCount = Math.max(keys.length, 1)
+
+    const hexToArgb = (hex: string) =>
+      `FF${hex.replace('#', '').toUpperCase().padStart(6, '0')}`
+    const brandArgb = hexToArgb(company?.couleur_marque ?? '#1e40af')
+
+    let logoEmbedded = false
+
+    // ── En-tête entreprise ────────────────────────────────────────────────────
+    if (company) {
+      if (company.logo_url) {
+        try {
+          const resp = await fetch(company.logo_url)
+          const buf = await resp.arrayBuffer()
+          const urlPath = company.logo_url.split('?')[0].toLowerCase()
+          let ext: 'png' | 'jpeg' | 'gif' = 'png'
+          if (urlPath.endsWith('.jpg') || urlPath.endsWith('.jpeg')) ext = 'jpeg'
+          else if (urlPath.endsWith('.gif')) ext = 'gif'
+          else if (!urlPath.endsWith('.png')) throw new Error('format non supporté')
+          const imgId = workbook.addImage({ buffer: buf, extension: ext })
+          worksheet.addImage(imgId, {
+            tl: { col: 0, row: 0 },
+            ext: { width: 90, height: 64 },
+            editAs: 'oneCell',
+          })
+          logoEmbedded = true
+          worksheet.getColumn(1).width = 14
+        } catch {
+          // logo ignoré silencieusement
+        }
+      }
+
+      const textStart = logoEmbedded ? 2 : 1
+      const endCol = textStart - 1 + colCount
+
+      // Ligne 1 — Nom entreprise
+      const r1 = worksheet.addRow([])
+      r1.height = 24
+      const c1 = r1.getCell(textStart)
+      c1.value = company.name
+      c1.font = { bold: true, size: 15, color: { argb: brandArgb } }
+      c1.alignment = { vertical: 'middle' }
+      if (endCol > textStart) worksheet.mergeCells(r1.number, textStart, r1.number, endCol)
+
+      // Ligne 2 — Infos légales
+      const legal = [
+        company.ice ? `ICE: ${company.ice}` : null,
+        company.if_number ? `IF: ${company.if_number}` : null,
+        company.rc ? `RC: ${company.rc}` : null,
+        company.tp_number ? `TP: ${company.tp_number}` : null,
+        company.rib ? `RIB: ${company.rib}` : null,
+      ].filter(Boolean).join('   |   ')
+      const r2 = worksheet.addRow([])
+      r2.height = 20
+      if (legal) {
+        const c2 = r2.getCell(textStart)
+        c2.value = legal
+        c2.font = { size: 9, color: { argb: 'FF64748B' } }
+        if (endCol > textStart) worksheet.mergeCells(r2.number, textStart, r2.number, endCol)
+      }
+
+      // Ligne 3 — Contact
+      const contact = [
+        company.address ?? null,
+        company.phone ? `Tél: ${company.phone}` : null,
+        company.email ?? null,
+      ].filter(Boolean).join('   |   ')
+      const r3 = worksheet.addRow([])
+      r3.height = 20
+      if (contact) {
+        const c3 = r3.getCell(textStart)
+        c3.value = contact
+        c3.font = { size: 9, color: { argb: 'FF64748B' } }
+        if (endCol > textStart) worksheet.mergeCells(r3.number, textStart, r3.number, endCol)
+      }
+
+      // Séparateur
+      const sep = worksheet.addRow([])
+      sep.height = 8
     }
+
+    // ── En-têtes colonnes ─────────────────────────────────────────────────────
+    if (keys.length > 0) {
+      const headerRow = worksheet.addRow(keys)
+      headerRow.height = 22
+      headerRow.eachCell(cell => {
+        cell.font = { bold: true, size: 10, color: { argb: 'FFFFFFFF' } }
+        cell.fill = { type: 'pattern', pattern: 'solid', fgColor: { argb: brandArgb } }
+        cell.alignment = { horizontal: 'center', vertical: 'middle' }
+      })
+
+      // ── Lignes de données ───────────────────────────────────────────────────
+      exportData.forEach((rowData, idx) => {
+        const dr = worksheet.addRow(keys.map(k => rowData[k]))
+        dr.height = 18
+        if (idx % 2 === 1) {
+          dr.eachCell({ includeEmpty: true }, cell => {
+            cell.fill = { type: 'pattern', pattern: 'solid', fgColor: { argb: 'FFF1F5F9' } }
+          })
+        }
+      })
+
+      // Auto-largeur basée sur les données
+      const dataStartCol = logoEmbedded ? 2 : 1
+      keys.forEach((key, idx) => {
+        const col = worksheet.getColumn(dataStartCol + idx)
+        let maxLen = Math.max(key.length, 10)
+        exportData.forEach(row => {
+          const len = row[key] != null ? String(row[key]).length : 0
+          if (len > maxLen) maxLen = len
+        })
+        col.width = Math.min(maxLen + 4, 45)
+      })
+    }
+
     const buffer = await workbook.xlsx.writeBuffer()
     const blob = new Blob([buffer], { type: 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet' })
     const url = URL.createObjectURL(blob)

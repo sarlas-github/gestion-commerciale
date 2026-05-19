@@ -1,5 +1,6 @@
 import { forwardRef } from 'react'
 import { formatCurrency, formatDate } from '@/lib/utils'
+import { getPaymentMethodLabel } from '@/lib/constants'
 
 export interface ReceiptPreviewData {
   receiptNumber?: string
@@ -154,7 +155,7 @@ const ReceiptCopy = ({ data, isDuplicata }: CopyProps) => {
       {/* Mode de paiement */}
       {modePaiement && (
         <div style={{ fontSize: '13px', color: C.gray600, marginBottom: '20px' }}>
-          <span style={{ fontWeight: 600 }}>Mode de paiement : </span>{modePaiement}
+          <span style={{ fontWeight: 600 }}>Mode de paiement : </span>{getPaymentMethodLabel(modePaiement)}
         </div>
       )}
 

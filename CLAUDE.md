@@ -151,8 +151,10 @@ Exemples : `20260520143000_ARCHI_add_company_members.sql`, `20260520143001_OBJET
 
 | Catégorie | Contenu |
 |---|---|
-| `_ARCHI_` | Structure : CREATE TABLE, ALTER TABLE, ADD/DROP COLUMN, index, contraintes, RLS ENABLE |
-| `_OBJETS_` | Objets DB : fonctions PG, RLS policies, triggers, vues, storage buckets |
+| `_ARCHI_` | Structure des **tables uniquement** : `CREATE TABLE`, `DROP TABLE`, `ALTER TABLE … ADD/DROP/RENAME COLUMN`, ajout d'index, contraintes `NOT NULL` / `UNIQUE` / `FK`, `RLS ENABLE` |
+| `_OBJETS_` | Tout ce qui n'est pas une table : fonctions PG, `CREATE/ALTER TYPE` (enums, types composites), RLS policies, triggers, vues, storage buckets |
+
+**Règle de décision rapide** : si la commande contient le mot `TABLE` → `_ARCHI_`. Sinon → `_OBJETS_`.
 
 ### Archive
 
