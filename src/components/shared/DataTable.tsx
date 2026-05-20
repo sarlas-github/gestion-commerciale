@@ -1,4 +1,4 @@
-import { useState, type ReactNode } from 'react'
+import { useState, useEffect, useRef, type ReactNode } from 'react'
 import {
   useReactTable,
   getCoreRowModel,
@@ -55,6 +55,7 @@ interface DataTableProps<TData> {
   hideExport?: boolean
   onExportPdf?: () => void
   footer?: ReactNode
+  autoPageSize?: boolean
 }
 
 export function DataTable<TData>({
@@ -68,10 +69,18 @@ export function DataTable<TData>({
   hideExport = false,
   onExportPdf,
   footer,
+  autoPageSize = true,
 }: DataTableProps<TData>) {
   const { data: company } = useCompany()
   const [sorting, setSorting] = useState<SortingState>(defaultSorting)
   const [globalFilter, setGlobalFilter] = useState('')
+
+  const tableWrapperRef = useRef<HTMLDivElement>(null)
+  const tableContainerRef = useRef<HTMLDivElement>(null)
+  const mobileCardsRef = useRef<HTMLDivElement>(null)
+  const paginationRef = useRef<HTMLDivElement>(null)
+  const resizeTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null)
+  const currentPageSizeRef = useRef<number>(DEFAULT_PAGE_SIZE)
 
   const table = useReactTable({
     data,
@@ -87,6 +96,99 @@ export function DataTable<TData>({
     initialState: { pagination: { pageSize: DEFAULT_PAGE_SIZE } },
     enableSortingRemoval: true,
   })
+
+  // Keeps a stable ref to the table instance so the resize effect doesn't
+  // need to re-subscribe every render (table is recreated on each render).
+  const tableInstanceRef = useRef(table)
+  tableInstanceRef.current = table
+
+  // Track data length to re-trigger autoPageSize when data loads or changes
+  const dataLenRef = useRef(data.length)
+  dataLenRef.current = data.length
+
+  useEffect(() => {
+    if (!autoPageSize) return
+
+    const recalc = () => {
+      const mainEl = document.getElementById('main-scroll')
+      if (!mainEl) return
+
+      const isSmall = window.innerWidth < 640
+      const mainBottom = mainEl.getBoundingClientRect().bottom
+      const pagH = paginationRef.current?.offsetHeight ?? 40
+
+      let refTop: number
+      let rowH: number
+      // Post-row constants — only what comes AFTER the rows in the DOM:
+      //   space-y-4 gap(16) + card bottom p-4(16) + main bottom p-4(16) = 48
+      //   + container bottom border(1) on desktop = 49
+      let postOverhead: number
+
+      if (isSmall) {
+        const el = mobileCardsRef.current
+        if (!el) return
+        refTop = el.getBoundingClientRect().top
+        // Measure an actual mobile card if possible
+        const firstCard = el.querySelector(':scope > div')
+        rowH = firstCard ? firstCard.getBoundingClientRect().height + 12 : 160 // 12 = space-y-3 gap
+        postOverhead = 48
+      } else {
+        const containerEl = tableContainerRef.current
+        if (!containerEl) return
+        // Measure from the tbody — automatically skips card padding,
+        // search bar, gaps, alert banners, page header, thead, etc.
+        const tbodyEl = containerEl.querySelector('tbody')
+        if (!tbodyEl) return
+        refTop = tbodyEl.getBoundingClientRect().top
+        // Measure actual row height from the first data row in the DOM
+        const firstRow = tbodyEl.querySelector('tr')
+        rowH = firstRow ? firstRow.getBoundingClientRect().height : 37
+        postOverhead = 49 // container border-bottom(1) + gap(16) + card(16) + main(16)
+      }
+
+      const rows = Math.max(5, Math.floor((mainBottom - refTop - pagH - postOverhead) / rowH))
+
+      if (rows !== currentPageSizeRef.current) {
+        currentPageSizeRef.current = rows
+        tableInstanceRef.current.setPageSize(rows)
+      }
+    }
+
+    recalc()
+    // Delayed recalcs catch layout shifts (banners, etc.) that appear after data loads
+    const t1 = setTimeout(recalc, 150)
+    const t2 = setTimeout(recalc, 500)
+
+    const onResize = () => {
+      if (resizeTimerRef.current) clearTimeout(resizeTimerRef.current)
+      resizeTimerRef.current = setTimeout(recalc, 200)
+    }
+
+    window.addEventListener('resize', onResize)
+    return () => {
+      clearTimeout(t1)
+      clearTimeout(t2)
+      window.removeEventListener('resize', onResize)
+      if (resizeTimerRef.current) clearTimeout(resizeTimerRef.current)
+    }
+  // Re-run when data loads/changes or loading state changes — this ensures
+  // recalc fires AFTER alert banners, filters, etc. render in the DOM.
+  // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [autoPageSize, data.length, isLoading])
+
+  const { pageIndex } = table.getState().pagination
+  const isFirstRender = useRef(true)
+
+  useEffect(() => {
+    if (isFirstRender.current) {
+      isFirstRender.current = false
+      return
+    }
+    const mainEl = document.getElementById('main-scroll')
+    if (mainEl) {
+      mainEl.scrollTo({ top: 0, behavior: 'smooth' })
+    }
+  }, [pageIndex])
 
   const handleExport = async () => {
     const rows = table.getFilteredRowModel().rows
@@ -223,7 +325,7 @@ export function DataTable<TData>({
     URL.revokeObjectURL(url)
   }
 
-  const { pageIndex, pageSize } = table.getState().pagination
+  const { pageSize } = table.getState().pagination
   const filteredCount = table.getFilteredRowModel().rows.length
   const start = filteredCount === 0 ? 0 : pageIndex * pageSize + 1
   const end = Math.min((pageIndex + 1) * pageSize, filteredCount)
@@ -271,7 +373,7 @@ export function DataTable<TData>({
   )
 
   return (
-    <div className="bg-card rounded-xl border shadow-sm p-4 space-y-4">
+    <div ref={tableWrapperRef} className="bg-card rounded-xl border shadow-sm p-4 space-y-4">
       {/* Recherche + Export */}
       <div className="flex items-center justify-between gap-4">
         <Input
@@ -297,7 +399,7 @@ export function DataTable<TData>({
       </div>
 
       {/* Mobile: cards */}
-      <div className="block sm:hidden space-y-3">
+      <div ref={mobileCardsRef} className="block sm:hidden space-y-3">
         {isLoading ? (
           Array.from({ length: 3 }).map((_, i) => (
             <div key={i} className="rounded-lg border p-4 space-y-2">
@@ -355,7 +457,7 @@ export function DataTable<TData>({
       </div>
 
       {/* Desktop: table */}
-      <div className="hidden sm:block rounded-lg border overflow-hidden">
+      <div ref={tableContainerRef} className="hidden sm:block rounded-lg border overflow-hidden">
         <Table>
           <TableHeader>
             {table.getHeaderGroups().map(hg => (
@@ -421,14 +523,14 @@ export function DataTable<TData>({
       </div>
 
       {/* Pagination */}
-      <div className="flex items-center justify-between">
-        <p className="text-sm text-muted-foreground">
+      <div ref={paginationRef} className="flex flex-col sm:flex-row items-center justify-between gap-4">
+        <p className="text-sm text-muted-foreground text-center sm:text-left">
           {filteredCount === 0
             ? 'Aucun résultat'
             : `Affichage ${start}–${end} sur ${filteredCount}`}
         </p>
         {pageCount > 1 && (
-          <div className="flex items-center gap-1">
+          <div className="flex flex-wrap items-center justify-center gap-1">
             <Button
               variant="outline"
               size="icon-sm"

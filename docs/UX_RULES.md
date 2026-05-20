@@ -310,3 +310,34 @@ Les éléments du formulaire (champs, tableaux de lignes) doivent toujours être
 - **Sur Desktop** : Ils sont placés dans le `PageHeader` (côté droit).
 - **Sur Mobile** : Ils sont fixés en bas de l'écran (Sticky Bar) via un conteneur `fixed bottom-0 bg-card border-t md:hidden`.
 - **Fond de la Sticky Bar** : Elle doit avoir le fond `bg-card` pour ne pas se fondre avec le fond gris, et les boutons secondaires (qui ont `variant="outline"`) doivent explicitement porter la classe `className="bg-card"` s'ils risquent de se confondre avec l'arrière plan.
+
+---
+
+## 17. Hauteur dynamique des grilles
+
+Le nombre de lignes affichées par page est calculé automatiquement pour remplir l'espace disponible, sans laisser de vide en bas d'écran.
+
+### Principe de mesure
+La mesure part du **`<tbody>`** (exactement là où les lignes commencent), pas du haut de la carte. Tout ce qui est au-dessus (bannières d'alerte, PageHeader, barre de recherche, thead, padding de la carte…) est automatiquement exclu — aucune constante à maintenir pour eux.
+
+Seul ce qui vient **après les lignes** est soustrait explicitement :
+- **Desktop** : border bas conteneur (1 px) + gap (16 px) + padding bas carte (16 px) + padding bas main (16 px) = 49 px
+- **Mobile** : gap (16 px) + padding bas carte (16 px) + padding bas main (16 px) = 48 px
+
+### Hauteurs de référence
+- **Desktop** : hauteur par ligne = 37 px (TableCell `p-2` + `text-sm` + border)
+- **Mobile** : hauteur par carte = 160 px
+- **Minimum** : 5 lignes/cartes par page
+- **Calcul** : `Math.max(5, Math.floor((mainBottom − containerTop − paginationHeight − postOverhead) / rowHeight))`
+
+### Comportement
+- Calcul au montage + à 300 ms (pour les bannières qui apparaissent après chargement)
+- Recalcul à chaque `resize` fenêtre (débounce 200 ms)
+- Guard same-value : `setPageSize` n'est appelé que si la valeur change (évite les boucles de re-render)
+
+Implémenté dans `DataTable.tsx` (prop `autoPageSize`, activée par défaut). Aucune configuration par page n'est requise.
+
+Pour désactiver sur un tableau embarqué (ex : modal, widget) :
+```tsx
+<DataTable autoPageSize={false} ... />
+```

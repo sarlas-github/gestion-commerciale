@@ -267,12 +267,11 @@ que ce soit
 ```
 pending
 -
-MODE DE paiement dans paiement obligatoire
 devise
 export excel pro , ligne et colonnes 
 international colonnes manquants
-il faut l ajouter dans guide utilisateurs
 mode de réglement achat vente
+guitilisateur_xxx
 ---
 
 ## Phase 2 — Documents (après validation client)
@@ -280,6 +279,7 @@ mode de réglement achat vente
 ⏸️ Devis, Bon de commande, Bon de livraison
 ⏸️ Téléchargement PDF facture et reçu
 ⏸️ Paramètres complets (couleur marque sur PDF)
+height grid ?
 ```
 
 🔄 Récapitulatif final de ta Checklist International (Pour ne rien perdre) :
