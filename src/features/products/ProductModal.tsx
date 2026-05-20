@@ -52,6 +52,7 @@ export const ProductModal = ({ product, open, onOpenChange, onSuccess, defaultNa
         isModal={true}
         initialNature={defaultNature}
         isProduction={isProduction}
+        isNewProduct={!isEditing}
       />
     </ResponsiveModal>
   )

@@ -85,13 +85,14 @@ export const useStockAlertCount = () =>
 export const useCreateProduct = () => {
   const qc = useQueryClient()
   return useMutation({
-    mutationFn: async (input: CreateProductInput) => {
+    mutationFn: async (input: CreateProductInput & { has_initial_stock?: boolean, initial_stock_quantity?: number }) => {
       const { data: productId, error } = await supabase.rpc('create_product', {
         p_name:         input.name,
         p_type:         input.type,
         p_nature:       input.nature,
         p_pieces_count: input.pieces_count || 1,
         p_stock_alert:  input.stock_alert ?? 0,
+        p_initial_stock: input.initial_stock_quantity ?? 0,
       })
       if (error) throw error
 

@@ -58,6 +58,7 @@ export const ProductNewPage = () => {
         isLoading={createProduct.isPending}
         initialNature={defaultNature}
         isProduction={isProduction}
+        isNewProduct
       />
 
       {/* Mobile Sticky Bar */}

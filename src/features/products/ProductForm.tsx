@@ -18,6 +18,7 @@ const schema = z.object({
     .number({ invalid_type_error: 'Veuillez entrer un nombre valide' })
     .min(1, 'La valeur doit être supérieure à 0'),
   stock_alert: z.number().min(0),
+  initial_stock_quantity: z.number().min(0).default(0),
 })
 
 export type ProductFormData = z.infer<typeof schema>
@@ -31,6 +32,7 @@ interface ProductFormProps {
   isModal?: boolean
   initialNature?: 'revente' | 'matiere_premiere' | 'produit_fini'
   isProduction?: boolean
+  isNewProduct?: boolean
 }
 
 export const ProductForm = ({
@@ -42,6 +44,7 @@ export const ProductForm = ({
   isModal = false,
   initialNature,
   isProduction: isProductionProp,
+  isNewProduct = false,
 }: ProductFormProps) => {
   const { data: profile } = useProfile()
   
@@ -67,6 +70,7 @@ export const ProductForm = ({
       nature: initial?.nature ?? initialNature ?? 'revente',
       pieces_count: initial?.pieces_count ?? 1,
       stock_alert: initial?.stock_alert ?? 0,
+      initial_stock_quantity: 0,
     },
   })
 
@@ -230,6 +234,38 @@ export const ProductForm = ({
           <p className="text-sm text-destructive">{errors.stock_alert.message}</p>
         )}
       </div>
+
+      {/* Initial Stock (Only for New Products) */}
+      {isNewProduct && (
+        <div className="space-y-1.5">
+          <Label htmlFor="pf-initial-stock">
+            Quantité en stock initial
+          </Label>
+          <Controller
+            name="initial_stock_quantity"
+            control={control}
+            render={({ field }) => (
+              <Input
+                id="pf-initial-stock"
+                type="number"
+                min={0}
+                onFocus={e => e.target.select()}
+                value={field.value ?? ''}
+                onChange={e =>
+                  field.onChange(
+                    e.target.value === '' ? 0 : Number(e.target.value)
+                  )
+                }
+                onBlur={field.onBlur}
+                aria-invalid={Boolean(errors.initial_stock_quantity)}
+              />
+            )}
+          />
+          {errors.initial_stock_quantity && (
+            <p className="text-sm text-destructive">{errors.initial_stock_quantity.message}</p>
+          )}
+        </div>
+      )}
 
       {/* Actions (uniquement si modal) */}
       {isModal && (

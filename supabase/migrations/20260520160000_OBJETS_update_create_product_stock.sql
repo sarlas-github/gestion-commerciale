@@ -1,17 +1,18 @@
--- Dernière version déployée : 20260520160000_OBJETS_update_create_product_stock.sql
+-- Update create_product to handle initial stock directly in the RPC
 
-CREATE OR REPLACE FUNCTION public.create_product(
-  p_name         text,
-  p_type         text,
-  p_nature       text,
-  p_pieces_count int     DEFAULT 1,
-  p_stock_alert  int     DEFAULT 0,
-  p_initial_stock int    DEFAULT 0
-)
-RETURNS uuid
-LANGUAGE plpgsql SECURITY DEFINER
-SET search_path = public
-AS $$
+DROP FUNCTION IF EXISTS "public"."create_product"("p_name" "text", "p_type" "text", "p_nature" "text", "p_pieces_count" integer, "p_stock_alert" integer);
+
+CREATE OR REPLACE FUNCTION "public"."create_product"(
+  "p_name" "text",
+  "p_type" "text",
+  "p_nature" "text",
+  "p_pieces_count" integer DEFAULT 1,
+  "p_stock_alert" integer DEFAULT 0,
+  "p_initial_stock" integer DEFAULT 0
+) RETURNS "uuid"
+    LANGUAGE "plpgsql" SECURITY DEFINER
+    SET "search_path" TO 'public'
+    AS $$
 DECLARE
   v_uid        uuid := auth.uid();
   v_company_id uuid := get_my_company_id();
@@ -38,5 +39,4 @@ BEGIN
 END;
 $$;
 
-GRANT EXECUTE ON FUNCTION public.create_product(text, text, text, int, int, int)
-  TO authenticated;
+ALTER FUNCTION "public"."create_product"("p_name" "text", "p_type" "text", "p_nature" "text", "p_pieces_count" integer, "p_stock_alert" integer, "p_initial_stock" integer) OWNER TO "postgres";
