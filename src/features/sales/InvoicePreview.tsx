@@ -257,8 +257,8 @@ export const InvoicePreview = forwardRef<HTMLDivElement, InvoicePreviewProps>(
           </colgroup>
           <thead>
             <tr>
-              <th style={{ textAlign: 'left', padding: `10px ${colPad}px`, fontWeight: 600, backgroundColor: brandColor, color: C.white }}>Produit</th>
-              <th style={{ textAlign: 'center', padding: `10px ${colPad}px`, fontWeight: 600, backgroundColor: brandColor, color: C.white }}>Qté</th>
+              <th style={{ textAlign: 'left', padding: `10px ${colPad}px`, fontWeight: 600, backgroundColor: brandColor, color: C.white }}>Désignation</th>
+              <th style={{ textAlign: 'center', padding: `10px ${colPad}px`, fontWeight: 600, backgroundColor: brandColor, color: C.white }}>Quantité</th>
               <th style={{ textAlign: 'right', padding: `10px ${colPad}px`, fontWeight: 600, backgroundColor: brandColor, color: C.white }}>P.U. HT</th>
               <th style={{ textAlign: 'right', padding: `10px ${colPad}px`, fontWeight: 600, backgroundColor: brandColor, color: C.white }}>Montant HT</th>
             </tr>

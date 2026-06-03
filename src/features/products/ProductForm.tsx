@@ -7,12 +7,13 @@ import { Button } from '@/components/ui/button'
 import { Input } from '@/components/ui/input'
 import { Label } from '@/components/ui/label'
 import { useProfile } from '@/hooks/useProfile'
+import { useCompany } from '@/hooks/useCompany'
 import type { ProductWithStock } from '@/types'
 import { cn } from '@/lib/utils'
 
 const schema = z.object({
   name: z.string().min(1, 'Ce champ est obligatoire'),
-  type: z.enum(['individual', 'pack']),
+  type: z.literal('individual').default('individual'),
   nature: z.enum(['revente', 'matiere_premiere', 'produit_fini']).default('revente'),
   pieces_count: z
     .number({ invalid_type_error: 'Veuillez entrer un nombre valide' })
@@ -47,17 +48,18 @@ export const ProductForm = ({
   isNewProduct = false,
 }: ProductFormProps) => {
   const { data: profile } = useProfile()
-  
+  const { data: company } = useCompany()
+  const showPiecesCount = company?.show_pieces_count ?? true
+
   // On fait confiance à la prop du parent si elle est fournie (instantané)
   // Sinon on attend le profil (fallback)
-  const isProduction = isProductionProp !== undefined 
-    ? isProductionProp 
+  const isProduction = isProductionProp !== undefined
+    ? isProductionProp
     : (profile?.business_mode === 'production')
 
   const {
     register,
     handleSubmit,
-    watch,
     setValue,
     control,
     setError,
@@ -66,19 +68,13 @@ export const ProductForm = ({
     resolver: zodResolver(schema),
     defaultValues: {
       name: initial?.name ?? '',
-      type: initial?.type ?? 'individual',
+      type: 'individual',
       nature: initial?.nature ?? initialNature ?? 'revente',
       pieces_count: initial?.pieces_count ?? 1,
       stock_alert: initial?.stock_alert ?? 0,
       initial_stock_quantity: 0,
     },
   })
-
-  const type = watch('type')
-
-  useEffect(() => {
-    if (type === 'individual') setValue('pieces_count', 1)
-  }, [type, setValue])
 
   // Synchroniser la nature initiale (utile pour les modals et redirections)
   useEffect(() => {
@@ -114,38 +110,11 @@ export const ProductForm = ({
         )}
       </div>
 
-      {/* Type */}
-      <div className="space-y-1.5">
-        <Label>
-          Type <span className="text-destructive">*</span>
-        </Label>
-        <div className="flex gap-6">
-          <label className="flex items-center gap-2 cursor-pointer text-sm">
-            <input
-              type="radio"
-              value="individual"
-              {...register('type')}
-              className="accent-primary"
-            />
-            Individuel
-          </label>
-          <label className="flex items-center gap-2 cursor-pointer text-sm">
-            <input
-              type="radio"
-              value="pack"
-              {...register('type')}
-              className="accent-primary"
-            />
-            Pack
-          </label>
-        </div>
-      </div>
- 
-      {/* Nombre de pièces (pack seulement) */}
-      {type === 'pack' && (
+      {/* Nombre de pièces */}
+      {showPiecesCount && (
         <div className="space-y-1.5">
           <Label htmlFor="pf-pieces">
-            Nombre de pièces <span className="text-destructive">*</span>
+            Nbr pièces <span className="text-destructive">*</span>
           </Label>
           <Controller
             name="pieces_count"

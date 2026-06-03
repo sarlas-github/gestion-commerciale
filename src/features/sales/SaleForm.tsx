@@ -15,7 +15,7 @@ import { useProfile } from '@/hooks/useProfile'
 import { useCompany } from '@/hooks/useCompany'
 import { ClientModal } from '@/features/clients/ClientModal'
 import { ProductModal } from '@/features/products/ProductModal'
-import { formatCurrency, getPaymentStatus, toISODate } from '@/lib/utils'
+import { cn, formatCurrency, getPaymentStatus, toISODate } from '@/lib/utils'
 import { PAYMENT_METHODS } from '@/lib/constants'
 import type { Sale } from '@/types'
 
@@ -85,6 +85,8 @@ export const SaleForm = ({ id, existing, onSubmit, hasInvoice = false, savedPaym
   const { data: clients = [] } = useClients()
   const { data: products = [] } = useProducts()
   const { data: company } = useCompany()
+  const labelQuantity = company?.label_quantity ?? 'Quantité'
+  const showPiecesCount = company?.show_pieces_count ?? true
 
   const defaultItems = existing?.sale_items?.map(i => ({
     original_id: i.id,
@@ -358,10 +360,13 @@ export const SaleForm = ({ id, existing, onSubmit, hasInvoice = false, savedPaym
           {/* Produits — cartes mobile / lignes desktop */}
           <div className="space-y-2 sm:space-y-0">
             {/* En-tête colonnes — desktop uniquement */}
-            <div className="hidden sm:grid sm:grid-cols-[1fr_60px_90px_140px_120px_40px] gap-2 px-1 pb-2 border-b text-xs font-medium text-muted-foreground">
+            <div className={cn(
+              "hidden sm:grid gap-2 px-1 pb-2 border-b text-xs font-medium text-muted-foreground",
+              showPiecesCount ? "sm:grid-cols-[1fr_60px_90px_140px_120px_40px]" : "sm:grid-cols-[1fr_90px_140px_120px_40px]"
+            )}>
               <span>Produit</span>
-              <span className="text-center">Pièces</span>
-              <span className="text-center">Quantité</span>
+              {showPiecesCount && <span className="text-center">Pièces</span>}
+              <span className="text-center">{labelQuantity}</span>
               <span className="text-right">Prix Unitaire HT</span>
               <span className="text-right">Sous-Total</span>
               <span></span>
@@ -379,7 +384,10 @@ export const SaleForm = ({ id, existing, onSubmit, hasInvoice = false, savedPaym
               return (
                 <div
                   key={field.id}
-                  className="rounded-md border bg-card p-3 space-y-2 sm:rounded-none sm:border-x-0 sm:border-t-0 sm:border-b sm:last:border-b-0 sm:bg-transparent sm:p-0 sm:py-2 sm:space-y-0 sm:grid sm:grid-cols-[1fr_60px_90px_140px_120px_40px] sm:gap-2 sm:items-start"
+                  className={cn(
+                    "rounded-md border bg-card p-3 space-y-2 sm:rounded-none sm:border-x-0 sm:border-t-0 sm:border-b sm:last:border-b-0 sm:bg-transparent sm:p-0 sm:py-2 sm:space-y-0 sm:grid sm:gap-2 sm:items-start",
+                    showPiecesCount ? "sm:grid-cols-[1fr_60px_90px_140px_120px_40px]" : "sm:grid-cols-[1fr_90px_140px_120px_40px]"
+                  )}
                 >
                   {/* Col 1 / Ligne 1 mobile : produit + boutons mobile */}
                   <div className="flex gap-2 items-start sm:items-center">
@@ -432,28 +440,33 @@ export const SaleForm = ({ id, existing, onSubmit, hasInvoice = false, savedPaym
                   </div>
 
                   {/* Cols 2-5 (desktop) / Ligne 2 (mobile) : Pièces, Qté, P.U., Sous-total */}
-                  <div className="grid grid-cols-[44px_1fr_1fr_1.4fr] gap-2 mt-2 sm:mt-0 sm:contents">
+                  <div className={cn(
+                    "grid gap-2 mt-2 sm:mt-0 sm:contents",
+                    showPiecesCount ? "grid-cols-[44px_1fr_1fr_1.4fr]" : "grid-cols-[1fr_1fr_1.4fr]"
+                  )}>
+                    {showPiecesCount && (
+                      <div className="space-y-1 sm:space-y-0">
+                        <span className="text-xs text-muted-foreground block sm:hidden">Pièces</span>
+                        <Controller
+                          name={`items.${idx}.pieces_count`}
+                          control={control}
+                          render={({ field: f }) => (
+                            <Input
+                              type="number"
+                              min={1}
+                              className="h-8 text-center text-sm px-1"
+                              onFocus={e => e.target.select()}
+                              value={f.value ?? 1}
+                              onChange={e => f.onChange(e.target.value === '' ? 1 : Number(e.target.value))}
+                              ref={f.ref}
+                              disabled={hasInvoice || !!hasExistingPayments}
+                            />
+                          )}
+                        />
+                      </div>
+                    )}
                     <div className="space-y-1 sm:space-y-0">
-                      <span className="text-xs text-muted-foreground block sm:hidden">Pièces</span>
-                      <Controller
-                        name={`items.${idx}.pieces_count`}
-                        control={control}
-                        render={({ field: f }) => (
-                          <Input
-                            type="number"
-                            min={1}
-                            className="h-8 text-center text-sm px-1"
-                            onFocus={e => e.target.select()}
-                            value={f.value ?? 1}
-                            onChange={e => f.onChange(e.target.value === '' ? 1 : Number(e.target.value))}
-                            ref={f.ref}
-                            disabled={hasInvoice || !!hasExistingPayments}
-                          />
-                        )}
-                      />
-                    </div>
-                    <div className="space-y-1 sm:space-y-0">
-                      <span className="text-xs text-muted-foreground block sm:hidden">Quantité</span>
+                      <span className="text-xs text-muted-foreground block sm:hidden">{labelQuantity}</span>
                       {field.original_id ? (
                         <div className="text-sm text-center h-8 flex items-center justify-center">{field.quantity}</div>
                       ) : (

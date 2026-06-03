@@ -28,6 +28,7 @@ const schema = z.object({
   rib: z.string().refine(v => v === '' || /^\d{24}$/.test(v), 'RIB : 24 chiffres exactement').optional().or(z.literal('')),
   taux_tva_defaut: z.number({ invalid_type_error: 'Entrer un taux' }).min(0).max(100).default(0),
   couleur_marque: z.string().min(1).default(DEFAULT_BRAND_COLOR),
+  label_quantity: z.string().min(1, 'Requis').max(50).default('Quantité'),
 })
 
 type FormValues = z.infer<typeof schema>
@@ -81,8 +82,9 @@ export const SettingsPage = () => {
       rc: company?.rc ?? '',
       tp_number: company?.tp_number ?? '',
       rib: company?.rib ?? '',
-      taux_tva_defaut: company?.taux_tva_defaut ?? 0,
+      taux_tva_defaut: company?.taux_tva_defaut ?? 10,
       couleur_marque: company?.couleur_marque || DEFAULT_BRAND_COLOR,
+      label_quantity: company?.label_quantity ?? 'Quantité',
     },
   })
 
@@ -119,6 +121,7 @@ export const SettingsPage = () => {
       rib: values.rib ?? '',
       logo_url: company?.logo_url ?? null,
       logoFile: logoFile ?? undefined,
+      label_quantity: values.label_quantity,
     })
   }
 
@@ -391,6 +394,26 @@ export const SettingsPage = () => {
                   <p className="text-xs text-destructive">{errors.taux_tva_defaut.message}</p>
                 )}
               </div>
+            </div>
+          </section>
+
+          {/* ── Nomenclature ── */}
+          <section className="rounded-lg border bg-card p-6 space-y-4">
+            <h2 className="text-sm font-semibold uppercase tracking-wide text-muted-foreground">Nomenclature</h2>
+            <p className="text-xs text-muted-foreground">Personnalisez les libellés affichés dans vos formulaires et documents.</p>
+
+            <div className="w-64 space-y-1.5">
+              <Label htmlFor="label_quantity">Libellé "Quantité"</Label>
+              <Controller
+                control={control}
+                name="label_quantity"
+                render={({ field }) => (
+                  <Input id="label_quantity" {...field} placeholder="Quantité" />
+                )}
+              />
+              {errors.label_quantity && (
+                <p className="text-xs text-destructive">{errors.label_quantity.message}</p>
+              )}
             </div>
           </section>
         </div>

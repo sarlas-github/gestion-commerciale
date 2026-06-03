@@ -159,6 +159,7 @@ export const InvoicePreviewPage = () => {
       totalTTC: sale.total,
       modePaiement: modePaiement || null,
       note: sale.note,
+      labelQuantity: company?.label_quantity ?? 'Quantité',
     }
   })()
 

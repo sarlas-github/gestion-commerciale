@@ -44,6 +44,7 @@ export interface UpsertCompanyInput {
   rib: string
   taux_tva_defaut: number
   couleur_marque: string
+  label_quantity: string
   logo_url?: string | null
   logoFile?: File
 }
@@ -88,8 +89,9 @@ export const useUpsertCompany = () => {
         rc: input.rc || null,
         tp_number: input.tp_number || null,
         rib: input.rib || null,
-        taux_tva_defaut: input.taux_tva_defaut ?? 0,
+        taux_tva_defaut: input.taux_tva_defaut ?? 10,
         couleur_marque: input.couleur_marque || DEFAULT_BRAND_COLOR,
+        label_quantity: input.label_quantity || 'Quantité',
         logo_url,
       }
 

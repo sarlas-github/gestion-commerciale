@@ -11,6 +11,7 @@ import { ConfirmDialog } from '@/components/shared/ConfirmDialog'
 import { StockAdjustModal } from '@/features/products/StockAdjustModal'
 import { useProducts, useDeleteProduct, useStockAlertCount } from '@/hooks/useProducts'
 import { useProfile } from '@/hooks/useProfile'
+import { useCompany } from '@/hooks/useCompany'
 import type { ProductWithStock } from '@/types'
 import { cn, formatDate } from '@/lib/utils'
 import { usePageAction } from '@/contexts/PageContext'
@@ -33,10 +34,6 @@ const STOCK_COLORS: Record<string, string> = {
   rupture: 'text-destructive font-medium',
 }
 
-const TYPE_LABELS: Record<string, string> = {
-  individual: 'Individuel',
-  pack: 'Pack',
-}
 
 export const ProductsPage = () => {
   const navigate = useNavigate()
@@ -47,6 +44,8 @@ export const ProductsPage = () => {
 
   const { data: profile, isLoading: isProfileLoading } = useProfile()
   const isProduction = profile?.business_mode === 'production'
+  const { data: company } = useCompany()
+  const showPiecesCount = company?.show_pieces_count ?? true
 
   const [adjustProduct, setAdjustProduct] = useState<ProductWithStock | null>(null)
   const [deleteId, setDeleteId] = useState<string | null>(null)
@@ -106,15 +105,10 @@ export const ProductsPage = () => {
       accessorKey: 'name',
       header: 'Nom',
     },
-    {
-      accessorKey: 'type',
-      header: 'Type',
-      cell: ({ row }) => TYPE_LABELS[row.original.type] ?? row.original.type,
-    },
-    {
+    ...(showPiecesCount ? [{
       accessorKey: 'pieces_count',
       header: 'Pièces',
-    },
+    } as ColumnDef<ProductWithStock>] : []),
     {
       accessorKey: 'updated_at',
       header: 'Modifié le',
@@ -346,8 +340,7 @@ export const ProductsPage = () => {
         exportFileName="produits"
         exportMapper={p => ({
           Nom: p.name,
-          Type: TYPE_LABELS[p.type] ?? p.type,
-          Pièces: p.pieces_count,
+          ...(showPiecesCount ? { Pièces: p.pieces_count } : {}),
           Stock: p.stock?.quantity ?? 0,
           'Seuil alerte': p.stock_alert,
           Statut: p.stockStatus === 'ok' ? 'En stock' : p.stockStatus === 'faible' ? 'Faible' : 'Rupture',

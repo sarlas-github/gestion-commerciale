@@ -52,6 +52,8 @@ export interface Company {
   taux_tva_defaut: number
   logo_url: string | null
   couleur_marque: string
+  label_quantity: string
+  show_pieces_count: boolean
   created_at: string
   updated_at: string
 }

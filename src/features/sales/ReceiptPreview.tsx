@@ -117,8 +117,8 @@ const ReceiptCopy = ({ data, isDuplicata }: CopyProps) => {
         </colgroup>
         <thead>
           <tr>
-            <th style={{ textAlign: 'left', padding: `8px ${colPad}px`, fontWeight: 600, backgroundColor: brandColor, color: C.white }}>Description</th>
-            <th style={{ textAlign: 'center', padding: `8px ${colPad}px`, fontWeight: 600, backgroundColor: brandColor, color: C.white }}>Qté</th>
+            <th style={{ textAlign: 'left', padding: `8px ${colPad}px`, fontWeight: 600, backgroundColor: brandColor, color: C.white }}>Désignation</th>
+            <th style={{ textAlign: 'center', padding: `8px ${colPad}px`, fontWeight: 600, backgroundColor: brandColor, color: C.white }}>Quantité</th>
             <th style={{ textAlign: 'right', padding: `8px ${colPad}px`, fontWeight: 600, backgroundColor: brandColor, color: C.white }}>Prix</th>
             <th style={{ textAlign: 'right', padding: `8px ${colPad}px`, fontWeight: 600, backgroundColor: brandColor, color: C.white }}>Total</th>
           </tr>

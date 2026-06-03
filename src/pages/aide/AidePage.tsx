@@ -12,6 +12,7 @@ import {
   Users,
   Layers,
   Cog,
+  Settings,
   ChevronDown,
   CheckCircle2,
   XCircle,
@@ -242,7 +243,12 @@ const GuideRevente = () => (
       <Note type="info">Le nombre de pièces défini sur la fiche produit est une valeur par défaut. Vous pouvez le modifier directement au moment de chaque achat ou vente si le nombre de pièces par pack change pour cette transaction.</Note>
     </Section>
 
-    <Section icon={ShoppingCart} title="Fournisseurs et achats" n={3}>
+    <Section icon={Activity} title="Historique des mouvements de stock" n={3}>
+      <p className="text-sm text-muted-foreground">Chaque entrée et sortie de stock est enregistrée automatiquement. Retrouvez, pour chaque produit, l'historique complet : quelle vente a consommé quoi, quel achat a réapprovisionné quoi. Chaque ligne affiche le <strong className="text-foreground">stock avant</strong> et le <strong className="text-foreground">stock après</strong> le mouvement.</p>
+      <Note type="info">Le stock actuel d'un produit correspond toujours au stock après de son dernier mouvement enregistré.</Note>
+    </Section>
+
+    <Section icon={ShoppingCart} title="Fournisseurs et achats" n={4}>
       <p className="text-sm text-muted-foreground">Votre liste de fournisseurs est votre carnet d'adresses : une base de référence que vous enrichissez au fil du temps. Chaque achat met à jour le stock et suit automatiquement ce que vous devez encore payer.</p>
       <Note type="info">Deux façons d'ajouter un fournisseur : depuis la page <strong>Fournisseurs</strong>, ou via le bouton <strong>+</strong> directement dans un formulaire d'achat. Dans les formulaires, tapez quelques lettres pour retrouver un fournisseur grâce à l'autocomplétion.</Note>
       <Steps items={[
@@ -264,7 +270,7 @@ const GuideRevente = () => (
       <p className="text-sm text-muted-foreground">Depuis la fiche d'un fournisseur, consultez l'historique complet de vos échanges : achats, paiements versés et solde restant dû. Un bouton <strong className="text-foreground">WhatsApp</strong> vous permet de le contacter directement depuis sa fiche, sans quitter l'application.</p>
     </Section>
 
-    <Section icon={TrendingUp} title="Clients et ventes" n={4}>
+    <Section icon={TrendingUp} title="Clients et ventes" n={5}>
       <p className="text-sm text-muted-foreground">Votre liste de clients est votre carnet d'adresses : une base de référence centrale pour toutes vos ventes. L'application génère automatiquement la facture, déduit le stock, et garde une trace de tout ce que vos clients vous doivent.</p>
       <Note type="info">Deux façons d'ajouter un client : depuis la page <strong>Clients</strong>, ou via le bouton <strong>+</strong> directement dans un formulaire de vente. Dans les formulaires, tapez quelques lettres pour retrouver un client grâce à l'autocomplétion.</Note>
       <Steps items={[
@@ -285,7 +291,7 @@ const GuideRevente = () => (
       <p className="text-sm text-muted-foreground">Depuis la fiche d'un client, consultez toutes ses ventes, ses paiements, et le total qu'il vous doit encore. Un bouton <strong className="text-foreground">WhatsApp</strong> vous permet de le contacter directement depuis sa fiche, sans quitter l'application.</p>
     </Section>
 
-    <Section icon={FileText} title="Factures et paiements" n={5}>
+    <Section icon={FileText} title="Factures et paiements" n={6}>
       <p className="text-sm text-muted-foreground">Vos documents existent en deux états distincts :</p>
       <div className="grid sm:grid-cols-2 gap-3">
         <div className="rounded-lg border bg-muted/40 p-4 space-y-1">
@@ -311,7 +317,7 @@ const GuideRevente = () => (
       <p className="text-sm text-muted-foreground">Les paiements partiels sont supportés : enregistrez plusieurs règlements sur une même vente ou un même achat. Le statut se met à jour à chaque fois.</p>
     </Section>
 
-    <Section icon={BarChart3} title="Rapports et états" n={6}>
+    <Section icon={BarChart3} title="Finances : Rapports et états" n={7}>
       <p className="text-sm text-muted-foreground">Les rapports vous donnent une vision claire de votre situation financière sur n'importe quelle période.</p>
       <div className="grid sm:grid-cols-2 gap-3">
         <div className="rounded-lg border bg-muted/40 p-4 space-y-1.5">
@@ -331,15 +337,25 @@ const GuideRevente = () => (
       </div>
       <Note type="info">Ces états peuvent couvrir une période longue (plusieurs mois ou toute l'année) pour une vue complète de vos relations commerciales.</Note>
       <p className="text-sm font-medium text-foreground">Paiements</p>
-      <p className="text-sm text-muted-foreground">La section <strong className="text-foreground">Paiements</strong> du menu vous donne accès au détail de chaque règlement enregistré — côté clients et côté fournisseurs — avec le montant, la date et la vente ou l'achat associé.</p>
+      <p className="text-sm text-muted-foreground">La section <strong className="text-foreground">Paiements</strong> du menu vous donne accès au detail de chaque règlement enregistré — côté clients et côté fournisseurs — avec le montant, la date et la vente ou l'achat associé.</p>
     </Section>
 
-    <Section icon={Activity} title="Historique des mouvements de stock" n={7}>
-      <p className="text-sm text-muted-foreground">Chaque entrée et sortie de stock est enregistrée automatiquement. Retrouvez, pour chaque produit, l'historique complet : quelle vente a consommé quoi, quel achat a réapprovisionné quoi. Chaque ligne affiche le <strong className="text-foreground">stock avant</strong> et le <strong className="text-foreground">stock après</strong> le mouvement.</p>
-      <Note type="info">Le stock actuel d'un produit correspond toujours au stock après de son dernier mouvement enregistré.</Note>
+    <Section icon={Settings} title="Paramètres" n={8}>
+      <p className="text-sm text-muted-foreground">Configurez l'identité de votre entreprise et vos préférences de facturation depuis la page <strong className="text-foreground">Paramètres</strong>.</p>
+      <div className="grid sm:grid-cols-2 gap-3">
+        <div className="rounded-lg border bg-muted/40 p-4 space-y-1">
+          <p className="text-sm font-semibold text-foreground">Identité & Design</p>
+          <p className="text-xs text-muted-foreground leading-relaxed">Renseignez le nom, la forme juridique, l'adresse et vos coordonnées de contact. Téléversez votre logo et sélectionnez votre couleur de marque pour personnaliser l'en-tête de vos factures et reçus.</p>
+        </div>
+        <div className="rounded-lg border bg-muted/40 p-4 space-y-1">
+          <p className="text-sm font-semibold text-foreground">Identifiants & TVA</p>
+          <p className="text-xs text-muted-foreground leading-relaxed">Configurez vos identifiants réglementaires (ICE, IF, RC, TP, RIB) et votre taux de TVA par défaut (0%, 7%, 10%, 14%, 20%) pour pré-remplir automatiquement vos formulaires.</p>
+        </div>
+      </div>
+      <Note type="info">Vos modifications de logo ou de couleur s'appliquent à tous vos documents générés futurs.</Note>
     </Section>
 
-    <Section icon={BookOpen} title="Règles à connaître" n={8}>
+    <Section icon={BookOpen} title="Règles à connaître" n={9}>
       <p className="text-sm font-medium text-foreground">Modification et annulation d'une vente</p>
       <RulesTable
         headers={['Situation', 'Modifier', 'Annuler']}
@@ -474,7 +490,12 @@ const GuideProduction = () => (
       <Note type="info">Le seuil d'alerte se définit sur chaque fiche produit. Dès que le stock descend en dessous de ce seuil, le badge d'alerte apparaît dans le menu de navigation. Pensez à le configurer pour chaque produit que vous souhaitez surveiller.</Note>
     </Section>
 
-    <Section icon={ShoppingCart} title="Achats de matières premières" n={3}>
+    <Section icon={Activity} title="Historique des mouvements de stock" n={3}>
+      <p className="text-sm text-muted-foreground">Chaque entrée et sortie de stock est enregistrée automatiquement — achats, ventes, déclarations de production et ajustements manuels. L'historique est séparé en deux onglets : un pour les matières premières, un pour les produits finis. Chaque ligne affiche le <strong className="text-foreground">stock avant</strong> et le <strong className="text-foreground">stock après</strong> le mouvement.</p>
+      <Note type="info">Le stock actuel d'un produit correspond toujours au stock après de son dernier mouvement enregistré.</Note>
+    </Section>
+
+    <Section icon={ShoppingCart} title="Achats de matières premières" n={4}>
       <p className="text-sm text-muted-foreground">Votre liste de fournisseurs est votre carnet d'adresses fournisseurs. Chaque achat enregistré augmente automatiquement le stock des matières premières concernées.</p>
       <Note type="info">Deux façons d'ajouter un fournisseur : depuis la page <strong>Fournisseurs</strong>, ou via le bouton <strong>+</strong> directement dans un formulaire d'achat. Dans les formulaires, tapez quelques lettres pour retrouver un fournisseur grâce à l'autocomplétion.</Note>
       <Steps items={[
@@ -496,7 +517,7 @@ const GuideProduction = () => (
       <p className="text-sm text-muted-foreground">Depuis la fiche d'un fournisseur, consultez l'historique complet de vos échanges : achats, paiements versés et solde restant dû. Un bouton <strong className="text-foreground">WhatsApp</strong> vous permet de le contacter directement depuis sa fiche, sans quitter l'application.</p>
     </Section>
 
-    <Section icon={Cog} title="Déclarer votre production" n={4}>
+    <Section icon={Cog} title="Déclarer votre production" n={5}>
       <p className="text-sm text-muted-foreground">L'application vous accompagne dans le suivi de votre cycle complet :</p>
       <div className="flex items-center gap-2 flex-wrap rounded-lg border bg-muted/40 p-4">
         <div className="flex items-center gap-1.5 rounded-md bg-amber-100 text-amber-800 dark:bg-amber-900/30 dark:text-amber-300 px-3 py-1.5 text-xs font-medium">
@@ -537,7 +558,7 @@ const GuideProduction = () => (
       <Note type="info"><strong>Exemple :</strong> vous produisez 50 pains avec 10 kg de farine. Déclarez d'abord une Consommation de Farine (−10 kg), puis une Production de Pain (+50 pièces). Les deux stocks sont mis à jour instantanément.</Note>
     </Section>
 
-    <Section icon={TrendingUp} title="Ventes" n={5}>
+    <Section icon={TrendingUp} title="Ventes" n={6}>
       <p className="text-sm text-muted-foreground">Votre liste de clients est votre carnet d'adresses clients. L'application génère automatiquement la facture, déduit le stock et garde une trace de tout ce que vos clients vous doivent.</p>
       <Note type="info">Deux façons d'ajouter un client : depuis la page <strong>Clients</strong>, ou via le bouton <strong>+</strong> directement dans un formulaire de vente. Dans les formulaires, tapez quelques lettres pour retrouver un client grâce à l'autocomplétion.</Note>
       <Steps items={[
@@ -558,7 +579,7 @@ const GuideProduction = () => (
       <p className="text-sm text-muted-foreground">Depuis la fiche d'un client, consultez toutes ses ventes, ses paiements, et le total qu'il vous doit encore. Un bouton <strong className="text-foreground">WhatsApp</strong> vous permet de le contacter directement depuis sa fiche, sans quitter l'application.</p>
     </Section>
 
-    <Section icon={FileText} title="Factures et paiements" n={6}>
+    <Section icon={FileText} title="Factures et paiements" n={7}>
       <p className="text-sm text-muted-foreground">Vos documents existent en deux états distincts :</p>
       <div className="grid sm:grid-cols-2 gap-3">
         <div className="rounded-lg border bg-muted/40 p-4 space-y-1">
@@ -578,13 +599,14 @@ const GuideProduction = () => (
         ]}
       />
       <Note type="ok">Documents fiables et immuables. Une facture conserve toujours les informations exactes du moment de sa génération, même si vos coordonnées ou celles du client changent par la suite.</Note>
+
       <Note type="info">Vos documents sont personnalisables : logo et couleur de marque de votre entreprise apparaissent sur chaque facture et reçu. Pensez à configurer votre entreprise dans <strong>Paramètres</strong> avant de générer vos premiers documents.</Note>
       <p className="text-sm font-medium text-foreground">Téléchargement, impression et partage</p>
       <p className="text-sm text-muted-foreground">Depuis l'aperçu d'une facture ou d'un reçu, vous pouvez <strong className="text-foreground">télécharger le PDF</strong>, l'<strong className="text-foreground">imprimer</strong> directement, ou l'<strong className="text-foreground">envoyer via WhatsApp</strong> en un clic — le message est pré-rempli avec le document joint.</p>
       <p className="text-sm text-muted-foreground">Les paiements partiels sont supportés. Le statut se met à jour automatiquement à chaque règlement.</p>
     </Section>
 
-    <Section icon={BarChart3} title="Rapports et états" n={7}>
+    <Section icon={BarChart3} title="Finances : Rapports et états" n={8}>
       <p className="text-sm text-muted-foreground">Les rapports vous donnent une vision claire de votre situation financière sur n'importe quelle période.</p>
       <div className="grid sm:grid-cols-2 gap-3">
         <div className="rounded-lg border bg-muted/40 p-4 space-y-1.5">
@@ -603,16 +625,27 @@ const GuideProduction = () => (
         </div>
       </div>
       <Note type="info">Ces états peuvent couvrir une période longue (plusieurs mois ou toute l'année) pour une vue complète de vos relations commerciales.</Note>
+
       <p className="text-sm font-medium text-foreground">Paiements</p>
       <p className="text-sm text-muted-foreground">La section <strong className="text-foreground">Paiements</strong> du menu vous donne accès au détail de chaque règlement enregistré — côté clients et côté fournisseurs — avec le montant, la date et la vente ou l'achat associé.</p>
     </Section>
 
-    <Section icon={Activity} title="Historique des mouvements de stock" n={8}>
-      <p className="text-sm text-muted-foreground">Chaque entrée et sortie de stock est enregistrée automatiquement — achats, ventes, déclarations de production et ajustements manuels. L'historique est séparé en deux onglets : un pour les matières premières, un pour les produits finis. Chaque ligne affiche le <strong className="text-foreground">stock avant</strong> et le <strong className="text-foreground">stock après</strong> le mouvement.</p>
-      <Note type="info">Le stock actuel d'un produit correspond toujours au stock après de son dernier mouvement enregistré.</Note>
+    <Section icon={Settings} title="Paramètres" n={9}>
+      <p className="text-sm text-muted-foreground">Configurez l'identité de votre entreprise et vos préférences de facturation depuis la page <strong className="text-foreground">Paramètres</strong>.</p>
+      <div className="grid sm:grid-cols-2 gap-3">
+        <div className="rounded-lg border bg-muted/40 p-4 space-y-1">
+          <p className="text-sm font-semibold text-foreground">Identité & Design</p>
+          <p className="text-xs text-muted-foreground leading-relaxed">Renseignez le nom, la forme juridique, l'adresse et vos coordonnées de contact. Téléversez votre logo et sélectionnez votre couleur de marque pour personnaliser l'en-tête de vos factures et reçus.</p>
+        </div>
+        <div className="rounded-lg border bg-muted/40 p-4 space-y-1">
+          <p className="text-sm font-semibold text-foreground">Identifiants & TVA</p>
+          <p className="text-xs text-muted-foreground leading-relaxed">Configurez vos identifiants réglementaires (ICE, IF, RC, TP, RIB) et votre taux de TVA par défaut (0%, 7%, 10%, 14%, 20%) pour pré-remplir automatiquement vos formulaires.</p>
+        </div>
+      </div>
+      <Note type="info">Vos modifications de logo ou de couleur s'appliquent immédiatement à tous vos documents générés et futurs.</Note>
     </Section>
 
-    <Section icon={BookOpen} title="Règles à connaître" n={9}>
+    <Section icon={BookOpen} title="Règles à connaître" n={10}>
       <p className="text-sm font-medium text-foreground">Modification et annulation d'une vente</p>
       <RulesTable
         headers={['Situation', 'Modifier', 'Annuler']}

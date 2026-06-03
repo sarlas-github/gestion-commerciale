@@ -121,6 +121,7 @@ export const ReceiptPreviewPage = () => {
       tvaAmount,
       totalTTC: sale.total,
       modePaiement: payment.methode_paiement ?? null,
+      labelQuantity: company?.label_quantity ?? 'Quantité',
     }
   })()
 
