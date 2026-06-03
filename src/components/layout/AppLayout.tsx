@@ -10,7 +10,6 @@ import { Button } from '@/components/ui/button'
 import { Building2, FileText, Palette, Percent } from 'lucide-react'
 import { PageProvider } from '@/contexts/PageContext'
 import { useCompany } from '@/hooks/useCompany'
-import { DEFAULT_BRAND_COLOR } from '@/lib/constants'
 
 const DEFAULT_COMPANY_NAME = 'votre-nom-entreprise'
 
@@ -22,12 +21,6 @@ export const AppLayout = () => {
   const [setupModalOpen, setSetupModalOpen] = useState(false)
   const hasShownSetupModal = useRef(false)
   const navigate = useNavigate()
-
-  useEffect(() => {
-    if (company !== undefined) {
-      document.documentElement.style.setProperty('--primary', company?.couleur_marque || DEFAULT_BRAND_COLOR)
-    }
-  }, [company?.couleur_marque])
 
   useEffect(() => {
     if (!hasShownSetupModal.current && company !== undefined && company?.name === DEFAULT_COMPANY_NAME) {
