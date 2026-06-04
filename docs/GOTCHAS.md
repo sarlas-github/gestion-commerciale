@@ -127,6 +127,30 @@ IF (v_item->>'original_id') IS NOT NULL THEN
 ---
 
 
+---
+
+## 11. `staleTime` + `invalidateQueries` — ne pas confondre les deux rôles
+
+`staleTime: 60_000` est le standard dans ce projet sur **tous** les `useQuery`. Il évite les refetches réseau inutiles quand les données n'ont pas changé (optimisation egress). **Ne jamais le supprimer.**
+
+La fraîcheur après une mutation est assurée par `invalidateQueries` dans `onSuccess` — pas par l'absence de `staleTime`. Sans `invalidateQueries`, le cache reste périmé pendant 60 secondes même si la donnée vient de changer.
+
+**Règle :** chaque `useMutation.onSuccess` doit invalider **toutes** les query keys affectées par l'écriture, y compris les tables indirectement impactées.
+
+```ts
+// ✅ CORRECT — création produit avec stock initial → 3 caches à invalider
+onSuccess: () => {
+  qc.invalidateQueries({ queryKey: ['products'] })
+  qc.invalidateQueries({ queryKey: ['stock-alerts'] })
+  qc.invalidateQueries({ queryKey: ['stock-movements'] }) // ← souvent oublié
+}
+
+// ❌ MAUVAIS FIX — supprimer staleTime pour "forcer" le rechargement
+// Cause : egress inutile à chaque navigation, même sans mutation
+```
+
+**Cas piège :** si on vient de consulter la page "Mouvements de stock" (cache chargé) puis qu'on crée un produit avec stock initial, le retour sur la page ne rafraîchit pas — à moins que `useCreateProduct.onSuccess` invalide `['stock-movements']`.
+
 Le calcul du total HT est `quantity × pieces_count × unit_price`. `pieces_count` doit être inséré explicitement dans `purchase_items` et `sale_items` au moment de la transaction — ne pas le laisser au DEFAULT (1).
 
 ```ts

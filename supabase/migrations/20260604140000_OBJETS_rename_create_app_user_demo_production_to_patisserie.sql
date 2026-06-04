@@ -1,12 +1,19 @@
--- Dernière version déployée : 20260520150000_OBJETS_create_app_user_demo.sql
--- Usage : SELECT * FROM public.create_app_user_demo_production('demo@prospect.ma');
---         SELECT * FROM public.create_app_user_demo_production('demo@prospect.ma', 'MonPass123', 'Ma Pâtisserie SARL');
--- Flux production : achats MP → ordres de fabrication (consommation MP + production PF) → ventes PF
+-- Renommage create_app_user_demo_production → create_app_user_demo_production_patisserie
+-- Ajout p_taux_tva_defaut, p_label_quantity, p_show_pieces_count
+-- Usage : SELECT * FROM public.create_app_user_demo_production_patisserie('demo@prospect.ma');
+--         SELECT * FROM public.create_app_user_demo_production_patisserie('demo@prospect.ma', p_label_quantity := 'Unités', p_show_pieces_count := false);
 
-CREATE OR REPLACE FUNCTION public.create_app_user_demo_production(
-    p_email        text,
-    p_password     text DEFAULT 'Démo@123',
-    p_company_name text DEFAULT 'Bacha Pâtisserie SARL'
+DROP FUNCTION IF EXISTS public.create_app_user_demo_production(text, text, text);
+
+DROP FUNCTION IF EXISTS public.create_app_user_demo_revente(text, text, text);
+
+CREATE OR REPLACE FUNCTION public.create_app_user_demo_production_patisserie(
+    p_email               text,
+    p_password            text    DEFAULT 'Démo@123',
+    p_company_name        text    DEFAULT 'Bacha Pâtisserie SARL',
+    p_taux_tva_defaut     numeric DEFAULT 10,
+    p_label_quantity      text    DEFAULT 'Quantité',
+    p_show_pieces_count   boolean DEFAULT true
 )
 RETURNS TABLE(out_user_id uuid, out_company_id uuid)
 LANGUAGE plpgsql
@@ -40,6 +47,7 @@ DECLARE
     v_purchase_id uuid; v_sale_id uuid; v_doc_id uuid; v_payment_id uuid;
 
     v_total  numeric; v_paid   numeric; v_price  numeric; v_qty int;
+    v_tva_amount numeric; v_total_ht numeric;
     v_mp_idx int; v_pf_qty int;
     v_stock_alerts   int[];
     v_target         numeric;
@@ -79,7 +87,12 @@ BEGIN
         ice            = '002567890000001',
         if_number      = '56789012',
         rc             = 'RC-CASA-567890',
-        tp_number      = '12345678'
+        tp_number         = '12345678',
+        logo_url          = '/yourlogo.jpg',
+        couleur_marque    = '#009FE3',
+        taux_tva_defaut   = p_taux_tva_defaut,
+        label_quantity    = p_label_quantity,
+        show_pieces_count = p_show_pieces_count
     WHERE id = v_company_id;
 
     SELECT * INTO v_company FROM public.companies WHERE id = v_company_id;
@@ -93,9 +106,10 @@ BEGIN
     DELETE FROM public.sales           WHERE company_id = v_company_id;
     DELETE FROM public.purchase_items  WHERE purchase_id IN (SELECT id FROM public.purchases WHERE company_id = v_company_id);
     DELETE FROM public.purchases       WHERE company_id = v_company_id;
-    DELETE FROM public.stock_movements WHERE company_id = v_company_id;
-    DELETE FROM public.stock           WHERE company_id = v_company_id;
-    DELETE FROM public.products        WHERE company_id = v_company_id;
+    DELETE FROM public.stock_movements    WHERE company_id = v_company_id;
+    DELETE FROM public.stock              WHERE company_id = v_company_id;
+    DELETE FROM public.document_sequences WHERE company_id = v_company_id;
+    DELETE FROM public.products           WHERE company_id = v_company_id;
     DELETE FROM public.clients         WHERE company_id = v_company_id;
     DELETE FROM public.suppliers       WHERE company_id = v_company_id;
 
@@ -223,6 +237,9 @@ BEGIN
         v_date    := (date_trunc('month', current_date)
                       - (v_month_offset || ' months')::interval
                       + (v_day          || ' days')::interval)::date;
+        IF v_month_offset = 0 THEN
+            v_date := LEAST(v_date, (current_date - 1));
+        END IF;
         v_s_id    := v_supplier_ids[((v_i - 1) % 10) + 1];
         v_n_items := 1 + (v_i % 3);
 
@@ -233,6 +250,10 @@ BEGIN
             v_total := v_total + v_qty * v_product_achat[v_p_idx];
         END LOOP;
 
+        v_total_ht   := v_total;
+        v_tva_amount := ROUND(v_total_ht * p_taux_tva_defaut / 100, 2);
+        v_total      := v_total_ht + v_tva_amount;
+
         v_paid := CASE v_status
             WHEN 'paid'    THEN v_total
             WHEN 'partial' THEN ROUND(v_total * 0.5, 2)
@@ -240,10 +261,10 @@ BEGIN
         END;
 
         v_ach_seq := v_ach_seq + 1;
-        INSERT INTO public.purchases (user_id, company_id, supplier_id, reference, date, status, total, paid)
+        INSERT INTO public.purchases (user_id, company_id, supplier_id, reference, date, status, total, tva_rate, tva_amount, paid)
         VALUES (v_user_id, v_company_id, v_s_id,
                 'ACH-' || v_year || '-' || LPAD(v_ach_seq::text, 3, '0'),
-                v_date, v_status, v_total, v_paid)
+                v_date, v_status, v_total, p_taux_tva_defaut, v_tva_amount, v_paid)
         RETURNING id INTO v_purchase_id;
 
         IF v_status != 'cancelled' THEN
@@ -259,8 +280,8 @@ BEGIN
                 v_stock_current[v_p_idx] := v_stock_current[v_p_idx] + v_qty;
                 UPDATE public.stock SET quantity = v_stock_current[v_p_idx]
                 WHERE product_id = v_product_ids[v_p_idx] AND company_id = v_company_id;
-                INSERT INTO public.stock_movements (user_id, company_id, product_id, type, quantity, reference_type, reference_id, date, stock_avant, stock_apres)
-                VALUES (v_user_id, v_company_id, v_product_ids[v_p_idx], 'in', v_qty, 'purchase', v_purchase_id, v_date, v_stock_avant, v_stock_current[v_p_idx]);
+                INSERT INTO public.stock_movements (user_id, company_id, product_id, type, quantity, reference_type, reference_id, note, date, stock_avant, stock_apres)
+                VALUES (v_user_id, v_company_id, v_product_ids[v_p_idx], 'in', v_qty, 'purchase', v_purchase_id, 'Nouvel achat', v_date, v_stock_avant, v_stock_current[v_p_idx]);
             END LOOP;
 
             IF v_paid > 0 THEN
@@ -291,6 +312,9 @@ BEGIN
         v_date         := (date_trunc('month', current_date)
                            - (v_month_offset || ' months')::interval
                            + (v_day          || ' days')::interval)::date;
+        IF v_month_offset = 0 THEN
+            v_date := LEAST(v_date, (current_date - 1));
+        END IF;
 
         -- Produit fini fabriqué ce lot (tourne sur les 10 PF)
         v_p_idx  := 10 + ((v_i - 1) % 10) + 1;
@@ -333,6 +357,9 @@ BEGIN
         v_date         := (date_trunc('month', current_date)
                            - (v_month_offset || ' months')::interval
                            + (v_day          || ' days')::interval)::date;
+        IF v_month_offset = 0 THEN
+            v_date := LEAST(v_date, (current_date - 1));
+        END IF;
         v_c_id    := v_client_ids[((v_i - 1) % 15) + 1];
         v_n_items := 1 + (v_i % 2);  -- 1 ou 2 références par commande
 
@@ -347,6 +374,10 @@ BEGIN
             v_total := v_total + v_qty * v_product_vente[v_p_idx];
         END LOOP;
 
+        v_total_ht   := v_total;
+        v_tva_amount := ROUND(v_total_ht * p_taux_tva_defaut / 100, 2);
+        v_total      := v_total_ht + v_tva_amount;
+
         v_paid := CASE v_status
             WHEN 'paid'    THEN v_total
             WHEN 'partial' THEN ROUND(v_total * 0.5, 2)
@@ -354,10 +385,10 @@ BEGIN
         END;
 
         v_ven_seq := v_ven_seq + 1;
-        INSERT INTO public.sales (user_id, company_id, client_id, reference, date, status, total, paid)
+        INSERT INTO public.sales (user_id, company_id, client_id, reference, date, status, total, tva_rate, tva_amount, paid)
         VALUES (v_user_id, v_company_id, v_c_id,
                 'VEN-' || v_year || '-' || LPAD(v_ven_seq::text, 3, '0'),
-                v_date, v_status, v_total, v_paid)
+                v_date, v_status, v_total, p_taux_tva_defaut, v_tva_amount, v_paid)
         RETURNING id INTO v_sale_id;
 
         IF v_status != 'cancelled' THEN
@@ -379,8 +410,8 @@ BEGIN
                     v_stock_current[v_p_idx] := v_stock_current[v_p_idx] - v_qty;
                     UPDATE public.stock SET quantity = v_stock_current[v_p_idx]
                     WHERE product_id = v_product_ids[v_p_idx] AND company_id = v_company_id;
-                    INSERT INTO public.stock_movements (user_id, company_id, product_id, type, quantity, reference_type, reference_id, date, stock_avant, stock_apres)
-                    VALUES (v_user_id, v_company_id, v_product_ids[v_p_idx], 'out', v_qty, 'sale', v_sale_id, v_date, v_stock_avant, v_stock_current[v_p_idx]);
+                    INSERT INTO public.stock_movements (user_id, company_id, product_id, type, quantity, reference_type, reference_id, note, date, stock_avant, stock_apres)
+                    VALUES (v_user_id, v_company_id, v_product_ids[v_p_idx], 'out', v_qty, 'sale', v_sale_id, 'Nouvelle vente', v_date, v_stock_avant, v_stock_current[v_p_idx]);
                 END IF;
             END LOOP;
 
@@ -401,7 +432,7 @@ BEGIN
             INSERT INTO public.documents (
                 user_id, company_id, client_id, sale_id,
                 type, number, date, status, payment_status,
-                total, paid,
+                total, tva_rate, tva_amount, paid,
                 client_name, client_address, client_ice, client_phone,
                 company_name, company_address, company_phone, company_email,
                 company_ice, company_if, company_rc, company_tp, company_rib,
@@ -412,7 +443,7 @@ BEGIN
                 'invoice', 'FAC-' || v_year || '-' || LPAD(v_fac_seq::text, 3, '0'),
                 v_date, 'confirmed',
                 CASE WHEN v_paid >= v_total THEN 'paid' WHEN v_paid > 0 THEN 'partial' ELSE 'unpaid' END,
-                v_total, v_paid,
+                v_total, p_taux_tva_defaut, v_tva_amount, v_paid,
                 v_client_name, v_client_address, v_client_ice, v_client_phone,
                 COALESCE(v_company.name, ''),           COALESCE(v_company.address, ''),
                 COALESCE(v_company.phone, ''),          COALESCE(v_company.email, ''),
@@ -435,7 +466,7 @@ BEGIN
                 INSERT INTO public.documents (
                     user_id, company_id, client_id, sale_id, payment_id,
                     type, number, date, status, payment_status,
-                    total, paid,
+                    total, tva_rate, tva_amount, paid,
                     client_name, client_address, client_ice, client_phone,
                     company_name, company_address, company_phone, company_email,
                     company_ice, company_if, company_rc, company_tp, company_rib,
@@ -446,7 +477,7 @@ BEGIN
                     'receipt', 'REC-' || v_year || '-' || LPAD(v_rec_seq::text, 3, '0'),
                     v_date, 'confirmed',
                     CASE WHEN v_paid >= v_total THEN 'paid' ELSE 'partial' END,
-                    v_total, v_paid,
+                    v_total, p_taux_tva_defaut, v_tva_amount, v_paid,
                     v_client_name, v_client_address, v_client_ice, v_client_phone,
                     COALESCE(v_company.name, ''),           COALESCE(v_company.address, ''),
                     COALESCE(v_company.phone, ''),          COALESCE(v_company.email, ''),
@@ -480,15 +511,24 @@ BEGIN
         END IF;
     END LOOP;
 
+    -- 9b. Initialiser document_sequences pour éviter les conflits lors des prochains enregistrements
+    INSERT INTO public.document_sequences (user_id, company_id, type, year, last_number)
+    VALUES
+        (v_user_id, v_company_id, 'purchase', v_year, v_ach_seq),
+        (v_user_id, v_company_id, 'sale',     v_year, v_ven_seq),
+        (v_user_id, v_company_id, 'invoice',  v_year, v_fac_seq),
+        (v_user_id, v_company_id, 'receipt',  v_year, v_rec_seq)
+    ON CONFLICT (company_id, type, year)
+    DO UPDATE SET last_number = GREATEST(document_sequences.last_number, EXCLUDED.last_number);
+
     -- 10. Ajustements stock : forcer rupture et faible sur quelques produits
     -- Beurre extra-fin kg (index 3) → rupture (seuil=10)
     v_target := 0;
     IF v_stock_current[3] != v_target THEN
         v_stock_avant := v_stock_current[3];
-        v_qty := (v_target - v_stock_current[3])::int;
         UPDATE public.stock SET quantity = v_target WHERE product_id = v_product_ids[3] AND company_id = v_company_id;
-        INSERT INTO public.stock_movements (user_id, company_id, product_id, type, quantity, reference_type, reference_id, date, note, stock_avant, stock_apres)
-        VALUES (v_user_id, v_company_id, v_product_ids[3], 'adjust', v_qty, 'manual', NULL, current_date, 'Ajustement inventaire', v_stock_avant, v_target);
+        INSERT INTO public.stock_movements (user_id, company_id, product_id, type, quantity, reference_type, note, date, stock_avant, stock_apres)
+        VALUES (v_user_id, v_company_id, v_product_ids[3], CASE WHEN v_target >= v_stock_avant THEN 'in' ELSE 'out' END, ABS((v_target - v_stock_avant)::int), 'manual', 'Perte matière première', current_date, v_stock_avant, v_target);
         v_stock_current[3] := v_target;
     END IF;
 
@@ -496,10 +536,9 @@ BEGIN
     v_target := 3;
     IF v_stock_current[7] != v_target THEN
         v_stock_avant := v_stock_current[7];
-        v_qty := (v_target - v_stock_current[7])::int;
         UPDATE public.stock SET quantity = v_target WHERE product_id = v_product_ids[7] AND company_id = v_company_id;
-        INSERT INTO public.stock_movements (user_id, company_id, product_id, type, quantity, reference_type, reference_id, date, note, stock_avant, stock_apres)
-        VALUES (v_user_id, v_company_id, v_product_ids[7], 'adjust', v_qty, 'manual', NULL, current_date, 'Ajustement inventaire', v_stock_avant, v_target);
+        INSERT INTO public.stock_movements (user_id, company_id, product_id, type, quantity, reference_type, note, date, stock_avant, stock_apres)
+        VALUES (v_user_id, v_company_id, v_product_ids[7], CASE WHEN v_target >= v_stock_avant THEN 'in' ELSE 'out' END, ABS((v_target - v_stock_avant)::int), 'manual', 'Correctif inventaire physique', current_date, v_stock_avant, v_target);
         v_stock_current[7] := v_target;
     END IF;
 
@@ -507,10 +546,9 @@ BEGIN
     v_target := 0;
     IF v_stock_current[13] != v_target THEN
         v_stock_avant := v_stock_current[13];
-        v_qty := (v_target - v_stock_current[13])::int;
         UPDATE public.stock SET quantity = v_target WHERE product_id = v_product_ids[13] AND company_id = v_company_id;
-        INSERT INTO public.stock_movements (user_id, company_id, product_id, type, quantity, reference_type, reference_id, date, note, stock_avant, stock_apres)
-        VALUES (v_user_id, v_company_id, v_product_ids[13], 'adjust', v_qty, 'manual', NULL, current_date, 'Ajustement inventaire', v_stock_avant, v_target);
+        INSERT INTO public.stock_movements (user_id, company_id, product_id, type, quantity, reference_type, note, date, stock_avant, stock_apres)
+        VALUES (v_user_id, v_company_id, v_product_ids[13], CASE WHEN v_target >= v_stock_avant THEN 'in' ELSE 'out' END, ABS((v_target - v_stock_avant)::int), 'manual', 'Rupture production arrêtée', current_date, v_stock_avant, v_target);
         v_stock_current[13] := v_target;
     END IF;
 
@@ -518,10 +556,9 @@ BEGIN
     v_target := 2;
     IF v_stock_current[19] != v_target THEN
         v_stock_avant := v_stock_current[19];
-        v_qty := (v_target - v_stock_current[19])::int;
         UPDATE public.stock SET quantity = v_target WHERE product_id = v_product_ids[19] AND company_id = v_company_id;
-        INSERT INTO public.stock_movements (user_id, company_id, product_id, type, quantity, reference_type, reference_id, date, note, stock_avant, stock_apres)
-        VALUES (v_user_id, v_company_id, v_product_ids[19], 'adjust', v_qty, 'manual', NULL, current_date, 'Ajustement inventaire', v_stock_avant, v_target);
+        INSERT INTO public.stock_movements (user_id, company_id, product_id, type, quantity, reference_type, note, date, stock_avant, stock_apres)
+        VALUES (v_user_id, v_company_id, v_product_ids[19], CASE WHEN v_target >= v_stock_avant THEN 'in' ELSE 'out' END, ABS((v_target - v_stock_avant)::int), 'manual', 'Ajustement fin de mois', current_date, v_stock_avant, v_target);
         v_stock_current[19] := v_target;
     END IF;
 

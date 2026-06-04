@@ -1,11 +1,11 @@
--- v4 : ajout taux_tva_defaut, label_quantity, show_pieces_count comme arguments
+-- v4 : démonstration pour un grossiste fruits & légumes (revente)
 -- Stratégie : mois précédent → grandes quantités pour constituer le stock
 --             mois courant   → petites quantités → Total Achats << CA Ventes
--- Usage : SELECT * FROM public.create_app_user_demo_fruits_legumes('demo@prospect.ma');
---         SELECT * FROM public.create_app_user_demo_fruits_legumes('demo@prospect.ma', p_label_quantity := 'Nb. caisses', p_show_pieces_count := false);
+-- Usage : SELECT * FROM public.create_app_user_demo_revente_fruits_legumes('demo@prospect.ma');
+--         SELECT * FROM public.create_app_user_demo_revente_fruits_legumes('demo@prospect.ma', p_label_quantity := 'Nb. caisses', p_show_pieces_count := false);
 
 
-CREATE OR REPLACE FUNCTION public.create_app_user_demo_fruits_legumes(
+CREATE OR REPLACE FUNCTION public.create_app_user_demo_revente_fruits_legumes(
     p_email               text,
     p_password            text    DEFAULT 'Démo@123',
     p_company_name        text    DEFAULT 'NaturalFood',

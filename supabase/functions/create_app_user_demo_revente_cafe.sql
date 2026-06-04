@@ -1,11 +1,17 @@
--- Dernière version déployée : 20260520150000_OBJETS_create_app_user_demo.sql
--- Usage : SELECT * FROM public.create_app_user_demo_revente('demo@prospect.ma');
---         SELECT * FROM public.create_app_user_demo_revente('demo@prospect.ma', 'MonPass123', 'Mon Distributeur SARL');
+-- v1 : démonstration pour un distributeur de café (revente)
+-- Secteur : distribution B2B de cafés, thés, accessoires aux hôtels, restaurants, entreprises
+-- Stratégie : mois précédent → grandes quantités pour constituer le stock
+--             mois courant   → petites quantités → Total Achats << CA Ventes
+-- Usage : SELECT * FROM public.create_app_user_demo_revente_cafe('demo@prospect.ma');
+--         SELECT * FROM public.create_app_user_demo_revente_cafe('demo@prospect.ma', p_taux_tva_defaut := 20, p_company_name := 'MonCaféSARL');
 
-CREATE OR REPLACE FUNCTION public.create_app_user_demo_revente(
-    p_email        text,
-    p_password     text DEFAULT 'Démo@123',
-    p_company_name text DEFAULT 'TechDist Maroc SARL'
+CREATE OR REPLACE FUNCTION public.create_app_user_demo_revente_cafe(
+    p_email               text,
+    p_password            text    DEFAULT 'Démo@123',
+    p_company_name        text    DEFAULT 'CaféPro Distribution',
+    p_taux_tva_defaut     numeric DEFAULT 10,
+    p_label_quantity      text    DEFAULT 'Quantité',
+    p_show_pieces_count   boolean DEFAULT true
 )
 RETURNS TABLE(out_user_id uuid, out_company_id uuid)
 LANGUAGE plpgsql
@@ -36,6 +42,7 @@ DECLARE
     v_purchase_id uuid; v_sale_id uuid; v_doc_id uuid; v_payment_id uuid;
 
     v_total  numeric; v_paid   numeric; v_price  numeric; v_qty int;
+    v_tva_amount numeric; v_total_ht numeric;
 
     v_stock_current numeric[] := '{0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0}'::numeric[];
     v_stock_avant   numeric;
@@ -62,39 +69,45 @@ DECLARE
     v_stock_alerts   int[];
     v_target         numeric;
 BEGIN
-    -- 1. Créer user + company via la fonction existante
+    -- 1. Créer user + company
     SELECT cau.out_user_id, cau.out_company_id
     INTO v_user_id, v_company_id
     FROM public.create_app_user(p_email := p_email, p_password := p_password, p_mode := 'revente', p_role := 'admin') cau;
 
     -- 2. Patcher les infos de la company
     UPDATE public.companies
-    SET name           = p_company_name,
-        address        = 'Technopark, Route de Nouaceur, Casablanca',
-        phone          = '0522710000',
-        email          = 'contact@techdist-maroc.ma',
-        ice            = '002178456000001',
-        if_number      = '45678901',
-        rc             = 'RC-CASA-456789',
-        tp_number      = '12345679'
+    SET name              = p_company_name,
+        address           = 'Zone Industrielle Had Soualem, Lot 15, Casablanca',
+        phone             = '0522560000',
+        email             = 'contact@cafepro-distribution.ma',
+        ice               = '003456789000001',
+        if_number         = '78901234',
+        rc                = 'RC-CASA-456789',
+        tp_number         = '34567890',
+        logo_url          = '/yourlogo.jpg',
+        couleur_marque    = '#009FE3',
+        taux_tva_defaut   = p_taux_tva_defaut,
+        label_quantity    = p_label_quantity,
+        show_pieces_count = p_show_pieces_count
     WHERE id = v_company_id;
 
     SELECT * INTO v_company FROM public.companies WHERE id = v_company_id;
 
     -- 3. Cleanup (idempotence)
-    DELETE FROM public.document_items  WHERE document_id IN (SELECT id FROM public.documents WHERE company_id = v_company_id);
-    DELETE FROM public.documents       WHERE company_id = v_company_id;
-    DELETE FROM public.client_payments WHERE company_id = v_company_id;
+    DELETE FROM public.document_items    WHERE document_id  IN (SELECT id FROM public.documents  WHERE company_id = v_company_id);
+    DELETE FROM public.documents         WHERE company_id = v_company_id;
+    DELETE FROM public.client_payments   WHERE company_id = v_company_id;
     DELETE FROM public.supplier_payments WHERE company_id = v_company_id;
-    DELETE FROM public.sale_items      WHERE sale_id     IN (SELECT id FROM public.sales     WHERE company_id = v_company_id);
-    DELETE FROM public.sales           WHERE company_id = v_company_id;
-    DELETE FROM public.purchase_items  WHERE purchase_id IN (SELECT id FROM public.purchases WHERE company_id = v_company_id);
-    DELETE FROM public.purchases       WHERE company_id = v_company_id;
-    DELETE FROM public.stock_movements WHERE company_id = v_company_id;
-    DELETE FROM public.stock           WHERE company_id = v_company_id;
-    DELETE FROM public.products        WHERE company_id = v_company_id;
-    DELETE FROM public.clients         WHERE company_id = v_company_id;
-    DELETE FROM public.suppliers       WHERE company_id = v_company_id;
+    DELETE FROM public.sale_items        WHERE sale_id     IN (SELECT id FROM public.sales     WHERE company_id = v_company_id);
+    DELETE FROM public.sales             WHERE company_id = v_company_id;
+    DELETE FROM public.purchase_items    WHERE purchase_id IN (SELECT id FROM public.purchases WHERE company_id = v_company_id);
+    DELETE FROM public.purchases         WHERE company_id = v_company_id;
+    DELETE FROM public.stock_movements    WHERE company_id = v_company_id;
+    DELETE FROM public.stock              WHERE company_id = v_company_id;
+    DELETE FROM public.document_sequences WHERE company_id = v_company_id;
+    DELETE FROM public.products           WHERE company_id = v_company_id;
+    DELETE FROM public.clients            WHERE company_id = v_company_id;
+    DELETE FROM public.suppliers          WHERE company_id = v_company_id;
 
     v_stock_current := '{0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0}'::numeric[];
 
@@ -102,54 +115,56 @@ BEGIN
     v_moroccan_cities  := ARRAY['Casablanca','Rabat','Tanger','Marrakech','Agadir','Fès','Meknès','Oujda','Kénitra','Tétouan'];
     v_moroccan_streets := ARRAY['Boulevard Zerktouni','Avenue Mohammed V','Rue Taha Hussein','Quartier Gauthier','Sidi Maârouf','Technopark','Route d El Jadida','Avenue des FAR','Boulevard Anfa','Quartier de l Océan'];
 
-    -- Toner HP pack 2 (index 15) et Câble HDMI lot 10 (index 18) sont des packs
-    v_product_types  := ARRAY['individual','individual','individual','individual','individual','individual','individual','individual','individual','individual','individual','individual','individual','individual','pack','individual','individual','pack','individual','individual'];
-    v_product_pieces := ARRAY[1,1,1,1,1,1,1,1,1,1,1,1,1,1,2,1,1,10,1,1];
-    v_stock_alerts   := ARRAY[2,2,3,3,2,3,5,5,3,5,3,3,8,10,15,2,8,20,10,5];
-
-    v_product_names := ARRAY[
-        'Laptop Dell Vostro 3520',     'Laptop Lenovo ThinkPad E14',
-        'Écran Dell 24" P2422H',       'Écran LG 27" IPS QHD',
-        'Imprimante HP LaserJet Pro',  'Imprimante Canon PIXMA G3470',
-        'Clavier Logitech MX Keys',    'Souris Logitech MX Master 3S',
-        'Casque Jabra Evolve2 40',     'Webcam Logitech C920',
-        'Switch TP-Link 16 ports',     'Onduleur APC 650VA',
-        'Disque SSD Samsung 1TB',      'RAM Kingston 16GB DDR4',
-        'Toner HP 85A (pack 2)',        'Scanner Fujitsu iX1400',
-        'Hub USB-C Aukey 7-en-1',      'Câble HDMI 2m (lot 10)',
-        'Multiprise Belkin 6 prises',  'Sac Laptop Samsonite 15.6"'
+    v_product_types  := ARRAY[
+        'individual','individual','individual','individual','individual','individual','individual','individual',
+        'pack',      'pack',      'pack',      'individual','individual','pack',
+        'individual','pack',      'pack',      'individual','pack',      'pack'
     ];
-    v_product_achat := ARRAY[7500,8200,1850,2900,2750,1350,440,370,1450,580,
-                               950, 880, 520, 420, 270,3200, 210,  95, 145, 290]::numeric[];
-    v_product_vente := ARRAY[9800,10500,2450,3800,3600,1800,620,540,2000,820,
-                               1350,1250, 750, 620, 400,4300, 320, 160, 220, 450]::numeric[];
+    v_product_pieces := ARRAY[1,1,1,1,1,1,1,1,50,16,500,1,1,100,1,25,25,1,100,500];
+    v_stock_alerts   := ARRAY[50,40,40,50,50,30,30,30,40,20,30,25,15,20,30,20,20,30,20,10];
+
+    -- 20 produits — conditionnements variés → unité dans le nom
+    v_product_names := ARRAY[
+        'Café Arabica Éthiopie (1kg)',   'Café Robusta Brésil (1kg)',
+        'Café Espresso Blend (1kg)',     'Café Colombia (1kg)',
+        'Café Décaféiné (250g)',         'Café Vert (1kg)',
+        'Nescafé Classic (500g)',        'Nescafé Gold (200g)',
+        'Capsules Nespresso (Boîte 50)', 'Capsules Dolce Gusto (Boîte 16)',
+        'Sucre en sachet (Boîte 500)',   'Café Turc (200g)',
+        'Sirop Café Vanille (1L)',       'Filtres Papier (Boîte 100)',
+        'Café Soluble Premium (200g)',   'Thé Noir (Boîte 25)',
+        'Thé à la Menthe (Boîte 25)',    'Chocolat en Poudre (1kg)',
+        'Gobelets Jetables (Pack 100)',  'Agitateurs Bois (Pack 500)'
+    ];
+    v_product_achat := ARRAY[ 85.00,  60.00,  70.00,  95.00,  90.00,  50.00,  45.00,  55.00,  95.00,  35.00,
+                               30.00,  28.00,  40.00,  12.00,  38.00,  22.00,  25.00,  55.00,   8.00,   5.00]::numeric[];
+    v_product_vente := ARRAY[130.00,  95.00, 110.00, 150.00, 140.00,  80.00,  72.00,  88.00, 145.00,  58.00,
+                              48.00,  45.00,  65.00,  20.00,  60.00,  35.00,  40.00,  85.00,  14.00,   9.00]::numeric[];
 
     v_supplier_names := ARRAY[
-        'Tech Data Morocco','Disway Distribution','Ingram Micro Casa','M2M Group Supply',
-        'Microplus Pro','Azur Systems','Next Step IT','Global IT Morocco',
-        'Netcom Distribution','Data Plus Casa'
+        'Caffè Lavazza Maroc','Torréfacteur Atlas Café','Nestlé Maroc Distribution','Cafés Richard Maroc',
+        'Comptoir Épices & Cafés','Trablit Arômes Maroc','El Assil Torréfaction','Green Coffee Importers',
+        'Comptoir Café Marrakech','Premium Beans Import'
     ];
 
     v_client_names := ARRAY[
-        'Maroc Telecom Services','Attijariwafa Bank','Banque Populaire Centre',
-        'OCP Phosphates Services','Managem Mining Tech','Ciments du Maroc',
-        'Label Vie Express','BMCE Capital Solutions','Wafa Assurance',
-        'CIH Bank Maroc','Al Mada Holding','HPS Global Trade',
-        'Lydec Services Techniques','RAM Cargo Services','Sonasid Steel Distribution'
+        'Café Maure Royal','Hôtel Four Seasons Casablanca','Restaurant La Sqala',
+        'OCP Cafétéria Khouribga','Café Glacier Guynemer','Hôtel Kenzi Tower',
+        'Restaurant El Bahia Marrakech','Aswak Assalam Casablanca','Café des Arts Rabat',
+        'Hôtel Palais Jamai Fès','Restaurant Dar Moha','Cafétéria Gare Voyageurs',
+        'Café du Parlement Rabat','Hôtel Barceló Casablanca','Boulangerie Paul Casablanca'
     ];
 
-    -- Statuts achats (20) — 10 mois précédent + 10 mois courant (interleaved)
     v_purchase_statuses := ARRAY[
-        'paid','paid','paid','partial','paid','unpaid','partial','paid','paid','cancelled',
-        'paid','partial','unpaid','paid','partial','unpaid','paid','paid','partial','cancelled'
+        'paid','paid','partial','paid','cancelled','paid','partial','paid','unpaid','paid',
+        'paid','partial','paid','unpaid','cancelled','paid','paid','partial','paid','cancelled'
     ];
 
-    -- Statuts ventes (30) — 15 mois précédent + 15 mois courant (interleaved)
     v_sale_statuses := ARRAY[
-        'paid','paid','paid','paid','paid','paid','partial','partial','paid','unpaid',
-        'partial','paid','paid','unpaid','cancelled',
-        'paid','partial','paid','unpaid','partial','paid','partial','cancelled',
-        'paid','unpaid','partial','paid','partial','unpaid','paid'
+        'paid','paid','paid','partial','paid','paid','unpaid','paid','partial','cancelled',
+        'paid','paid','partial','paid','paid',
+        'paid','partial','paid','paid','partial','paid','unpaid','cancelled',
+        'paid','partial','paid','paid','partial','paid','paid'
     ];
 
     -- 5. Créer les produits (20)
@@ -158,7 +173,6 @@ BEGIN
         VALUES (v_user_id, v_company_id, v_product_names[v_i], v_product_types[v_i], 'revente', v_product_pieces[v_i], v_stock_alerts[v_i])
         RETURNING id INTO v_p_id;
         v_product_ids := array_append(v_product_ids, v_p_id);
-
         INSERT INTO public.stock (user_id, company_id, product_id, quantity)
         VALUES (v_user_id, v_company_id, v_p_id, 0);
     END LOOP;
@@ -166,10 +180,10 @@ BEGIN
     -- 6. Créer les fournisseurs (10)
     FOR v_i IN 1..10 LOOP
         v_addr := 'Zone Industrielle, ' || v_moroccan_cities[(v_i % 5) + 1];
-        v_ice  := '001' || LPAD(((v_i * 1234567) % 90000000 + 10000000)::text, 8, '0') || '0001';
+        v_ice  := '003' || LPAD(((v_i * 2345678) % 90000000 + 10000000)::text, 8, '0') || '0001';
         INSERT INTO public.suppliers (user_id, company_id, name, phone, address, ice)
         VALUES (v_user_id, v_company_id, v_supplier_names[v_i],
-                '052' || LPAD(((v_i * 2345678) % 9000000 + 1000000)::text, 7, '0'),
+                '052' || LPAD(((v_i * 3456789) % 9000000 + 1000000)::text, 7, '0'),
                 v_addr, v_ice)
         RETURNING id INTO v_s_id;
         v_supplier_ids := array_append(v_supplier_ids, v_s_id);
@@ -178,16 +192,18 @@ BEGIN
     -- 7. Créer les clients (15)
     FOR v_i IN 1..15 LOOP
         v_addr := v_moroccan_streets[((v_i - 1) % 10) + 1] || ', ' || v_moroccan_cities[((v_i - 1) % 10) + 1];
-        v_ice  := '002' || LPAD(((v_i * 3456789) % 90000000 + 10000000)::text, 8, '0') || '0001';
+        v_ice  := '004' || LPAD(((v_i * 4567890) % 90000000 + 10000000)::text, 8, '0') || '0001';
         INSERT INTO public.clients (user_id, company_id, name, phone, address, ice)
         VALUES (v_user_id, v_company_id, v_client_names[v_i],
-                '06' || LPAD(((v_i * 4567890) % 90000000 + 10000000)::text, 8, '0'),
+                '06' || LPAD(((v_i * 5678901) % 90000000 + 10000000)::text, 8, '0'),
                 v_addr, v_ice)
         RETURNING id INTO v_c_id;
         v_client_ids := array_append(v_client_ids, v_c_id);
     END LOOP;
 
     -- 8. Créer les achats (20) sur 2 mois
+    -- Clé marge positive : i ≤ 10 (mois précédent) → grosses quantités pour constituer le stock
+    --                      i > 10 (mois courant)    → petites quantités → Total Achats mois courant faible
     FOR v_i IN 1..20 LOOP
         v_status       := v_purchase_statuses[v_i];
         v_month_offset := CASE WHEN v_i <= 10 THEN 1 ELSE 0 END;
@@ -195,15 +211,25 @@ BEGIN
         v_date         := (date_trunc('month', current_date)
                            - (v_month_offset || ' months')::interval
                            + (v_day          || ' days')::interval)::date;
+        IF v_month_offset = 0 THEN
+            v_date := LEAST(v_date, (current_date - 1));
+        END IF;
         v_s_id    := v_supplier_ids[((v_i - 1) % 10) + 1];
         v_n_items := 1 + (v_i % 3);
 
         v_total := 0;
         FOR v_j IN 1..v_n_items LOOP
             v_p_idx := ((v_i + v_j * 3 - 1) % 20) + 1;
-            v_qty   := 5 + (v_i + v_j) % 5;
+            v_qty   := CASE
+                WHEN v_i <= 10 THEN 50 + (v_i + v_j) % 5 * 20   -- 50–130 unités : constitution du stock
+                ELSE                 10 + (v_i + v_j) % 4 * 10   -- 10–40 unités   : réapprovisionnement léger
+            END;
             v_total := v_total + v_qty * v_product_achat[v_p_idx];
         END LOOP;
+
+        v_total_ht   := v_total;
+        v_tva_amount := ROUND(v_total_ht * p_taux_tva_defaut / 100, 2);
+        v_total      := v_total_ht + v_tva_amount;
 
         v_paid := CASE v_status
             WHEN 'paid'    THEN v_total
@@ -212,16 +238,19 @@ BEGIN
         END;
 
         v_ach_seq := v_ach_seq + 1;
-        INSERT INTO public.purchases (user_id, company_id, supplier_id, reference, date, status, total, paid)
+        INSERT INTO public.purchases (user_id, company_id, supplier_id, reference, date, status, total, tva_rate, tva_amount, paid)
         VALUES (v_user_id, v_company_id, v_s_id,
                 'ACH-' || v_year || '-' || LPAD(v_ach_seq::text, 3, '0'),
-                v_date, v_status, v_total, v_paid)
+                v_date, v_status, v_total, p_taux_tva_defaut, v_tva_amount, v_paid)
         RETURNING id INTO v_purchase_id;
 
         IF v_status != 'cancelled' THEN
             FOR v_j IN 1..v_n_items LOOP
                 v_p_idx := ((v_i + v_j * 3 - 1) % 20) + 1;
-                v_qty   := 5 + (v_i + v_j) % 5;
+                v_qty   := CASE
+                    WHEN v_i <= 10 THEN 50 + (v_i + v_j) % 5 * 20
+                    ELSE                 10 + (v_i + v_j) % 4 * 10
+                END;
                 v_price := v_product_achat[v_p_idx];
 
                 INSERT INTO public.purchase_items (purchase_id, product_id, quantity, pieces_count, unit_price)
@@ -233,8 +262,8 @@ BEGIN
                 UPDATE public.stock SET quantity = v_stock_current[v_p_idx]
                 WHERE product_id = v_product_ids[v_p_idx] AND company_id = v_company_id;
 
-                INSERT INTO public.stock_movements (user_id, company_id, product_id, type, quantity, reference_type, reference_id, date, stock_avant, stock_apres)
-                VALUES (v_user_id, v_company_id, v_product_ids[v_p_idx], 'in', v_qty, 'purchase', v_purchase_id, v_date, v_stock_avant, v_stock_current[v_p_idx]);
+                INSERT INTO public.stock_movements (user_id, company_id, product_id, type, quantity, reference_type, reference_id, note, date, stock_avant, stock_apres)
+                VALUES (v_user_id, v_company_id, v_product_ids[v_p_idx], 'in', v_qty, 'purchase', v_purchase_id, 'Nouvel achat', v_date, v_stock_avant, v_stock_current[v_p_idx]);
             END LOOP;
 
             IF v_paid > 0 THEN
@@ -250,7 +279,10 @@ BEGIN
         ELSE
             FOR v_j IN 1..v_n_items LOOP
                 v_p_idx := ((v_i + v_j * 3 - 1) % 20) + 1;
-                v_qty   := 5 + (v_i + v_j) % 5;
+                v_qty   := CASE
+                    WHEN v_i <= 10 THEN 50 + (v_i + v_j) % 5 * 20
+                    ELSE                 10 + (v_i + v_j) % 4 * 10
+                END;
                 INSERT INTO public.purchase_items (purchase_id, product_id, quantity, pieces_count, unit_price)
                 VALUES (v_purchase_id, v_product_ids[v_p_idx], v_qty, v_product_pieces[v_p_idx], v_product_achat[v_p_idx]);
             END LOOP;
@@ -258,6 +290,8 @@ BEGIN
     END LOOP;
 
     -- 9. Créer les ventes (30) sur 2 mois
+    -- Le stock abondant du mois précédent permet de vendre sans clamp
+    -- → CA Ventes mois courant nettement supérieur au Total Achats mois courant
     FOR v_i IN 1..30 LOOP
         v_status       := v_sale_statuses[v_i];
         v_month_offset := CASE WHEN v_i <= 15 THEN 1 ELSE 0 END;
@@ -265,6 +299,9 @@ BEGIN
         v_date         := (date_trunc('month', current_date)
                            - (v_month_offset || ' months')::interval
                            + (v_day          || ' days')::interval)::date;
+        IF v_month_offset = 0 THEN
+            v_date := LEAST(v_date, (current_date - 1));
+        END IF;
         v_c_id    := v_client_ids[((v_i - 1) % 15) + 1];
         v_n_items := 1 + (v_i % 3);
 
@@ -275,9 +312,13 @@ BEGIN
         v_total := 0;
         FOR v_j IN 1..v_n_items LOOP
             v_p_idx := ((v_i + v_j * 5 - 1) % 20) + 1;
-            v_qty   := 3 + (v_i + v_j) % 3;
+            v_qty   := 15 + (v_i + v_j) % 5 * 10;   -- 15–55 unités par produit
             v_total := v_total + v_qty * v_product_vente[v_p_idx];
         END LOOP;
+
+        v_total_ht   := v_total;
+        v_tva_amount := ROUND(v_total_ht * p_taux_tva_defaut / 100, 2);
+        v_total      := v_total_ht + v_tva_amount;
 
         v_paid := CASE v_status
             WHEN 'paid'    THEN v_total
@@ -286,19 +327,18 @@ BEGIN
         END;
 
         v_ven_seq := v_ven_seq + 1;
-        INSERT INTO public.sales (user_id, company_id, client_id, reference, date, status, total, paid)
+        INSERT INTO public.sales (user_id, company_id, client_id, reference, date, status, total, tva_rate, tva_amount, paid)
         VALUES (v_user_id, v_company_id, v_c_id,
                 'VEN-' || v_year || '-' || LPAD(v_ven_seq::text, 3, '0'),
-                v_date, v_status, v_total, v_paid)
+                v_date, v_status, v_total, p_taux_tva_defaut, v_tva_amount, v_paid)
         RETURNING id INTO v_sale_id;
 
         IF v_status != 'cancelled' THEN
             FOR v_j IN 1..v_n_items LOOP
                 v_p_idx := ((v_i + v_j * 5 - 1) % 20) + 1;
-                v_qty   := 3 + (v_i + v_j) % 3;
+                v_qty   := 15 + (v_i + v_j) % 5 * 10;
                 v_price := v_product_vente[v_p_idx];
 
-                -- Clamp : ne jamais vendre plus que le stock disponible
                 IF v_qty > v_stock_current[v_p_idx] THEN
                     v_qty := GREATEST(v_stock_current[v_p_idx], 0)::int;
                 END IF;
@@ -313,8 +353,8 @@ BEGIN
                     UPDATE public.stock SET quantity = v_stock_current[v_p_idx]
                     WHERE product_id = v_product_ids[v_p_idx] AND company_id = v_company_id;
 
-                    INSERT INTO public.stock_movements (user_id, company_id, product_id, type, quantity, reference_type, reference_id, date, stock_avant, stock_apres)
-                    VALUES (v_user_id, v_company_id, v_product_ids[v_p_idx], 'out', v_qty, 'sale', v_sale_id, v_date, v_stock_avant, v_stock_current[v_p_idx]);
+                    INSERT INTO public.stock_movements (user_id, company_id, product_id, type, quantity, reference_type, reference_id, note, date, stock_avant, stock_apres)
+                    VALUES (v_user_id, v_company_id, v_product_ids[v_p_idx], 'out', v_qty, 'sale', v_sale_id, 'Nouvelle vente', v_date, v_stock_avant, v_stock_current[v_p_idx]);
                 END IF;
             END LOOP;
 
@@ -335,7 +375,7 @@ BEGIN
             INSERT INTO public.documents (
                 user_id, company_id, client_id, sale_id,
                 type, number, date, status, payment_status,
-                total, paid,
+                total, tva_rate, tva_amount, paid,
                 client_name, client_address, client_ice, client_phone,
                 company_name, company_address, company_phone, company_email,
                 company_ice, company_if, company_rc, company_tp, company_rib,
@@ -346,7 +386,7 @@ BEGIN
                 'invoice', 'FAC-' || v_year || '-' || LPAD(v_fac_seq::text, 3, '0'),
                 v_date, 'confirmed',
                 CASE WHEN v_paid >= v_total THEN 'paid' WHEN v_paid > 0 THEN 'partial' ELSE 'unpaid' END,
-                v_total, v_paid,
+                v_total, p_taux_tva_defaut, v_tva_amount, v_paid,
                 v_client_name, v_client_address, v_client_ice, v_client_phone,
                 COALESCE(v_company.name, ''),           COALESCE(v_company.address, ''),
                 COALESCE(v_company.phone, ''),          COALESCE(v_company.email, ''),
@@ -359,7 +399,7 @@ BEGIN
 
             FOR v_j IN 1..v_n_items LOOP
                 v_p_idx := ((v_i + v_j * 5 - 1) % 20) + 1;
-                v_qty   := 3 + (v_i + v_j) % 3;
+                v_qty   := 15 + (v_i + v_j) % 5 * 10;
                 INSERT INTO public.document_items (document_id, product_id, product_name, quantity, pieces_count, unit_price)
                 VALUES (v_doc_id, v_product_ids[v_p_idx], v_product_names[v_p_idx], v_qty, v_product_pieces[v_p_idx], v_product_vente[v_p_idx]);
             END LOOP;
@@ -369,7 +409,7 @@ BEGIN
                 INSERT INTO public.documents (
                     user_id, company_id, client_id, sale_id, payment_id,
                     type, number, date, status, payment_status,
-                    total, paid,
+                    total, tva_rate, tva_amount, paid,
                     client_name, client_address, client_ice, client_phone,
                     company_name, company_address, company_phone, company_email,
                     company_ice, company_if, company_rc, company_tp, company_rib,
@@ -380,7 +420,7 @@ BEGIN
                     'receipt', 'REC-' || v_year || '-' || LPAD(v_rec_seq::text, 3, '0'),
                     v_date, 'confirmed',
                     CASE WHEN v_paid >= v_total THEN 'paid' ELSE 'partial' END,
-                    v_total, v_paid,
+                    v_total, p_taux_tva_defaut, v_tva_amount, v_paid,
                     v_client_name, v_client_address, v_client_ice, v_client_phone,
                     COALESCE(v_company.name, ''),           COALESCE(v_company.address, ''),
                     COALESCE(v_company.phone, ''),          COALESCE(v_company.email, ''),
@@ -398,7 +438,7 @@ BEGIN
 
                 FOR v_j IN 1..v_n_items LOOP
                     v_p_idx := ((v_i + v_j * 5 - 1) % 20) + 1;
-                    v_qty   := 3 + (v_i + v_j) % 3;
+                    v_qty   := 15 + (v_i + v_j) % 5 * 10;
                     INSERT INTO public.document_items (document_id, product_id, product_name, quantity, pieces_count, unit_price)
                     VALUES (v_doc_id, v_product_ids[v_p_idx], v_product_names[v_p_idx], v_qty, v_product_pieces[v_p_idx], v_product_vente[v_p_idx]);
                 END LOOP;
@@ -407,56 +447,50 @@ BEGIN
         ELSE
             FOR v_j IN 1..v_n_items LOOP
                 v_p_idx := ((v_i + v_j * 5 - 1) % 20) + 1;
-                v_qty   := 3 + (v_i + v_j) % 3;
+                v_qty   := 15 + (v_i + v_j) % 5 * 10;
                 INSERT INTO public.sale_items (sale_id, product_id, quantity, pieces_count, unit_price)
                 VALUES (v_sale_id, v_product_ids[v_p_idx], v_qty, v_product_pieces[v_p_idx], v_product_vente[v_p_idx]);
             END LOOP;
         END IF;
     END LOOP;
 
-    -- 10. Ajustements stock : rupture et faible pour diversifier les statuts affichés
-    -- Laptop Lenovo ThinkPad E14 (index 2) → rupture (seuil=2)
+    -- 9b. Initialiser document_sequences pour éviter les conflits lors des prochains enregistrements
+    INSERT INTO public.document_sequences (user_id, company_id, type, year, last_number)
+    VALUES
+        (v_user_id, v_company_id, 'purchase', v_year, v_ach_seq),
+        (v_user_id, v_company_id, 'sale',     v_year, v_ven_seq),
+        (v_user_id, v_company_id, 'invoice',  v_year, v_fac_seq),
+        (v_user_id, v_company_id, 'receipt',  v_year, v_rec_seq)
+    ON CONFLICT (company_id, type, year)
+    DO UPDATE SET last_number = GREATEST(document_sequences.last_number, EXCLUDED.last_number);
+
+    -- 10. Ajustements manuels de stock pour diversifier les états produits
+    -- Café Décaféiné (index 5, seuil=50) → rupture livraison reportée
     v_target := 0;
-    IF v_stock_current[2] != v_target THEN
-        v_stock_avant := v_stock_current[2];
-        v_qty := (v_target - v_stock_current[2])::int;
-        UPDATE public.stock SET quantity = v_target WHERE product_id = v_product_ids[2] AND company_id = v_company_id;
-        INSERT INTO public.stock_movements (user_id, company_id, product_id, type, quantity, reference_type, reference_id, date, note, stock_avant, stock_apres)
-        VALUES (v_user_id, v_company_id, v_product_ids[2], 'adjust', v_qty, 'manual', NULL, current_date, 'Ajustement inventaire', v_stock_avant, v_target);
-        v_stock_current[2] := v_target;
+    IF v_stock_current[5] != v_target THEN
+        v_stock_avant := v_stock_current[5];
+        UPDATE public.stock SET quantity = v_target WHERE product_id = v_product_ids[5] AND company_id = v_company_id;
+        INSERT INTO public.stock_movements (user_id, company_id, product_id, type, quantity, reference_type, note, date, stock_avant, stock_apres)
+        VALUES (v_user_id, v_company_id, v_product_ids[5], CASE WHEN v_target >= v_stock_avant THEN 'in' ELSE 'out' END, ABS((v_target - v_stock_avant)::int), 'manual', 'Rupture livraison reportée', current_date, v_stock_avant, v_target);
+        v_stock_current[5] := v_target;
     END IF;
-
-    -- Imprimante Canon PIXMA G3470 (index 6) → faible (1, seuil=3)
-    v_target := 1;
-    IF v_stock_current[6] != v_target THEN
-        v_stock_avant := v_stock_current[6];
-        v_qty := (v_target - v_stock_current[6])::int;
-        UPDATE public.stock SET quantity = v_target WHERE product_id = v_product_ids[6] AND company_id = v_company_id;
-        INSERT INTO public.stock_movements (user_id, company_id, product_id, type, quantity, reference_type, reference_id, date, note, stock_avant, stock_apres)
-        VALUES (v_user_id, v_company_id, v_product_ids[6], 'adjust', v_qty, 'manual', NULL, current_date, 'Ajustement inventaire', v_stock_avant, v_target);
-        v_stock_current[6] := v_target;
+    -- Sirop Café Vanille (index 13, seuil=15) → perte produit détérioré
+    v_target := 5;
+    IF v_stock_current[13] != v_target THEN
+        v_stock_avant := v_stock_current[13];
+        UPDATE public.stock SET quantity = v_target WHERE product_id = v_product_ids[13] AND company_id = v_company_id;
+        INSERT INTO public.stock_movements (user_id, company_id, product_id, type, quantity, reference_type, note, date, stock_avant, stock_apres)
+        VALUES (v_user_id, v_company_id, v_product_ids[13], CASE WHEN v_target >= v_stock_avant THEN 'in' ELSE 'out' END, ABS((v_target - v_stock_avant)::int), 'manual', 'Perte produit détérioré', current_date, v_stock_avant, v_target);
+        v_stock_current[13] := v_target;
     END IF;
-
-    -- Câble HDMI 2m lot 10 (index 18) → rupture (seuil=20)
-    v_target := 0;
-    IF v_stock_current[18] != v_target THEN
-        v_stock_avant := v_stock_current[18];
-        v_qty := (v_target - v_stock_current[18])::int;
-        UPDATE public.stock SET quantity = v_target WHERE product_id = v_product_ids[18] AND company_id = v_company_id;
-        INSERT INTO public.stock_movements (user_id, company_id, product_id, type, quantity, reference_type, reference_id, date, note, stock_avant, stock_apres)
-        VALUES (v_user_id, v_company_id, v_product_ids[18], 'adjust', v_qty, 'manual', NULL, current_date, 'Ajustement inventaire', v_stock_avant, v_target);
-        v_stock_current[18] := v_target;
-    END IF;
-
-    -- Toner HP 85A pack 2 (index 15) → faible (8, seuil=15)
-    v_target := 8;
-    IF v_stock_current[15] != v_target THEN
-        v_stock_avant := v_stock_current[15];
-        v_qty := (v_target - v_stock_current[15])::int;
-        UPDATE public.stock SET quantity = v_target WHERE product_id = v_product_ids[15] AND company_id = v_company_id;
-        INSERT INTO public.stock_movements (user_id, company_id, product_id, type, quantity, reference_type, reference_id, date, note, stock_avant, stock_apres)
-        VALUES (v_user_id, v_company_id, v_product_ids[15], 'adjust', v_qty, 'manual', NULL, current_date, 'Ajustement inventaire', v_stock_avant, v_target);
-        v_stock_current[15] := v_target;
+    -- Gobelets Jetables (index 19, seuil=20) → stock faible
+    v_target := 12;
+    IF v_stock_current[19] != v_target THEN
+        v_stock_avant := v_stock_current[19];
+        UPDATE public.stock SET quantity = v_target WHERE product_id = v_product_ids[19] AND company_id = v_company_id;
+        INSERT INTO public.stock_movements (user_id, company_id, product_id, type, quantity, reference_type, note, date, stock_avant, stock_apres)
+        VALUES (v_user_id, v_company_id, v_product_ids[19], CASE WHEN v_target >= v_stock_avant THEN 'in' ELSE 'out' END, ABS((v_target - v_stock_avant)::int), 'manual', 'Correctif inventaire physique', current_date, v_stock_avant, v_target);
+        v_stock_current[19] := v_target;
     END IF;
 
     RETURN QUERY SELECT v_user_id, v_company_id;
