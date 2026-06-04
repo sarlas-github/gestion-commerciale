@@ -88,6 +88,7 @@ export const useAddSupplierPayment = () => {
       qc.invalidateQueries({ queryKey: ['purchases', purchase_id] })
       qc.invalidateQueries({ queryKey: ['suppliers'] })
       qc.invalidateQueries({ queryKey: ['unpaid-suppliers-count'] })
+      qc.invalidateQueries({ queryKey: ['supplier-report'] })
       qc.invalidateQueries({ queryKey: ['supplier-payments-all'] })
       qc.invalidateQueries({ queryKey: ['dashboard'] })
       toast.success('Paiement enregistré')

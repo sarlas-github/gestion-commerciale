@@ -107,6 +107,7 @@ export const useAddClientPayment = () => {
       qc.invalidateQueries({ queryKey: ['sales', sale_id] })
       qc.invalidateQueries({ queryKey: ['clients'] })
       qc.invalidateQueries({ queryKey: ['unpaid-clients-count'] })
+      qc.invalidateQueries({ queryKey: ['client-report'] })
       qc.invalidateQueries({ queryKey: ['client-payments-all'] })
       qc.invalidateQueries({ queryKey: ['dashboard'] })
       toast.success('Paiement enregistré')
