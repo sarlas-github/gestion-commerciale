@@ -72,6 +72,7 @@ export const ClientReportsPage = () => {
       {
         accessorKey: 'client_name',
         header: 'Client',
+        sortingFn: 'text',
         cell: ({ row }) => (
           <button
             className="flex items-center gap-1 text-primary hover:underline text-sm font-medium"

@@ -362,12 +362,12 @@ export const SaleForm = ({ id, existing, onSubmit, hasInvoice = false, savedPaym
             {/* En-tête colonnes — desktop uniquement */}
             <div className={cn(
               "hidden sm:grid gap-2 px-1 pb-2 border-b text-xs font-medium text-muted-foreground",
-              showPiecesCount ? "sm:grid-cols-[1fr_60px_90px_140px_120px_40px]" : "sm:grid-cols-[1fr_90px_140px_120px_40px]"
+              showPiecesCount ? "sm:grid-cols-[2fr_52px_72px_110px_100px_32px]" : "sm:grid-cols-[2fr_72px_110px_100px_32px]"
             )}>
               <span>Produit</span>
               {showPiecesCount && <span className="text-center">Pièces</span>}
               <span className="text-center">{labelQuantity}</span>
-              <span className="text-right">Prix Unitaire HT</span>
+              <span className="text-right">P.U. HT</span>
               <span className="text-right">Sous-Total</span>
               <span></span>
             </div>
@@ -386,7 +386,7 @@ export const SaleForm = ({ id, existing, onSubmit, hasInvoice = false, savedPaym
                   key={field.id}
                   className={cn(
                     "rounded-md border bg-card p-3 space-y-2 sm:rounded-none sm:border-x-0 sm:border-t-0 sm:border-b sm:last:border-b-0 sm:bg-transparent sm:p-0 sm:py-2 sm:space-y-0 sm:grid sm:gap-2 sm:items-start",
-                    showPiecesCount ? "sm:grid-cols-[1fr_60px_90px_140px_120px_40px]" : "sm:grid-cols-[1fr_90px_140px_120px_40px]"
+                    showPiecesCount ? "sm:grid-cols-[2fr_52px_72px_110px_100px_32px]" : "sm:grid-cols-[2fr_72px_110px_100px_32px]"
                   )}
                 >
                   {/* Col 1 / Ligne 1 mobile : produit + boutons mobile */}

@@ -72,6 +72,7 @@ export const SupplierReportsPage = () => {
       {
         accessorKey: 'supplier_name',
         header: 'Fournisseur',
+        sortingFn: 'text',
         cell: ({ row }) => (
           <button
             className="flex items-center gap-1 text-primary hover:underline text-sm font-medium"

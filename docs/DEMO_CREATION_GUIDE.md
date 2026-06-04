@@ -35,9 +35,10 @@ RETURNS TABLE(out_user_id uuid, out_company_id uuid)
 4. Créer les produits + initialiser le stock à 0
 5. Créer les fournisseurs
 6. Créer les clients
-7. Créer les achats (avec stock_movements)
-8. Créer les ventes + paiements + factures + reçus
-9. Ajustements de stock finaux (rupture/faible/ok)
+7. Créer les achats (avec stock_movements `note = 'Nouvel achat'`)
+8. Créer les ventes + paiements + factures + reçus (stock_movements `note = 'Nouvelle vente'`)
+9. Initialiser `document_sequences` (9b)
+10. Ajustements manuels de stock finaux (rupture/faible) — `type = 'in/ut'`, `reference_type = 'manual'`
 
 ---
 
@@ -176,16 +177,16 @@ Le 15 juin → toutes les transactions du mois courant sont au max le 14 juin.
 
 ### Règle de nommage des produits
 
-**Ne jamais inclure l'unité dans le nom du produit.**  
-L'unité (kg, litre, botte, unité…) appartient à la description ou à un champ dédié, pas au nom.
+**L'unité dans le nom uniquement si les conditionnements varient dans le catalogue.**
 
-| ❌ À éviter | ✅ Correct |
-|---|---|
-| `'Tomates (kg)'` | `'Tomates'` |
-| `'Lait (litre)'` | `'Lait'` |
-| `'Laitue (unité)'` | `'Laitue'` |
+| Situation | Règle | Exemple |
+|---|---|---|
+| Tous les produits ont la **même unité implicite** | Ne pas inclure l'unité | Fruits/légumes → tous au kg → `'Tomates'`, `'Carottes'` |
+| Les **conditionnements varient** d'un produit à l'autre | Inclure le conditionnement | Café → 1kg, 250g, boîte 50… → `'Café Arabica (1kg)'`, `'Capsules (Boîte 50)'` |
 
-Si des noms avec unité ont été créés par erreur, utiliser le script de nettoyage :  
+Le conditionnement différencie le SKU : vendre 5 × `'Café Arabica (1kg)'` est précis, vendre 5 × `'Café Arabica'` est ambigu.
+
+Si des unités en doublon ont été créées par erreur sur un catalogue homogène, utiliser le script de nettoyage :  
 `supabase/migrations/20260603140000_OBJETS_cleanup_product_names_kg.sql`
 
 ---
@@ -232,14 +233,33 @@ Les fichiers SQL créés localement **ne s'appliquent pas automatiquement à Sup
 
 ---
 
-## 9. Checklist finale avant de considérer la fonction terminée
+## 9. Notes dans `stock_movements` — référence
+
+| Contexte | `type` | `reference_type` | `note` |
+|---|---|---|---|
+| Achat reçu (`create_purchase`) | `in` | `purchase` | `'Nouvel achat'` |
+| Vente expédiée (`create_sale`) | `out` | `sale` | `'Nouvelle vente'` |
+| Annulation achat | `out` | `purchase` | `'Annulation ACH-...'` |
+| Annulation vente | `in` | `sale` | `'Annulation VEN-...'` |
+| Stock initial produit | `in` | `manual` | `'Stock initial'` |
+| Ajustement manuel (UI Produits) | `in`/`out` | `manual` | note libre saisie par l'utilisateur |
+| Ajustement démo (réduction) | `out` | `manual` | texte descriptif (ex: `'Perte périssable fin de lot'`) |
+| Ajustement démo (augmentation) | `in` | `manual` | texte descriptif (ex: `'Réintégration stock'`) |
+
+**Règle pour les ajustements manuels en démo** : `type = 'in'` si v_target > stock actuel, `type = 'out'` si v_target < stock actuel. `reference_type = 'manual'`, `reference_id = NULL`, note descriptive réaliste. Utiliser `CASE WHEN v_target >= v_stock_avant THEN 'in' ELSE 'out' END` et `ABS(...)` pour la quantité.
+
+---
+
+## 10. Checklist finale avant de considérer la fonction terminée
 
 ```
 □ Les 20 produits ont des prix achat/vente cohérents avec le secteur
 □ v_stock_alerts dimensionnés pour le secteur (volumes réalistes)
 □ CASE WHEN v_i <= 10 présent dans la boucle achats
 □ Estimation marge mois courant vérifiée > 0 sur papier
-□ 6 ajustements de stock couvrent les positions 20, 18, 17, 16, 15, 13
+□ stock_movements achats : note = 'Nouvel achat' présent
+□ stock_movements ventes : note = 'Nouvelle vente' présent
+□ 3 ajustements manuels (step 10) avec notes réalistes
 □ LEAST(v_date, current_date - 1) présent dans les boucles achats ET ventes (mois courant)
 □ Les seuils faible/ok/rupture sont cohérents avec v_stock_alerts
 □ Migration déployée dans Supabase SQL Editor

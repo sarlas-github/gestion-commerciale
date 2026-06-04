@@ -83,6 +83,8 @@ BEGIN
         if_number         = '56789012',
         rc                = 'RC-CASA-789012',
         tp_number         = '23456789',
+        logo_url          = '/yourlogo.jpg',
+        couleur_marque    = '#009FE3',
         taux_tva_defaut   = p_taux_tva_defaut,
         label_quantity    = p_label_quantity,
         show_pieces_count = p_show_pieces_count
@@ -254,8 +256,8 @@ BEGIN
                 UPDATE public.stock SET quantity = v_stock_current[v_p_idx]
                 WHERE product_id = v_product_ids[v_p_idx] AND company_id = v_company_id;
 
-                INSERT INTO public.stock_movements (user_id, company_id, product_id, type, quantity, reference_type, reference_id, date, stock_avant, stock_apres)
-                VALUES (v_user_id, v_company_id, v_product_ids[v_p_idx], 'in', v_qty, 'purchase', v_purchase_id, v_date, v_stock_avant, v_stock_current[v_p_idx]);
+                INSERT INTO public.stock_movements (user_id, company_id, product_id, type, quantity, reference_type, reference_id, note, date, stock_avant, stock_apres)
+                VALUES (v_user_id, v_company_id, v_product_ids[v_p_idx], 'in', v_qty, 'purchase', v_purchase_id, 'Nouvel achat', v_date, v_stock_avant, v_stock_current[v_p_idx]);
             END LOOP;
 
             IF v_paid > 0 THEN
@@ -345,8 +347,8 @@ BEGIN
                     UPDATE public.stock SET quantity = v_stock_current[v_p_idx]
                     WHERE product_id = v_product_ids[v_p_idx] AND company_id = v_company_id;
 
-                    INSERT INTO public.stock_movements (user_id, company_id, product_id, type, quantity, reference_type, reference_id, date, stock_avant, stock_apres)
-                    VALUES (v_user_id, v_company_id, v_product_ids[v_p_idx], 'out', v_qty, 'sale', v_sale_id, v_date, v_stock_avant, v_stock_current[v_p_idx]);
+                    INSERT INTO public.stock_movements (user_id, company_id, product_id, type, quantity, reference_type, reference_id, note, date, stock_avant, stock_apres)
+                    VALUES (v_user_id, v_company_id, v_product_ids[v_p_idx], 'out', v_qty, 'sale', v_sale_id, 'Nouvelle vente', v_date, v_stock_avant, v_stock_current[v_p_idx]);
                 END IF;
             END LOOP;
 
@@ -456,67 +458,32 @@ BEGIN
     ON CONFLICT (company_id, type, year)
     DO UPDATE SET last_number = GREATEST(document_sequences.last_number, EXCLUDED.last_number);
 
-    -- 10. Ajustements stock — 6 produits ciblés pour diversifier la page 1
-    -- Page 1 triée par created_at DESC → ordre 20, 19, 18, 17, 16, 15, 14, 13, 12, 11
-    -- Résultat : RUPTURE – ok – FAIBLE – ok – ok – RUPTURE – ok – FAIBLE – ok – ok
-
-    -- Haricots verts (20) → rupture (seuil=20)
+    -- 10. Ajustements manuels de stock pour diversifier les états produits
+    -- Oignons (index 3, seuil=100) → rupture
     v_target := 0;
-    IF v_stock_current[20] != v_target THEN
-        v_stock_avant := v_stock_current[20];
-        UPDATE public.stock SET quantity = v_target WHERE product_id = v_product_ids[20] AND company_id = v_company_id;
-        INSERT INTO public.stock_movements (user_id, company_id, product_id, type, quantity, reference_type, reference_id, date, note, stock_avant, stock_apres)
-        VALUES (v_user_id, v_company_id, v_product_ids[20], 'adjust', (v_target - v_stock_avant)::int, 'manual', NULL, current_date, 'Ajustement inventaire', v_stock_avant, v_target);
-        v_stock_current[20] := v_target;
+    IF v_stock_current[3] != v_target THEN
+        v_stock_avant := v_stock_current[3];
+        UPDATE public.stock SET quantity = v_target WHERE product_id = v_product_ids[3] AND company_id = v_company_id;
+        INSERT INTO public.stock_movements (user_id, company_id, product_id, type, quantity, reference_type, note, date, stock_avant, stock_apres)
+        VALUES (v_user_id, v_company_id, v_product_ids[3], CASE WHEN v_target >= v_stock_avant THEN 'in' ELSE 'out' END, ABS((v_target - v_stock_avant)::int), 'manual', 'Perte périssable fin de lot', current_date, v_stock_avant, v_target);
+        v_stock_current[3] := v_target;
     END IF;
-
-    -- Piment (18) → faible (3, seuil=50)
-    v_target := 3;
-    IF v_stock_current[18] != v_target THEN
-        v_stock_avant := v_stock_current[18];
-        UPDATE public.stock SET quantity = v_target WHERE product_id = v_product_ids[18] AND company_id = v_company_id;
-        INSERT INTO public.stock_movements (user_id, company_id, product_id, type, quantity, reference_type, reference_id, date, note, stock_avant, stock_apres)
-        VALUES (v_user_id, v_company_id, v_product_ids[18], 'adjust', (v_target - v_stock_avant)::int, 'manual', NULL, current_date, 'Ajustement inventaire', v_stock_avant, v_target);
-        v_stock_current[18] := v_target;
-    END IF;
-
-    -- Ail (17) → ok, forcé à niveau confortable (seuil=10)
-    v_target := 80;
-    IF v_stock_current[17] != v_target THEN
-        v_stock_avant := v_stock_current[17];
-        UPDATE public.stock SET quantity = v_target WHERE product_id = v_product_ids[17] AND company_id = v_company_id;
-        INSERT INTO public.stock_movements (user_id, company_id, product_id, type, quantity, reference_type, reference_id, date, note, stock_avant, stock_apres)
-        VALUES (v_user_id, v_company_id, v_product_ids[17], 'adjust', (v_target - v_stock_avant)::int, 'manual', NULL, current_date, 'Ajustement inventaire', v_stock_avant, v_target);
-        v_stock_current[17] := v_target;
-    END IF;
-
-    -- Menthe (16) → ok, forcé à niveau confortable (seuil=10)
-    v_target := 50;
-    IF v_stock_current[16] != v_target THEN
-        v_stock_avant := v_stock_current[16];
-        UPDATE public.stock SET quantity = v_target WHERE product_id = v_product_ids[16] AND company_id = v_company_id;
-        INSERT INTO public.stock_movements (user_id, company_id, product_id, type, quantity, reference_type, reference_id, date, note, stock_avant, stock_apres)
-        VALUES (v_user_id, v_company_id, v_product_ids[16], 'adjust', (v_target - v_stock_avant)::int, 'manual', NULL, current_date, 'Ajustement inventaire', v_stock_avant, v_target);
-        v_stock_current[16] := v_target;
-    END IF;
-
-    -- Coriandre (15) → rupture (seuil=30)
-    v_target := 0;
-    IF v_stock_current[15] != v_target THEN
-        v_stock_avant := v_stock_current[15];
-        UPDATE public.stock SET quantity = v_target WHERE product_id = v_product_ids[15] AND company_id = v_company_id;
-        INSERT INTO public.stock_movements (user_id, company_id, product_id, type, quantity, reference_type, reference_id, date, note, stock_avant, stock_apres)
-        VALUES (v_user_id, v_company_id, v_product_ids[15], 'adjust', (v_target - v_stock_avant)::int, 'manual', NULL, current_date, 'Ajustement inventaire', v_stock_avant, v_target);
-        v_stock_current[15] := v_target;
-    END IF;
-
-    -- Laitue (13) → faible (5, seuil=20)
+    -- Pommes (index 7, seuil=20) → stock faible
     v_target := 5;
+    IF v_stock_current[7] != v_target THEN
+        v_stock_avant := v_stock_current[7];
+        UPDATE public.stock SET quantity = v_target WHERE product_id = v_product_ids[7] AND company_id = v_company_id;
+        INSERT INTO public.stock_movements (user_id, company_id, product_id, type, quantity, reference_type, note, date, stock_avant, stock_apres)
+        VALUES (v_user_id, v_company_id, v_product_ids[7], CASE WHEN v_target >= v_stock_avant THEN 'in' ELSE 'out' END, ABS((v_target - v_stock_avant)::int), 'manual', 'Correctif inventaire physique', current_date, v_stock_avant, v_target);
+        v_stock_current[7] := v_target;
+    END IF;
+    -- Laitue (index 13, seuil=20) → stock faible
+    v_target := 8;
     IF v_stock_current[13] != v_target THEN
         v_stock_avant := v_stock_current[13];
         UPDATE public.stock SET quantity = v_target WHERE product_id = v_product_ids[13] AND company_id = v_company_id;
-        INSERT INTO public.stock_movements (user_id, company_id, product_id, type, quantity, reference_type, reference_id, date, note, stock_avant, stock_apres)
-        VALUES (v_user_id, v_company_id, v_product_ids[13], 'adjust', (v_target - v_stock_avant)::int, 'manual', NULL, current_date, 'Ajustement inventaire', v_stock_avant, v_target);
+        INSERT INTO public.stock_movements (user_id, company_id, product_id, type, quantity, reference_type, note, date, stock_avant, stock_apres)
+        VALUES (v_user_id, v_company_id, v_product_ids[13], CASE WHEN v_target >= v_stock_avant THEN 'in' ELSE 'out' END, ABS((v_target - v_stock_avant)::int), 'manual', 'Ajustement fin de mois', current_date, v_stock_avant, v_target);
         v_stock_current[13] := v_target;
     END IF;
 
