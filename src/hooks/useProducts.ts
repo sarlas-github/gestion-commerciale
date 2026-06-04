@@ -108,6 +108,7 @@ export const useCreateProduct = () => {
     onSuccess: () => {
       qc.invalidateQueries({ queryKey: ['products'] })
       qc.invalidateQueries({ queryKey: ['stock-alerts'] })
+      qc.invalidateQueries({ queryKey: ['stock-movements'] })
       toast.success('Produit créé avec succès')
     },
     onError: (err: Error) => {
